@@ -85,7 +85,7 @@ export const selectedExtension$ = state(
 
 const preferredExtensions = [
   {
-    id: "novawallet",
+    id: "nova-wallet",
     name: "Nova Wallet",
     logo: "/novawallet.webp",
   },
@@ -95,7 +95,7 @@ const preferredExtensions = [
     logo: "/talisman.webp",
   },
   {
-    id: "subwallet",
+    id: "subwallet-js",
     name: "Subwallet",
     logo: "/subwallet.webp",
   },
@@ -104,9 +104,11 @@ const preferredExtensions = [
 export const PickExtension = () => {
   const availableExtensions = useStateObservable(availableExtensions$);
   const preferredExtensionIds = new Set(preferredExtensions.map((v) => v.id));
-  const otherExtensions = availableExtensions.filter(
-    (id) => !preferredExtensionIds.has(id)
-  );
+  const hasNova = availableExtensions.includes("nova-wallet");
+  // Nova Wallet puts themselves as "polkadot-js" too. Because it's a mobile in-app browser, we're guaranteed only to have nova.
+  const otherExtensions = hasNova
+    ? []
+    : availableExtensions.filter((id) => !preferredExtensionIds.has(id));
 
   return (
     <div className="space-y-2">

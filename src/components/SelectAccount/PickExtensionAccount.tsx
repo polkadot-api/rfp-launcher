@@ -85,13 +85,14 @@ export const PickExtensionAccount: FC<{
               className="flex gap-2"
             >
               <PolkadotIdenticon
+                className="shrink-0"
                 size={32}
                 publicKey={account.polkadotSigner.publicKey}
               />
               {account.name ? (
-                <div className="text-left">
+                <div className="text-left overflow-hidden">
                   <p>{account.name}</p>
-                  <p className="text-sm text-foreground/60">
+                  <p className="text-sm text-foreground/60 overflow-hidden overflow-ellipsis">
                     {account.address}
                   </p>
                 </div>
