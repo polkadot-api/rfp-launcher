@@ -1,3 +1,4 @@
+import { RfpForm } from "./components/RfpForm";
 import { Header } from "./Header";
 
 function App() {
@@ -7,7 +8,9 @@ function App() {
         <Header />
       </div>
       <div className="w-full overflow-auto p-2">
-        <div className="max-w-5xl m-auto">Content</div>
+        <div className="max-w-5xl m-auto">
+          <RfpForm />
+        </div>
       </div>
     </div>
   );

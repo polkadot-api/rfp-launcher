@@ -1,3 +1,4 @@
+import { sliceMiddleAddr } from "@/lib/ss58";
 import { PolkadotIdenticon } from "@polkadot-api/react-components";
 import { useStateObservable } from "@react-rxjs/core";
 import { useState } from "react";
@@ -50,5 +51,3 @@ export const SelectAccount = () => {
     </Dialog>
   );
 };
-
-const sliceMiddleAddr = (s: string) => s.slice(0, 6) + "…" + s.slice(-6);
