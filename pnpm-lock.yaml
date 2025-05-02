@@ -8,6 +8,9 @@ dependencies:
   '@hookform/resolvers':
     specifier: ^5.0.1
     version: 5.0.1(react-hook-form@7.56.1)
+  '@polkadot-api/descriptors':
+    specifier: file:.papi/descriptors
+    version: file:.papi/descriptors(polkadot-api@1.10.0)
   '@polkadot-api/react-components':
     specifier: 0.1.0-local.2
     version: 0.1.0-local.2(react-dom@19.1.0)(react@19.1.0)
@@ -4042,4 +4045,14 @@ packages:
 
   /zod@3.24.3:
     resolution: {integrity: sha512-HhY1oqzWCQWuUqvBFnsyrtZRhyPeR7SUGv+C4+MsisMuVfSPx8HpwWqH8tRahSlt6M3PiFAcoeFhZAqIXTxoSg==}
+    dev: false
+
+  file:.papi/descriptors(polkadot-api@1.10.0):
+    resolution: {directory: .papi/descriptors, type: directory}
+    id: file:.papi/descriptors
+    name: '@polkadot-api/descriptors'
+    peerDependencies:
+      polkadot-api: '>=1.9.11'
+    dependencies:
+      polkadot-api: 1.10.0(rxjs@7.8.2)
     dev: false
