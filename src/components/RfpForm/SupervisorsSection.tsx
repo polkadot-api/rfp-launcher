@@ -1,8 +1,13 @@
+import { peopleApi } from "@/chain";
+import { sliceMiddleAddr } from "@/lib/ss58";
 import { CopyText, PolkadotIdenticon } from "@polkadot-api/react-components";
+import { createIdentitySdk, Identity } from "@polkadot-api/sdk-accounts";
+import { state, useStateObservable } from "@react-rxjs/core";
 import { CheckCircle, Trash2 } from "lucide-react";
-import { getSs58AddressInfo } from "polkadot-api";
+import { getSs58AddressInfo, SS58String } from "polkadot-api";
 import { FC, useState } from "react";
 import { ControllerRenderProps } from "react-hook-form";
+import { from, map, startWith, tap } from "rxjs";
 import { Button } from "../ui/button";
 import {
   Card,
@@ -14,7 +19,6 @@ import {
 import { FormControl, FormField, FormItem } from "../ui/form";
 import { Input } from "../ui/input";
 import { FormSchema, RfpControlType } from "./formSchema";
-import { sliceMiddleAddr } from "@/lib/ss58";
 
 export const SupervisorsSection: FC<{ control: RfpControlType }> = ({
   control,
@@ -69,20 +73,7 @@ const SupervisorsControl: FC<
             <Button variant="destructive" className="mx-1 h-auto">
               <Trash2 />
             </Button>
-            <CopyText
-              text={addr}
-              copiedContent={
-                <CheckCircle
-                  size={16}
-                  className="text-green-500 dark:text-green-300 w-8"
-                />
-              }
-            >
-              <PolkadotIdenticon size={32} publicKey={getPublicKey(addr)} />
-            </CopyText>
-            <span className="text-sm text-foreground/60 overflow-hidden text-ellipsis">
-              {sliceMiddleAddr(addr)}
-            </span>
+            <AddressIdentity addr={addr} />
           </li>
         ))}
       </ul>
@@ -112,4 +103,67 @@ const getPublicKey = (addr: string) => {
   const info = getSs58AddressInfo(addr);
   if (!info.isValid) throw new Error("Invalid SS58 Address");
   return info.publicKey;
+};
+
+const CACHE_KEY = "identity-cache";
+const cache: Record<SS58String, Identity["displayName"] | undefined> =
+  JSON.parse(localStorage.getItem(CACHE_KEY) ?? "{}");
+
+const identitySdk = createIdentitySdk(peopleApi);
+const identity$ = state((address: SS58String) => {
+  const defaultValue = cache[address] ?? null;
+  return from(identitySdk.getIdentity(address)).pipe(
+    map((v) => v?.displayName),
+    tap((v) => {
+      if (v != null) {
+        cache[address] = v;
+      } else {
+        delete cache[address];
+      }
+      localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+    }),
+    startWith(defaultValue)
+  );
+}, null);
+
+const AddressIdentity: FC<{ addr: string }> = ({ addr }) => {
+  const identity = useStateObservable(identity$(addr));
+
+  return (
+    <div className="flex items-center gap-1 overflow-hidden">
+      <CopyText
+        text={addr}
+        copiedContent={
+          <CheckCircle
+            size={16}
+            className="text-green-500 dark:text-green-300 w-8"
+          />
+        }
+      >
+        <PolkadotIdenticon size={32} publicKey={getPublicKey(addr)} />
+      </CopyText>
+      {identity ? (
+        identity.verified ? (
+          <div className="flex items-center gap-1">
+            <span>{identity.value}</span>
+            <CheckCircle
+              size={16}
+              className="text-green-500 dark:text-green-400"
+            />
+          </div>
+        ) : (
+          <div className="leading-tight">
+            <div>{identity.value}</div>
+            <div className="text-sm text-foreground/60">
+              {sliceMiddleAddr(addr)}
+            </div>
+          </div>
+        )
+      ) : (
+        <span className="text-sm text-foreground/60 overflow-hidden text-ellipsis">
+          {sliceMiddleAddr(addr)}
+        </span>
+      )}
+    </div>
+  );
 };
