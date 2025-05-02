@@ -1,4 +1,4 @@
-import { SelectAccount } from "./components/SelectAccount";
+import { SelectAccount } from "./components/SelectAccount/SelectAccount";
 
 export const Header = () => {
   return (
