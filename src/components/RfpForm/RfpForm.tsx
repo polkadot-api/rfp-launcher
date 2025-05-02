@@ -6,6 +6,7 @@ import { Form } from "../ui/form";
 import { emptyNumeric, formSchema } from "./formSchema";
 import { FundingSection } from "./FundingSection";
 import { SupervisorsSection } from "./SupervisorsSection";
+import { TimelineSection } from "./TimelineSection";
 
 export const RfpForm = () => {
   // 1. Define your form.
@@ -16,6 +17,7 @@ export const RfpForm = () => {
       findersFee: emptyNumeric,
       supervisorsFee: emptyNumeric,
       supervisors: [],
+      fundsExpiry: emptyNumeric,
     },
   });
 
@@ -31,6 +33,7 @@ export const RfpForm = () => {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FundingSection control={form.control} />
         <SupervisorsSection control={form.control} />
+        <TimelineSection control={form.control} />
         <Button type="submit">Submit</Button>
       </form>
     </Form>

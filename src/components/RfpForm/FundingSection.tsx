@@ -1,4 +1,4 @@
-import { Control, FieldValues, Path } from "react-hook-form";
+import { FC } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import {
   FormControl,
@@ -8,10 +8,9 @@ import {
   FormLabel,
   FormMessage,
 } from "../ui/form";
-import { Input } from "../ui/input";
 import { SelectItem } from "../ui/select";
 import { SelectInput } from "../ui/selectInput";
-import { FC } from "react";
+import { FormInputField } from "./FormInputField";
 import { RfpControlType } from "./formSchema";
 
 const findersFeeValues = [1000, 2000, 5000, 10000];
@@ -40,7 +39,7 @@ export const FundingSection: FC<{ control: RfpControlType }> = ({
               <SelectInput
                 {...field}
                 value={String(field.value)}
-                placeholder="value"
+                placeholder="Value"
               >
                 {findersFeeValues.map((value) => (
                   <SelectItem key={value} value={String(value)}>
@@ -64,31 +63,4 @@ export const FundingSection: FC<{ control: RfpControlType }> = ({
       />
     </CardContent>
   </Card>
-);
-
-const FormInputField = <T extends FieldValues>({
-  control,
-  name,
-  label,
-  description,
-}: {
-  control: Control<T>;
-  name: Path<T>;
-  label: string;
-  description?: string;
-}) => (
-  <FormField
-    control={control}
-    name={name}
-    render={({ field }) => (
-      <FormItem>
-        <FormLabel>{label}</FormLabel>
-        <FormControl>
-          <Input placeholder="value" {...field} value={field.value ?? ""} />
-        </FormControl>
-        {description ? <FormDescription>{description}</FormDescription> : null}
-        <FormMessage />
-      </FormItem>
-    )}
-  />
 );

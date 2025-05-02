@@ -6,8 +6,8 @@ export const formSchema = z.object({
   findersFee: z.coerce.number(),
   supervisorsFee: z.coerce.number(),
   supervisors: z.array(z.string()),
-  // fundsExpiry: z.date(),
-  // projectCompletion: z.date(),
+  fundsExpiry: z.coerce.number().positive(),
+  projectCompletion: z.date(),
   // projectScope: z.string(),
   // milestones: z.array(
   //   z.object({
