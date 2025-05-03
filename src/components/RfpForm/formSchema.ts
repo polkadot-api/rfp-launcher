@@ -18,6 +18,14 @@ export const formSchema = z.object({
   ),
 });
 
+export const parseNumber = (value: string | number | undefined) => {
+  try {
+    return z.coerce.number().parse(value);
+  } catch (_) {
+    return null;
+  }
+};
+
 // zod with .coerce can work with strings, but TS complains.
 export const emptyNumeric = "" as unknown as number;
 

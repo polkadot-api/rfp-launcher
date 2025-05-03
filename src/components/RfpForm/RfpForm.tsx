@@ -1,10 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Button } from "../ui/button";
 import { Form } from "../ui/form";
 import { emptyNumeric, formSchema } from "./formSchema";
 import { FundingSection } from "./FundingSection";
+import { ReviewSection } from "./ReviewSection";
 import { ScopeSection } from "./ScopeSection";
 import { SupervisorsSection } from "./SupervisorsSection";
 import { TimelineSection } from "./TimelineSection";
@@ -38,7 +38,7 @@ export const RfpForm = () => {
         <SupervisorsSection control={form.control} />
         <TimelineSection control={form.control} />
         <ScopeSection control={form.control} />
-        <Button type="submit">Submit</Button>
+        <ReviewSection control={form.control} />
       </form>
     </Form>
   );
