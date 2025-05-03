@@ -1,6 +1,7 @@
 import { client, typedApi } from "@/chain";
+import { BLOCK_LENGTH, TRACK_ID } from "@/constants";
 import { state, useStateObservable } from "@react-rxjs/core";
-import { add, addWeeks, format } from "date-fns";
+import { add, addWeeks, differenceInDays, format } from "date-fns";
 import { FC } from "react";
 import { useWatch } from "react-hook-form";
 import { switchMap } from "rxjs";
@@ -33,7 +34,7 @@ export const TimelineSection: FC<{ control: RfpControlType }> = ({
           min={1}
           name="fundsExpiry"
           label="Submission Deadline"
-          description="Amount of weeks after bounty funding in which the bounty has to be cancelled if there were no submissions"
+          description="Amount of weeks after bounty funding in which the bounty has to be cancelled if there were no implementors"
         />
         <FormField
           control={control}
@@ -62,9 +63,6 @@ export const TimelineSection: FC<{ control: RfpControlType }> = ({
     </Card>
   );
 };
-
-const TRACK_ID = "treasurer";
-const BLOCK_LENGTH = 6;
 
 const track = typedApi.constants.Referenda.Tracks().then((tracks) => {
   const track = tracks.find(([, value]) => value.name === TRACK_ID);
@@ -137,6 +135,13 @@ const EstimatedTimeline: FC<{ control: RfpControlType }> = ({ control }) => {
   });
   const submissionDeadline = useSubmissionDeadline(control);
 
+  const lateSubmissionDiff = estimatedTimeline
+    ? differenceInDays(
+        estimatedTimeline.referendumSubmissionDeadline,
+        new Date()
+      )
+    : 0;
+
   return (
     <div>
       <h3 className="text-sm font-medium">Estimated Timeline</h3>
@@ -155,10 +160,10 @@ const EstimatedTimeline: FC<{ control: RfpControlType }> = ({ control }) => {
             </span>
           </li>
           <li>
-            Bounty funding if RFP is submitted after{" "}
+            Bounty funding if RFP is submitted later than{" "}
             {format(
               estimatedTimeline.referendumSubmissionDeadline,
-              "LLL do kk:mm"
+              lateSubmissionDiff < 2 ? "LLL do kk:mm" : "LLL do"
             )}
             :{" "}
             <span className="text-foreground">

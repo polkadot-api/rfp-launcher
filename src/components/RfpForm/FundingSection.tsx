@@ -1,3 +1,4 @@
+import { FINDERS_FEE_VALUES } from "@/constants";
 import { FC } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import {
@@ -12,8 +13,6 @@ import { SelectItem } from "../ui/select";
 import { SelectInput } from "../ui/selectInput";
 import { FormInputField } from "./FormInputField";
 import { RfpControlType } from "./formSchema";
-
-const findersFeeValues = [1000, 2000, 5000, 10000];
 
 export const FundingSection: FC<{ control: RfpControlType }> = ({
   control,
@@ -41,7 +40,7 @@ export const FundingSection: FC<{ control: RfpControlType }> = ({
                 value={String(field.value)}
                 placeholder="Value"
               >
-                {findersFeeValues.map((value) => (
+                {FINDERS_FEE_VALUES.map((value) => (
                   <SelectItem key={value} value={String(value)}>
                     {value.toLocaleString()}
                   </SelectItem>
