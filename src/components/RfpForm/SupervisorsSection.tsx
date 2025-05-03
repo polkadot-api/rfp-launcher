@@ -70,7 +70,12 @@ const SupervisorsControl: FC<
       <ul className="space-y-2">
         {value.map((addr) => (
           <li key={addr} className="flex items-center gap-1 overflow-hidden">
-            <Button variant="destructive" className="mx-1 h-auto">
+            <Button
+              type="button"
+              variant="outline"
+              className="mx-1 h-auto text-destructive border-destructive hover:bg-destructive/5 hover:text-destructive"
+              onClick={() => onChange(value.filter((v) => v !== addr))}
+            >
               <Trash2 />
             </Button>
             <AddressIdentity addr={addr} />
