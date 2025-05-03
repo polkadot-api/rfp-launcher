@@ -5,6 +5,7 @@ import { Button } from "../ui/button";
 import { Form } from "../ui/form";
 import { emptyNumeric, formSchema } from "./formSchema";
 import { FundingSection } from "./FundingSection";
+import { ScopeSection } from "./ScopeSection";
 import { SupervisorsSection } from "./SupervisorsSection";
 import { TimelineSection } from "./TimelineSection";
 
@@ -18,6 +19,8 @@ export const RfpForm = () => {
       supervisorsFee: emptyNumeric,
       supervisors: [],
       fundsExpiry: emptyNumeric,
+      projectScope: "",
+      milestones: [],
     },
   });
 
@@ -34,6 +37,7 @@ export const RfpForm = () => {
         <FundingSection control={form.control} />
         <SupervisorsSection control={form.control} />
         <TimelineSection control={form.control} />
+        <ScopeSection control={form.control} />
         <Button type="submit">Submit</Button>
       </form>
     </Form>
