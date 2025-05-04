@@ -82,7 +82,7 @@ const getNextTreasurySpend = async (block: number) => {
   return { next, remaining, period };
 };
 
-const estimatedTimeline$ = state(
+export const estimatedTimeline$ = state(
   client.finalizedBlock$.pipe(
     switchMap(async (currentBlock) => {
       const refDuration = await referendaDuration;
@@ -148,7 +148,7 @@ const EstimatedTimeline: FC<{ control: RfpControlType }> = ({ control }) => {
       {estimatedTimeline ? (
         <ol className="text-sm text-foreground/80 list-disc pl-4 leading-normal">
           <li>
-            Referendum approved deadline:{" "}
+            Referendum executed deadline:{" "}
             <span className="text-foreground">
               {formatDate(estimatedTimeline.referendumDeadline)}
             </span>
