@@ -1,4 +1,4 @@
-import { TOKEN_SYMBOL } from "@/constants";
+import { REFERENDUM_PRICE_BUFFER, TOKEN_SYMBOL } from "@/constants";
 import { useStateObservable } from "@react-rxjs/core";
 import { addWeeks, differenceInDays, format } from "date-fns";
 import { OctagonAlert, TriangleAlert } from "lucide-react";
@@ -16,6 +16,7 @@ import {
 } from "../ui/table";
 import { Milestone, parseNumber, RfpControlType } from "./formSchema";
 import { estimatedTimeline$ } from "./TimelineSection";
+import { generateMarkdown } from "./markdown";
 
 export const ReviewSection: FC<{ control: RfpControlType }> = ({ control }) => {
   const estimatedTimeline = useStateObservable(estimatedTimeline$);
@@ -75,7 +76,10 @@ const FundingSummary: FC<{
     .filter((v) => v != null)
     .reduce((a, b) => a + b, 0);
   const totalAmountToken = totalAmount / conversionRate;
-  const totalAmountWithBuffer = totalAmountToken * 1.25;
+  const totalAmountWithBuffer =
+    totalAmountToken * (1 + REFERENDUM_PRICE_BUFFER);
+
+  console.log(generateMarkdown(formFields, conversionRate, {}));
 
   return (
     <div className="max-w-xl">
