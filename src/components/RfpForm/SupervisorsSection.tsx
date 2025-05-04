@@ -117,7 +117,8 @@ const cache: Record<
 > = JSON.parse(localStorage.getItem(CACHE_KEY) ?? "{}");
 
 const identitySdk = createIdentitySdk(peopleApi);
-const identity$ = state((address: SS58String) => {
+
+export const identity$ = state((address: SS58String) => {
   const defaultValue = cache[address] ?? null;
   return from(identitySdk.getIdentity(address)).pipe(
     map((v) =>

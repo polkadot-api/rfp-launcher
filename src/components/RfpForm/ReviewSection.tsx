@@ -1,9 +1,14 @@
-import { KRAKEN_SYMBOL_PAIR, TOKEN_SYMBOL } from "@/constants";
+import {
+  KRAKEN_SYMBOL_PAIR,
+  REFERENDUM_PRICE_BUFFER,
+  TOKEN_SYMBOL,
+} from "@/constants";
 import { state, useStateObservable } from "@react-rxjs/core";
 import { addWeeks, differenceInDays, format } from "date-fns";
-import { OctagonAlert, TriangleAlert } from "lucide-react";
-import { FC } from "react";
+import { BadgeInfo, OctagonAlert, TriangleAlert } from "lucide-react";
+import { FC, useEffect, useState } from "react";
 import { useWatch } from "react-hook-form";
+import { catchError, combineLatest, map, of, switchMap, timer } from "rxjs";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import {
@@ -14,9 +19,11 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
+import { Textarea } from "../ui/textarea";
 import { Milestone, parseNumber, RfpControlType } from "./formSchema";
+import { generateMarkdown } from "./markdown";
+import { identity$ } from "./SupervisorsSection";
 import { estimatedTimeline$ } from "./TimelineSection";
-import { catchError, map, of, switchMap, timer } from "rxjs";
 
 const conversionRate$ = state(
   timer(0, 60_000).pipe(
@@ -72,6 +79,7 @@ export const ReviewSection: FC<{ control: RfpControlType }> = ({ control }) => {
           milestonesMatchesPrize={milestonesMatchesPrize}
         />
         <TimelineSummary control={control} enoughDevDays={enoughDevDays} />
+        <ResultingMarkdown control={control} />
         <div className="text-right">
           <Button
             type="submit"
@@ -102,13 +110,15 @@ const FundingSummary: FC<{
     .map(parseNumber)
     .filter((v) => v != null)
     .reduce((a, b) => a + b, 0);
-  const totalAmountToken =
-    conversionRate == null ? undefined : totalAmount / conversionRate;
-  const totalAmountWithBuffer =
-    totalAmountToken == null ? undefined : totalAmountToken * 1.25;
+  const totalAmountToken = conversionRate
+    ? totalAmount / conversionRate
+    : undefined;
+  const totalAmountWithBuffer = totalAmountToken
+    ? totalAmountToken * (1 + REFERENDUM_PRICE_BUFFER)
+    : undefined;
 
   return (
-    <div className="max-w-xl">
+    <div className="max-w-xl mx-auto">
       <Table>
         <TableHeader>
           <TableRow>
@@ -245,7 +255,7 @@ const TimelineSummary: FC<{
     : null;
 
   return (
-    <div className="max-w-xl">
+    <div className="max-w-xl mx-auto">
       <Table>
         <TableHeader>
           <TableRow>
@@ -297,7 +307,7 @@ const TimelineSummary: FC<{
         daysToLateSubmission != null &&
         daysToLateSubmission < 1 ? (
         <div className="text-amber-600 py-2 flex items-center gap-2">
-          <TriangleAlert className="inline-block shrink-0" />
+          <TriangleAlert className="shrink-0" />
           <div>
             If this RFP is submitted after{" "}
             {format(
@@ -315,3 +325,52 @@ const TimelineSummary: FC<{
 };
 const formatDate = (value: Date | undefined | null) =>
   value ? format(value, "PPP") : "";
+
+const ResultingMarkdown: FC<{
+  control: RfpControlType;
+}> = ({ control }) => {
+  const formFields = useWatch({ control });
+  const conversionRate = useStateObservable(conversionRate$);
+  const identities = useIdentities(formFields.supervisors);
+
+  const markdown = generateMarkdown(formFields, conversionRate, identities);
+
+  return (
+    <div className="space-y-2">
+      <h3 className="text-sm font-bold">RFP Body</h3>
+      <Textarea readOnly value={markdown ?? ""} className="max-h-72" />
+      <div className="text-foreground/80 text-sm py-2 flex items-center gap-2">
+        <BadgeInfo className="shrink-0" />
+        <div>
+          This is the content you have to copy and paste into the body of the
+          referendum once it has been submitted.
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const useIdentities = (supervisors: Array<string> | undefined) => {
+  const [identities, setIdentities] = useState<
+    Record<string, string | undefined>
+  >({});
+
+  useEffect(() => {
+    if (!supervisors) {
+      setIdentities({});
+      return;
+    }
+
+    const subscription = combineLatest(
+      Object.fromEntries(
+        supervisors.map((addr) => [
+          addr,
+          identity$(addr).pipe(map((id) => id?.value)),
+        ])
+      )
+    ).subscribe((r) => setIdentities(r));
+    return () => subscription.unsubscribe();
+  }, [supervisors]);
+
+  return identities;
+};
