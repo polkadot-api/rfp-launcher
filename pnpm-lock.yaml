@@ -12,11 +12,11 @@ dependencies:
     specifier: file:.papi/descriptors
     version: file:.papi/descriptors(polkadot-api@1.10.0)
   '@polkadot-api/react-components':
-    specifier: 0.1.0-local.2
-    version: 0.1.0-local.2(react-dom@19.1.0)(react@19.1.0)
+    specifier: 0.1.0
+    version: 0.1.0(react-dom@19.1.0)(react@19.1.0)
   '@polkadot-api/sdk-accounts':
-    specifier: 0.0.1-1.local.3
-    version: 0.0.1-1.local.3(@noble/hashes@1.8.0)(@react-rxjs/core@0.10.8)(polkadot-api@1.10.0)(react@19.1.0)(rxjs@7.8.2)
+    specifier: 0.1.0
+    version: 0.1.0(@noble/hashes@1.8.0)(@react-rxjs/core@0.10.8)(polkadot-api@1.10.0)(react@19.1.0)(rxjs@7.8.2)
   '@radix-ui/react-dialog':
     specifier: ^1.1.11
     version: 1.1.11(@types/react-dom@19.1.3)(@types/react@19.1.2)(react-dom@19.1.0)(react@19.1.0)
@@ -769,10 +769,10 @@ packages:
       '@polkadot-api/utils': 0.1.2
     dev: false
 
-  /@polkadot-api/common-sdk-utils@0.0.1(polkadot-api@1.10.0)(rxjs@7.8.2):
-    resolution: {integrity: sha512-PLQeHmOva+hohgko7U3DburM/SFmeEMglqZxgcbddd02gbgBlY9LDgfvRD8bhSeM3cPRPwR/LqaBkC5cMZPHjg==}
+  /@polkadot-api/common-sdk-utils@0.0.1-1(polkadot-api@1.10.0)(rxjs@7.8.2):
+    resolution: {integrity: sha512-LaAacWhJO9jYyhTD2avY/LCy7kn29qB1gc0D0ziWjL1r48kqLB0rOORxWYDdDw6kX+ypiWBKL0eQPa/VF7qVSA==}
     peerDependencies:
-      polkadot-api: '>=1.7.4'
+      polkadot-api: ^1.8.1
       rxjs: '>=7.8.1'
     dependencies:
       polkadot-api: 1.10.0(rxjs@7.8.2)
@@ -852,8 +852,8 @@ packages:
     resolution: {integrity: sha512-X7ghAa4r7doETtjAPTb50IpfGtrBmy3BJM5WCfNKa1saK04VFY9w+vDn+hwEcM4p0PcDHt66Ts74hzvHq54d9A==}
     dev: false
 
-  /@polkadot-api/react-components@0.1.0-local.2(react-dom@19.1.0)(react@19.1.0):
-    resolution: {integrity: sha512-8fryGBhj/ApbabGzeY6Oh5UrvGi832lcvITyKmPcwyshKom2eNrGoj7mH1oTQ/jgWpnH/naxJ1cR46dDMe/nfQ==}
+  /@polkadot-api/react-components@0.1.0(react-dom@19.1.0)(react@19.1.0):
+    resolution: {integrity: sha512-uLPQ4M098g8Lrk5ylmM9/RdtOSA1uO2WWNRUo0BuPCC0FRu8pKYmN4+XDH6X8cyDr/ik8/whgvSDKpNxwRbMeA==}
     peerDependencies:
       react: ^19.0.0
       react-dom: ^19.0.0
@@ -863,15 +863,15 @@ packages:
       react-dom: 19.1.0(react@19.1.0)
     dev: false
 
-  /@polkadot-api/sdk-accounts@0.0.1-1.local.3(@noble/hashes@1.8.0)(@react-rxjs/core@0.10.8)(polkadot-api@1.10.0)(react@19.1.0)(rxjs@7.8.2):
-    resolution: {integrity: sha512-Ph/ih8dtO4a0YsliW3jtYgp3Ms9JGjtVhpnaNVvRbKu95DIJS1AzbbEISz0bTHnk9Jn8OcpZ0D5GuPjiGNd1Eg==}
+  /@polkadot-api/sdk-accounts@0.1.0(@noble/hashes@1.8.0)(@react-rxjs/core@0.10.8)(polkadot-api@1.10.0)(react@19.1.0)(rxjs@7.8.2):
+    resolution: {integrity: sha512-uZ5I+lzHqgLmpuIcvNVYI3esBDVSOtelkKWc8oU5nNkUY51p92oNhqAaoXaXLEFYrwZHxOrWuJze6PN+Ib/qvw==}
     peerDependencies:
       '@noble/hashes': '>=1.6.1'
       polkadot-api: '>=1.8.1'
       rxjs: '>=7.8.0'
     dependencies:
       '@noble/hashes': 1.8.0
-      '@polkadot-api/common-sdk-utils': 0.0.1(polkadot-api@1.10.0)(rxjs@7.8.2)
+      '@polkadot-api/common-sdk-utils': 0.0.1-1(polkadot-api@1.10.0)(rxjs@7.8.2)
       '@react-rxjs/utils': 0.9.7(@react-rxjs/core@0.10.8)(react@19.1.0)(rxjs@7.8.2)
       polkadot-api: 1.10.0(rxjs@7.8.2)
       rxjs: 7.8.2

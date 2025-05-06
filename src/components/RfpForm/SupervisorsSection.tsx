@@ -1,7 +1,7 @@
 import { peopleApi } from "@/chain";
 import { sliceMiddleAddr } from "@/lib/ss58";
 import { CopyText, PolkadotIdenticon } from "@polkadot-api/react-components";
-import { createIdentitySdk, Identity } from "@polkadot-api/sdk-accounts";
+import { createIdentitySdk } from "@polkadot-api/sdk-accounts";
 import { state, useStateObservable } from "@react-rxjs/core";
 import { CheckCircle, Trash2 } from "lucide-react";
 import { getSs58AddressInfo, SS58String } from "polkadot-api";
@@ -111,14 +111,23 @@ const getPublicKey = (addr: string) => {
 };
 
 const CACHE_KEY = "identity-cache";
-const cache: Record<SS58String, Identity["displayName"] | undefined> =
-  JSON.parse(localStorage.getItem(CACHE_KEY) ?? "{}");
+const cache: Record<
+  SS58String,
+  { value: string; verified: boolean } | undefined
+> = JSON.parse(localStorage.getItem(CACHE_KEY) ?? "{}");
 
 const identitySdk = createIdentitySdk(peopleApi);
 const identity$ = state((address: SS58String) => {
   const defaultValue = cache[address] ?? null;
   return from(identitySdk.getIdentity(address)).pipe(
-    map((v) => v?.displayName),
+    map((v) =>
+      v?.info.display
+        ? {
+            value: v.info.display,
+            verified: v.verified,
+          }
+        : null
+    ),
     tap((v) => {
       if (v != null) {
         cache[address] = v;
