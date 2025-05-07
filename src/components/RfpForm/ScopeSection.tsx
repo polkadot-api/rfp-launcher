@@ -27,6 +27,19 @@ export const ScopeSection: FC<{ control: RfpControlType }> = ({ control }) => (
     <CardContent className="space-y-4">
       <FormField
         control={control}
+        name="projectTitle"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Title</FormLabel>
+            <FormControl>
+              <Input placeholder="Value" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={control}
         name="projectScope"
         render={({ field }) => (
           <FormItem>
