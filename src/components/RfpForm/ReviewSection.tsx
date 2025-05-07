@@ -1,5 +1,5 @@
-import { TOKEN_SYMBOL } from "@/constants";
-import { useStateObservable } from "@react-rxjs/core";
+import { KRAKEN_SYMBOL_PAIR, TOKEN_SYMBOL } from "@/constants";
+import { state, useStateObservable } from "@react-rxjs/core";
 import { addWeeks, differenceInDays, format } from "date-fns";
 import { OctagonAlert, TriangleAlert } from "lucide-react";
 import { FC } from "react";
@@ -16,6 +16,33 @@ import {
 } from "../ui/table";
 import { Milestone, parseNumber, RfpControlType } from "./formSchema";
 import { estimatedTimeline$ } from "./TimelineSection";
+import { catchError, map, of, switchMap, timer } from "rxjs";
+
+const conversionRate$ = state(
+  timer(0, 60_000).pipe(
+    switchMap(() =>
+      fetch(
+        `https://api.kraken.com/0/public/Ticker?pair=${KRAKEN_SYMBOL_PAIR}`,
+        {
+          headers: {
+            Accept: "application/json",
+          },
+        }
+      ).then((r) => r.json())
+    ),
+    map((v) => {
+      if (v.error?.length) {
+        throw new Error(v.error[0]);
+      }
+      return Number(v.result[KRAKEN_SYMBOL_PAIR].p[1]);
+    }),
+    catchError((err) => {
+      console.error(err);
+      return of(null);
+    })
+  ),
+  null
+);
 
 export const ReviewSection: FC<{ control: RfpControlType }> = ({ control }) => {
   const estimatedTimeline = useStateObservable(estimatedTimeline$);
@@ -30,8 +57,9 @@ export const ReviewSection: FC<{ control: RfpControlType }> = ({ control }) => {
   const submissionDeadline = estimatedTimeline
     ? addWeeks(estimatedTimeline.bountyFunding, fundsExpiry || 1)
     : new Date();
-  const enoughDevDays =
-    differenceInDays(projectCompletion, submissionDeadline) >= 7;
+  const enoughDevDays = projectCompletion
+    ? differenceInDays(projectCompletion, submissionDeadline) >= 7
+    : true;
 
   return (
     <Card>
@@ -65,7 +93,7 @@ const FundingSummary: FC<{
 
   const milestonesTotal = getMilestonesTotal(formFields.milestones);
 
-  const conversionRate = 15.123846546812; // TODO
+  const conversionRate = useStateObservable(conversionRate$) ?? undefined;
   const totalAmount = [
     formFields.prizePool,
     formFields.findersFee,
@@ -74,8 +102,10 @@ const FundingSummary: FC<{
     .map(parseNumber)
     .filter((v) => v != null)
     .reduce((a, b) => a + b, 0);
-  const totalAmountToken = totalAmount / conversionRate;
-  const totalAmountWithBuffer = totalAmountToken * 1.25;
+  const totalAmountToken =
+    conversionRate == null ? undefined : totalAmount / conversionRate;
+  const totalAmountWithBuffer =
+    totalAmountToken == null ? undefined : totalAmountToken * 1.25;
 
   return (
     <div className="max-w-xl">
