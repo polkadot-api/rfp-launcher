@@ -26,6 +26,8 @@ export function generateMarkdown(
     : null;
 
   return `\
+# ${parsed.projectTitle}
+
 Prize Pool: $${parsed.prizePool.toLocaleString()}  
 Finder's Fee: $${parsed.findersFee.toLocaleString()}  
 Supervisors: $${parsed.supervisorsFee.toLocaleString()}  

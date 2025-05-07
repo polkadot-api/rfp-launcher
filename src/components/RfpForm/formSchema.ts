@@ -8,7 +8,8 @@ export const formSchema = z.object({
   supervisors: z.array(z.string()),
   fundsExpiry: z.coerce.number().positive(),
   projectCompletion: z.date(),
-  projectScope: z.string().nonempty(),
+  projectTitle: z.string().nonempty(),
+  projectScope: z.string(),
   milestones: z.array(
     z.object({
       title: z.string(),
