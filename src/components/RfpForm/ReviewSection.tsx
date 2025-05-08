@@ -7,7 +7,7 @@ import { state, useStateObservable } from "@react-rxjs/core";
 import { addWeeks, differenceInDays, format } from "date-fns";
 import { BadgeInfo, OctagonAlert, TriangleAlert } from "lucide-react";
 import { FC, useEffect, useState } from "react";
-import { useWatch } from "react-hook-form";
+import { DeepPartialSkipArrayKey, useWatch } from "react-hook-form";
 import { catchError, combineLatest, map, of, switchMap, timer } from "rxjs";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
@@ -20,12 +20,17 @@ import {
   TableRow,
 } from "../ui/table";
 import { Textarea } from "../ui/textarea";
-import { Milestone, parseNumber, RfpControlType } from "./formSchema";
+import {
+  FormSchema,
+  Milestone,
+  parseNumber,
+  RfpControlType,
+} from "./formSchema";
 import { generateMarkdown } from "./markdown";
 import { identity$ } from "./SupervisorsSection";
 import { estimatedTimeline$ } from "./TimelineSection";
 
-const conversionRate$ = state(
+export const conversionRate$ = state(
   timer(0, 60_000).pipe(
     switchMap(() =>
       fetch(
@@ -101,21 +106,9 @@ const FundingSummary: FC<{
 
   const milestonesTotal = getMilestonesTotal(formFields.milestones);
 
-  const conversionRate = useStateObservable(conversionRate$) ?? undefined;
-  const totalAmount = [
-    formFields.prizePool,
-    formFields.findersFee,
-    formFields.supervisorsFee,
-  ]
-    .map(parseNumber)
-    .filter((v) => v != null)
-    .reduce((a, b) => a + b, 0);
-  const totalAmountToken = conversionRate
-    ? totalAmount / conversionRate
-    : undefined;
-  const totalAmountWithBuffer = totalAmountToken
-    ? totalAmountToken * (1 + REFERENDUM_PRICE_BUFFER)
-    : undefined;
+  const conversionRate = useStateObservable(conversionRate$);
+  const { totalAmount, totalAmountToken, totalAmountWithBuffer } =
+    calculatePriceTotals(formFields, conversionRate);
 
   return (
     <div className="max-w-xl mx-auto">
@@ -194,6 +187,26 @@ const FundingSummary: FC<{
   );
 };
 
+export const calculatePriceTotals = (
+  formFields: DeepPartialSkipArrayKey<FormSchema>,
+  conversionRate: number | null
+) => {
+  const totalAmount = [
+    formFields.prizePool,
+    formFields.findersFee,
+    formFields.supervisorsFee,
+  ]
+    .map(parseNumber)
+    .filter((v) => v != null)
+    .reduce((a, b) => a + b, 0);
+  const totalAmountToken = conversionRate ? totalAmount / conversionRate : null;
+  const totalAmountWithBuffer = totalAmountToken
+    ? totalAmountToken * (1 + REFERENDUM_PRICE_BUFFER)
+    : null;
+
+  return { totalAmount, totalAmountToken, totalAmountWithBuffer };
+};
+
 const getMilestonesTotal = (milestones: Partial<Milestone>[] | undefined) =>
   (milestones ?? [])
     .map((milestone) => parseNumber(milestone.amount))
@@ -209,7 +222,10 @@ const formatUsd = (value: string | number | undefined) => {
   })}`;
 };
 
-const formatToken = (value: number | undefined, token = TOKEN_SYMBOL) => {
+const formatToken = (
+  value: number | null | undefined,
+  token = TOKEN_SYMBOL
+) => {
   if (value == null) return "";
 
   return `${value.toLocaleString(undefined, {
@@ -333,7 +349,15 @@ const ResultingMarkdown: FC<{
   const conversionRate = useStateObservable(conversionRate$);
   const identities = useIdentities(formFields.supervisors);
 
-  const markdown = generateMarkdown(formFields, conversionRate, identities);
+  const { totalAmountWithBuffer } = calculatePriceTotals(
+    formFields,
+    conversionRate
+  );
+  const markdown = generateMarkdown(
+    formFields,
+    totalAmountWithBuffer,
+    identities
+  );
 
   return (
     <div className="space-y-2">

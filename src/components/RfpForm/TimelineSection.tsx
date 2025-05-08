@@ -1,10 +1,10 @@
 import { client, typedApi } from "@/chain";
 import { BLOCK_LENGTH, TRACK_ID } from "@/constants";
-import { state, useStateObservable } from "@react-rxjs/core";
+import { state, useStateObservable, withDefault } from "@react-rxjs/core";
 import { add, addWeeks, differenceInDays, format } from "date-fns";
 import { FC } from "react";
 import { useWatch } from "react-hook-form";
-import { switchMap } from "rxjs";
+import { filter, map, switchMap } from "rxjs";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { DatePicker } from "../ui/datepicker";
 import {
@@ -71,6 +71,7 @@ const track = typedApi.constants.Referenda.Tracks().then((tracks) => {
 });
 const referendaDuration = track.then(
   (value) => value.prepare_period + value.decision_period + value.confirm_period
+  // TODO minimum enactment period?
 );
 
 const getNextTreasurySpend = async (block: number) => {
@@ -82,11 +83,11 @@ const getNextTreasurySpend = async (block: number) => {
   return { next, remaining, period };
 };
 
-export const estimatedTimeline$ = state(
+export const referendumExecutionBlocks$ = state(
   client.finalizedBlock$.pipe(
     switchMap(async (currentBlock) => {
-      const refDuration = await referendaDuration;
       const currentBlockDate = new Date();
+      const refDuration = await referendaDuration;
 
       const referendumEnd = currentBlock.number + refDuration;
 
@@ -97,6 +98,30 @@ export const estimatedTimeline$ = state(
       const lateBountyFunding =
         nextTreasurySpend.next + nextTreasurySpend.period;
 
+      return {
+        currentBlock,
+        currentBlockDate,
+        referendumEnd,
+        bountyFunding,
+        lateBountyFunding,
+        referendumSubmissionDeadline,
+      };
+    })
+  ),
+  null
+);
+
+export const estimatedTimeline$ = referendumExecutionBlocks$.pipeState(
+  filter((v) => !!v),
+  map(
+    ({
+      currentBlock,
+      currentBlockDate,
+      referendumEnd,
+      bountyFunding,
+      lateBountyFunding,
+      referendumSubmissionDeadline,
+    }) => {
       const getBlockDate = (block: number) =>
         add(currentBlockDate, {
           seconds: (block - currentBlock.number) * BLOCK_LENGTH,
@@ -110,9 +135,9 @@ export const estimatedTimeline$ = state(
           referendumSubmissionDeadline
         ),
       };
-    })
+    }
   ),
-  null
+  withDefault(null)
 );
 
 const useSubmissionDeadline = (control: RfpControlType) => {

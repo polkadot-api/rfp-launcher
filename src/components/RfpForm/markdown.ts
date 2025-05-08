@@ -5,7 +5,7 @@ import { DeepPartialSkipArrayKey } from "react-hook-form";
 
 export function generateMarkdown(
   data: DeepPartialSkipArrayKey<FormSchema>,
-  conversionRate: number | null,
+  totalAmountWithBuffer: number | null,
   identities: Record<string, string | undefined>
 ) {
   let parsed: FormSchema;
@@ -14,16 +14,6 @@ export function generateMarkdown(
   } catch (_) {
     return null;
   }
-
-  const totalAmount = [
-    parsed.prizePool,
-    parsed.findersFee,
-    parsed.supervisorsFee,
-  ].reduce((a, b) => a + b, 0);
-  const totalAmountToken = conversionRate ? totalAmount / conversionRate : null;
-  const totalAmountWithBuffer = totalAmountToken
-    ? totalAmountToken * (1 + REFERENDUM_PRICE_BUFFER)
-    : null;
 
   return `\
 # ${parsed.projectTitle}
