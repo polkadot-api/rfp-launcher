@@ -2,18 +2,27 @@ import { typedApi } from "@/chain";
 import { TOKEN_DECIMALS } from "@/constants";
 import { MultiAddress } from "@polkadot-api/descriptors";
 import {
+  createBountiesSdk,
+  createReferendaSdk,
+} from "@polkadot-api/sdk-governance";
+import {
   AccountId,
   getMultisigAccountId,
 } from "@polkadot-api/substrate-bindings";
 import { state } from "@react-rxjs/core";
 import { createSignal } from "@react-rxjs/utils";
-import { Binary } from "polkadot-api";
+import { Binary, Transaction } from "polkadot-api";
 import {
+  combineLatest,
   concat,
+  endWith,
   exhaustMap,
   filter,
   from,
   map,
+  merge,
+  NEVER,
+  Observable,
   switchMap,
   takeUntil,
   withLatestFrom,
@@ -23,11 +32,15 @@ import {
   calculatePriceTotals,
   conversionRate$,
 } from "../RfpForm/ReviewSection";
+import { referendumExecutionBlocks$ } from "../RfpForm/TimelineSection";
 import { selectedAccount$ } from "../SelectAccount";
 
 export const [formDataChange$, submit] = createSignal<FormSchema>();
 export const [dismiss$, dismiss] = createSignal<void>();
-export const submittedFormData$ = state(formDataChange$, null);
+export const submittedFormData$ = state(
+  merge(formDataChange$, dismiss$.pipe(map(() => null))),
+  null
+);
 
 const totalAmount$ = (formData: FormSchema) =>
   conversionRate$.pipe(
@@ -38,15 +51,15 @@ const totalAmount$ = (formData: FormSchema) =>
     filter((v) => v != null),
     map((v) => {
       // It's approximate after all, but probably for correctness TODO refactor to use bigints (planks) on every amount
-      return BigInt(v * Math.pow(10, TOKEN_DECIMALS));
+      return BigInt(Math.round(v * Math.pow(10, TOKEN_DECIMALS)));
     })
   );
-export const bountyCreationTx$ = state(
+const bountyCreationTx$ = state(
   submittedFormData$.pipe(
     switchMap((formData) => {
       if (!formData) return [null];
 
-      const tx$ = totalAmount$(formData).pipe(
+      return totalAmount$(formData).pipe(
         map((value) =>
           typedApi.tx.Bounties.propose_bounty({
             value,
@@ -54,37 +67,50 @@ export const bountyCreationTx$ = state(
           })
         )
       );
-
-      return concat(tx$.pipe(takeUntil(dismiss$)), [null]);
     })
   )
 );
 
-export const [submitBountyCreation$, submitBountyCreation] =
-  createSignal<void>();
-export const bountyCreationProcess$ = state(
-  submitBountyCreation$.pipe(
-    withLatestFrom(selectedAccount$, bountyCreationTx$),
-    exhaustMap(([, selectedAccount, tx]) => {
-      if (!selectedAccount || !tx) return [null];
-      return tx.signSubmitAndWatch(selectedAccount.polkadotSigner);
-    })
-  ),
-  null
-);
+/**
+ * Operator that prevents completion of the stream until it has been dismissed.
+ * It will end with a "null" emission (to help reset state).
+ */
+const dismissable =
+  <T>() =>
+  (source$: Observable<T>) =>
+    concat(source$, NEVER).pipe(takeUntil(dismiss$), endWith(null));
 
-import {
-  createBountiesSdk,
-  createReferendaSdk,
-} from "@polkadot-api/sdk-governance";
-import { referendumExecutionBlocks$ } from "../RfpForm/TimelineSection";
+const createTxProcess = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tx$: Observable<Transaction<any, any, any, any> | null>
+) => {
+  const [submitTx$, submitTx] = createSignal<void>();
+  const txProcess$ = state(
+    submitTx$.pipe(
+      withLatestFrom(selectedAccount$, tx$),
+      exhaustMap(([, selectedAccount, tx]) => {
+        if (!selectedAccount || !tx) return [null];
+        return tx.signSubmitAndWatch(selectedAccount.polkadotSigner);
+      }),
+      dismissable()
+    ),
+    null
+  );
+
+  return [txProcess$, submitTx] as const;
+};
+
+export const [bountyCreationProcess$, submitBountyCreation] =
+  createTxProcess(bountyCreationTx$);
+
 // TODO
 const referendaSdk = createReferendaSdk(typedApi as any);
 const bountiesSdk = createBountiesSdk(typedApi as any);
 
-export const referendumCreationTx$ = state(
+const accountCodec = AccountId();
+const referendumCreationTx$ = state(
   bountyCreationProcess$.pipe(
-    filter((v) => v?.type === "finalized"),
+    filter((v) => v?.type === "finalized" && v.ok),
     withLatestFrom(
       submittedFormData$.pipe(filter((v) => !!v)),
       referendumExecutionBlocks$.pipe(filter((v) => !!v))
@@ -132,7 +158,7 @@ export const referendumCreationTx$ = state(
         )
       );
 
-      const tx$ = proposal$.pipe(
+      return proposal$.pipe(
         switchMap((v) => v.getEncodedData()),
         map((proposal) =>
           typedApi.tx.Utility.batch({
@@ -153,26 +179,79 @@ export const referendumCreationTx$ = state(
               ).decodedCall,
             ],
           })
-        )
+        ),
+        dismissable()
       );
-
-      return concat(tx$.pipe(takeUntil(dismiss$)), [null]);
     })
   ),
   null
 );
-export const [submitReferendumCreation$, submitReferendumCreation] =
-  createSignal<void>();
-export const referendumCreationProcess$ = state(
-  submitReferendumCreation$.pipe(
-    withLatestFrom(selectedAccount$, referendumCreationTx$),
-    exhaustMap(([, selectedAccount, tx]) => {
-      if (!selectedAccount || !tx) return [null];
-      return tx.signSubmitAndWatch(selectedAccount.polkadotSigner);
+
+export const [referendumCreationProcess$, submitReferendumCreation] =
+  createTxProcess(bountyCreationTx$);
+
+export const activeTxStep$ = state(
+  combineLatest([
+    bountyCreationTx$,
+    bountyCreationProcess$,
+    referendumCreationTx$,
+    referendumCreationProcess$,
+  ]).pipe(
+    map(([bountyTx, bountyProcess, referendumTx, referendumProcess]) => {
+      if (referendumProcess) {
+        if (referendumProcess.type === "finalized") {
+          const referendum =
+            referendaSdk.getSubmittedReferendum(referendumProcess);
+          return {
+            type: "refDone" as const,
+            value: {
+              txEvent: referendumProcess,
+              referendum,
+            },
+          };
+        }
+        return {
+          type: "refSubmitting" as const,
+          value: {
+            txEvent: referendumProcess,
+          },
+        };
+      }
+      if (referendumTx) {
+        return {
+          type: "refTx" as const,
+          value: {
+            tx: referendumTx,
+          },
+        };
+      }
+
+      if (bountyProcess) {
+        if (bountyProcess.type === "finalized") {
+          return {
+            type: "bountyDone" as const,
+            value: {
+              txEvent: bountyProcess,
+            },
+          };
+        }
+        return {
+          type: "bountySubmitting" as const,
+          value: {
+            txEvent: bountyProcess,
+          },
+        };
+      }
+
+      return bountyTx
+        ? {
+            type: "bountyTx" as const,
+            value: {
+              tx: bountyTx,
+            },
+          }
+        : null;
     })
-    // TODO maybe takeuntil?
   ),
   null
 );
-
-const accountCodec = AccountId();

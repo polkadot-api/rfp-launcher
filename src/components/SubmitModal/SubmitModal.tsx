@@ -1,5 +1,7 @@
 import { state, useStateObservable } from "@react-rxjs/core";
 import { mergeWithKey } from "@react-rxjs/utils";
+import { Transaction } from "polkadot-api";
+import { FC, useEffect } from "react";
 import { filter, map, merge, of, switchMap, take, withLatestFrom } from "rxjs";
 import { selectedAccount$ } from "../SelectAccount";
 import { PickExtension } from "../SelectAccount/PickExtension";
@@ -12,10 +14,11 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import {
-  bountyCreationTx$,
+  activeTxStep$,
   dismiss,
   dismiss$,
   formDataChange$,
+  submittedFormData$,
 } from "./submit.state";
 
 const submitModal$ = state(
@@ -27,22 +30,16 @@ const submitModal$ = state(
         return of(null);
       }
 
-      const submitStep$ = bountyCreationTx$.pipe(
-        map((tx) => ({
-          type: "submit" as const,
-          value: tx,
-        }))
-      );
       if (account) {
-        return submitStep$;
+        return of("submit" as const);
       }
 
       return merge(
-        of({ type: "account" as const }),
+        of("account" as const),
         selectedAccount$.pipe(
           filter((v) => !!v),
           take(1),
-          switchMap(() => submitStep$)
+          map(() => "submit" as const)
         )
       );
     })
@@ -53,9 +50,18 @@ const submitModal$ = state(
 export const SubmitModal = () => {
   const modalStatus = useStateObservable(submitModal$);
 
+  useEffect(() => {
+    const sub = submittedFormData$.subscribe();
+    console.log("subscribe");
+    return () => {
+      console.log("unsubscribe");
+      sub.unsubscribe();
+    };
+  }, []);
+
   if (!modalStatus) return null;
 
-  if (modalStatus.type === "account") {
+  if (modalStatus === "account") {
     return (
       <Dialog open={true} onOpenChange={() => dismiss()}>
         <DialogContent>
@@ -82,7 +88,29 @@ export const SubmitModal = () => {
             referendum
           </DialogDescription>
         </DialogHeader>
+        <SubmitModalContent />
       </DialogContent>
     </Dialog>
   );
+};
+
+const SubmitModalContent = () => {
+  const activeTxStep = useStateObservable(activeTxStep$);
+  if (!activeTxStep) return null;
+
+  if (activeTxStep.type === "bountyTx") {
+    return (
+      <div>
+        <h3>Submit the transaction to create the bounty</h3>
+        <SubmitTxStep tx={activeTxStep.value.tx} />
+      </div>
+    );
+  }
+
+  return <div>Next step</div>;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const SubmitTxStep: FC<{ tx: Transaction<any, any, any, any> }> = () => {
+  return <div>TODO</div>;
 };
