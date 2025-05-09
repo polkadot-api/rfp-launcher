@@ -87,17 +87,17 @@ const preferredExtensions = [
   {
     id: "nova-wallet",
     name: "Nova Wallet",
-    logo: "/novawallet.webp",
+    logo: import.meta.env.BASE_URL + "novawallet.webp",
   },
   {
     id: "talisman",
     name: "Talisman",
-    logo: "/talisman.webp",
+    logo: import.meta.env.BASE_URL + "talisman.webp",
   },
   {
     id: "subwallet-js",
     name: "Subwallet",
-    logo: "/subwallet.webp",
+    logo: import.meta.env.BASE_URL + "subwallet.webp",
   },
 ];
 
