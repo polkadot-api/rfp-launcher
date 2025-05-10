@@ -13,6 +13,7 @@ import { state } from "@react-rxjs/core";
 import { createSignal } from "@react-rxjs/utils";
 import { Binary, Transaction } from "polkadot-api";
 import {
+  catchError,
   combineLatest,
   concat,
   endWith,
@@ -23,8 +24,10 @@ import {
   merge,
   NEVER,
   Observable,
+  of,
   switchMap,
   takeUntil,
+  tap,
   withLatestFrom,
 } from "rxjs";
 import { FormSchema } from "../RfpForm/formSchema";
@@ -84,13 +87,22 @@ const createTxProcess = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tx$: Observable<Transaction<any, any, any, any> | null>
 ) => {
-  const [submitTx$, submitTx] = createSignal<void>();
+  const [submitTx$, submitTx] = createSignal();
   const txProcess$ = state(
     submitTx$.pipe(
       withLatestFrom(selectedAccount$, tx$),
+      tap((v) => console.log("bump")),
       exhaustMap(([, selectedAccount, tx]) => {
+        console.log({ selectedAccount, tx });
         if (!selectedAccount || !tx) return [null];
-        return tx.signSubmitAndWatch(selectedAccount.polkadotSigner);
+        return tx.signSubmitAndWatch(selectedAccount.polkadotSigner).pipe(
+          catchError((err) =>
+            of({
+              type: "error" as const,
+              err,
+            })
+          )
+        );
       }),
       dismissable()
     ),
@@ -210,12 +222,17 @@ export const activeTxStep$ = state(
             },
           };
         }
-        return {
-          type: "refSubmitting" as const,
-          value: {
-            txEvent: referendumProcess,
-          },
-        };
+        if (
+          referendumProcess.type !== "error" ||
+          referendumProcess.err.message !== "Cancelled"
+        ) {
+          return {
+            type: "refSubmitting" as const,
+            value: {
+              txEvent: referendumProcess,
+            },
+          };
+        }
       }
       if (referendumTx) {
         return {
@@ -235,12 +252,17 @@ export const activeTxStep$ = state(
             },
           };
         }
-        return {
-          type: "bountySubmitting" as const,
-          value: {
-            txEvent: bountyProcess,
-          },
-        };
+        if (
+          bountyProcess.type !== "error" ||
+          bountyProcess.err.message !== "Cancelled"
+        ) {
+          return {
+            type: "bountySubmitting" as const,
+            value: {
+              txEvent: bountyProcess,
+            },
+          };
+        }
       }
 
       return bountyTx
