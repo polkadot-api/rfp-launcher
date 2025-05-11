@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { SubmitModal } from "../SubmitModal";
 import { submit } from "../SubmitModal/submit.state";
@@ -10,21 +11,34 @@ import { ScopeSection } from "./ScopeSection";
 import { SupervisorsSection } from "./SupervisorsSection";
 import { TimelineSection } from "./TimelineSection";
 
+const defaultValues: Partial<FormSchema> = {
+  prizePool: emptyNumeric,
+  findersFee: emptyNumeric,
+  supervisorsFee: emptyNumeric,
+  supervisors: [],
+  projectCompletion: undefined,
+  fundsExpiry: 1,
+  projectTitle: "",
+  projectScope: "",
+  milestones: [],
+};
+
 export const RfpForm = () => {
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      prizePool: emptyNumeric,
-      findersFee: emptyNumeric,
-      supervisorsFee: emptyNumeric,
-      supervisors: [],
-      projectCompletion: undefined,
-      fundsExpiry: 1,
-      projectTitle: "",
-      projectScope: "",
-      milestones: [],
+      ...defaultValues,
+      ...JSON.parse(localStorage.getItem("rfp-form") ?? "{}"),
     },
   });
+
+  const watch = form.watch;
+  useEffect(() => {
+    const sub = watch((data) => {
+      localStorage.setItem("rfp-form", JSON.stringify(data));
+    });
+    return () => sub.unsubscribe();
+  }, [watch]);
 
   return (
     <Form {...form}>
@@ -33,7 +47,17 @@ export const RfpForm = () => {
         <SupervisorsSection control={form.control} />
         <TimelineSection control={form.control} />
         <ScopeSection control={form.control} />
-        <ReviewSection control={form.control} />
+        <ReviewSection
+          control={form.control}
+          onReset={() => {
+            if (!confirm("Are you sure you want to reset the form?")) return;
+
+            Object.entries(defaultValues).forEach(([key, value]) =>
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              form.setValue(key as any, value)
+            );
+          }}
+        />
       </form>
       <SubmitModal />
     </Form>

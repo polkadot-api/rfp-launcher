@@ -56,7 +56,10 @@ export const conversionRate$ = state(
   null
 );
 
-export const ReviewSection: FC<{ control: RfpControlType }> = ({ control }) => {
+export const ReviewSection: FC<{
+  control: RfpControlType;
+  onReset: () => void;
+}> = ({ control, onReset }) => {
   const estimatedTimeline = useStateObservable(estimatedTimeline$);
   const milestones = useWatch({ control, name: "milestones" });
   const prizePool = useWatch({ control, name: "prizePool" });
@@ -85,7 +88,10 @@ export const ReviewSection: FC<{ control: RfpControlType }> = ({ control }) => {
         />
         <TimelineSummary control={control} enoughDevDays={enoughDevDays} />
         <ResultingMarkdown control={control} />
-        <div className="text-right">
+        <div className="flex items-center justify-between">
+          <Button type="button" variant="secondary" onClick={onReset}>
+            Reset form
+          </Button>
           <Button
             type="submit"
             disabled={!milestonesMatchesPrize || !enoughDevDays}
