@@ -11,9 +11,11 @@ import {
   catchError,
   concat,
   defer,
+  distinctUntilChanged,
   filter,
   interval,
   map,
+  merge,
   NEVER,
   of,
   retry,
@@ -36,9 +38,21 @@ const availableExtensions$ = state(
   []
 );
 
+const getPersistedSelectedExtension = () =>
+  localStorage.getItem("selected-extension");
+const setPersistedSelectedExtension = (value: string) =>
+  localStorage.setItem("selected-extension", value);
+
 const [selectExtension$, selectExtension] = createSignal<string>();
 export const selectedExtension$ = state(
-  selectExtension$.pipe(
+  merge(
+    availableExtensions$.pipe(
+      filter((v) => v.includes(getPersistedSelectedExtension()!)),
+      map(() => getPersistedSelectedExtension()!)
+    ),
+    selectExtension$.pipe(tap(setPersistedSelectedExtension))
+  ).pipe(
+    distinctUntilChanged(),
     switchMap((name) => {
       const connect$ = defer(() => connectInjectedExtension(name)).pipe(
         // PolkadotJS rejects the promise straight away instead of waiting for user input

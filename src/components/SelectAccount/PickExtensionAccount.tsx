@@ -4,10 +4,13 @@ import { createSignal } from "@react-rxjs/utils";
 import { InjectedPolkadotAccount } from "polkadot-api/pjs-signer";
 import { FC } from "react";
 import {
+  filter,
   fromEventPattern,
   map,
+  merge,
   startWith,
   switchMap,
+  tap,
   withLatestFrom,
 } from "rxjs";
 import { Button } from "../ui/button";
@@ -47,12 +50,28 @@ const selectValue$ = state(
 
 const [selectAccount$, selectAccount] = createSignal();
 
+const getPersistedSelectedAccount = () =>
+  localStorage.getItem("selected-account");
+const setPersistedSelectedAccount = (value: string | null) =>
+  value
+    ? localStorage.setItem("selected-account", value)
+    : localStorage.removeItem("selected-account");
+
 export const selectedAccount$ = state(
-  selectAccount$.pipe(
-    withLatestFrom(extensionAccounts$, selectValue$),
-    map(
-      ([, accounts, value]) =>
-        accounts?.find((v) => v.address === value) ?? null
+  merge(
+    selectAccount$.pipe(
+      withLatestFrom(extensionAccounts$, selectValue$),
+      map(
+        ([, accounts, value]) =>
+          accounts?.find((v) => v.address === value) ?? null
+      ),
+      tap((v) => setPersistedSelectedAccount(v?.address ?? null))
+    ),
+    extensionAccounts$.pipe(
+      map((v) =>
+        v?.find((acc) => acc.address === getPersistedSelectedAccount())
+      ),
+      filter((v) => !!v)
     )
   ),
   null
