@@ -1,5 +1,5 @@
 import { Control } from "react-hook-form";
-import { z, ZodType } from "zod";
+import { z } from "zod";
 
 export const formSchema = z.object({
   prizePool: z.coerce.number().positive(),
@@ -30,7 +30,7 @@ export const parseNumber = (value: string | number | undefined) => {
 // zod with .coerce can work with strings, but TS complains.
 export const emptyNumeric = "" as unknown as number;
 
-export type FormSchema = typeof formSchema extends ZodType<infer R> ? R : never;
+export type FormSchema = z.infer<typeof formSchema>;
 export type Milestone = FormSchema["milestones"][number];
 
 export type RfpFormContext = unknown;

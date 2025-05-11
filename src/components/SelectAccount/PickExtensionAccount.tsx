@@ -59,7 +59,7 @@ export const selectedAccount$ = state(
 );
 
 export const PickExtensionAccount: FC<{
-  onSelected: () => void;
+  onSelected?: () => void;
 }> = ({ onSelected }) => {
   const extensionAccounts = useStateObservable(extensionAccounts$);
   const selectValue = useStateObservable(selectValue$);
@@ -108,7 +108,7 @@ export const PickExtensionAccount: FC<{
           disabled={!selectValue}
           onClick={() => {
             selectAccount();
-            onSelected();
+            onSelected?.();
           }}
         >
           Select Account
