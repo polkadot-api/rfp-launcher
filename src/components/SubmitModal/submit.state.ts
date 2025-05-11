@@ -37,6 +37,8 @@ import {
 } from "../RfpForm/ReviewSection";
 import { referendumExecutionBlocks$ } from "../RfpForm/TimelineSection";
 import { selectedAccount$ } from "../SelectAccount";
+import { generateMarkdown } from "../RfpForm/markdown";
+import { identity$ } from "../RfpForm/SupervisorsSection";
 
 export const [formDataChange$, submit] = createSignal<FormSchema>();
 export const [dismiss$, dismiss] = createSignal<void>();
@@ -74,6 +76,36 @@ const bountyCreationTx$ = state(
   )
 );
 
+export const bountyMarkdown$ = state(
+  combineLatest([
+    submittedFormData$.pipe(filter((v) => !!v)),
+    conversionRate$,
+  ]).pipe(
+    switchMap(([formFields, conversionRate]) => {
+      const { totalAmountWithBuffer } = calculatePriceTotals(
+        formFields,
+        conversionRate
+      );
+
+      const identities$ = combineLatest(
+        Object.fromEntries(
+          formFields.supervisors.map((addr) => [
+            addr,
+            identity$(addr).pipe(map((id) => id?.value)),
+          ])
+        )
+      );
+
+      return identities$.pipe(
+        map((identities) =>
+          generateMarkdown(formFields, totalAmountWithBuffer, identities)
+        )
+      );
+    })
+  ),
+  null
+);
+
 /**
  * Operator that prevents completion of the stream until it has been dismissed.
  * It will end with a "null" emission (to help reset state).
@@ -91,9 +123,7 @@ const createTxProcess = (
   const txProcess$ = state(
     submitTx$.pipe(
       withLatestFrom(selectedAccount$, tx$),
-      tap((v) => console.log("bump")),
       exhaustMap(([, selectedAccount, tx]) => {
-        console.log({ selectedAccount, tx });
         if (!selectedAccount || !tx) return [null];
         return tx.signSubmitAndWatch(selectedAccount.polkadotSigner).pipe(
           catchError((err) =>
@@ -120,78 +150,109 @@ const referendaSdk = createReferendaSdk(typedApi as any);
 const bountiesSdk = createBountiesSdk(typedApi as any);
 
 const accountCodec = AccountId();
-const referendumCreationTx$ = state(
+
+const rfpBounty$ = merge(
   bountyCreationProcess$.pipe(
     filter((v) => v?.type === "finalized" && v.ok),
+    switchMap((v) => bountiesSdk.getProposedBounty(v)),
+    map((bounty) => {
+      if (!bounty) {
+        // TODO check error boundaries
+        throw new Error("Bounty could not be found");
+      }
+      return bounty;
+    })
+  ),
+  // try and load existing one if it's there
+  submittedFormData$.pipe(
+    filter((v) => !!v),
+    switchMap(async (v) => [v, await bountiesSdk.getBounties()] as const),
+    map(([formData, bounties]) =>
+      bounties.find((bounty) => bounty.description === formData.projectTitle)
+    ),
+    filter((v) => !!v)
+  )
+);
+
+const referendumCreationTx$ = state(
+  rfpBounty$.pipe(
     withLatestFrom(
       submittedFormData$.pipe(filter((v) => !!v)),
       referendumExecutionBlocks$.pipe(filter((v) => !!v))
     ),
-    switchMap(([finalizedEvt, formData, { bountyFunding }]) => {
+    switchMap(([bounty, formData, { bountyFunding }]) => {
       // This is for the second step
-      const multisigAddr = getMultisigAccountId({
-        threshold: 2,
-        signatories: formData.supervisors.map(accountCodec.enc),
-      });
-      // TODO check multisig balance, transfer only what's required as a curator
-      // With existential deposit?
-      const amount = 1n << BigInt(TOKEN_DECIMALS);
-
-      const bounty$ = from(bountiesSdk.getProposedBounty(finalizedEvt)).pipe(
-        map((bounty) => {
-          if (!bounty) {
-            // TODO check error boundaries
-            throw new Error("Bounty could not be found");
-          }
-          return bounty;
+      const multisigAddr = accountCodec.dec(
+        getMultisigAccountId({
+          threshold: 2,
+          signatories: formData.supervisors.map(accountCodec.enc),
         })
       );
 
-      const proposal$ = bounty$.pipe(
-        map((bounty) =>
-          typedApi.tx.Utility.batch({
-            calls: [
-              bounty.approve().decodedCall,
-              typedApi.tx.Scheduler.schedule({
-                // As we're using the scheduler, we might run before it's funded... better schedule for the next block.
-                // TODO check if this is true
-                when: bountyFunding + 1,
-                // Maybe it can be done with priority? But then it's also weak since it's hard-coded?
-                priority: 255,
-                call: typedApi.tx.Bounties.propose_curator({
-                  bounty_id: bounty.id,
-                  curator: MultiAddress.Id(accountCodec.dec(multisigAddr)),
-                  fee: 0n,
-                }).decodedCall,
-                maybe_periodic: undefined,
-              }).decodedCall,
-            ],
-          })
-        )
+      const amount$ = from(
+        Promise.all([
+          typedApi.query.System.Account.getValue(multisigAddr),
+          typedApi.constants.Balances.ExistentialDeposit(),
+          typedApi.constants.Bounties.CuratorDepositMin(),
+        ])
+      ).pipe(
+        map(([account, ed, minDeposit = 0n]) => {
+          if (!account.data.free) {
+            return minDeposit > ed ? minDeposit : ed;
+          }
+          // The account already exists, therefore we don't care about the existential deposit anymore
+          // But make sure it will have enough tokens to lock to accept curator
+          // TODO
+          return minDeposit - account.data.free;
+        })
       );
 
-      return proposal$.pipe(
-        switchMap((v) => v.getEncodedData()),
-        map((proposal) =>
-          typedApi.tx.Utility.batch({
-            calls: [
-              typedApi.tx.Balances.transfer_keep_alive({
-                dest: MultiAddress.Id(accountCodec.dec(multisigAddr)),
-                value: amount,
-              }).decodedCall,
-              referendaSdk.createReferenda(
-                {
-                  type: "Origins",
-                  value: {
-                    type: "Treasurer",
-                    value: undefined,
-                  },
-                },
-                proposal
-              ).decodedCall,
-            ],
-          })
-        ),
+      const proposal = typedApi.tx.Utility.batch({
+        calls: [
+          typedApi.tx.Bounties.approve_bounty({ bounty_id: bounty.id })
+            .decodedCall,
+          typedApi.tx.Scheduler.schedule({
+            // As we're using the scheduler, we might run before it's funded... better schedule for the next block.
+            // TODO check if this is true
+            when: bountyFunding + 1,
+            // Maybe it can be done with priority? But then it's also weak since it's hard-coded?
+            priority: 255,
+            call: typedApi.tx.Bounties.propose_curator({
+              bounty_id: bounty.id,
+              curator: MultiAddress.Id(multisigAddr),
+              fee: 0n,
+            }).decodedCall,
+            maybe_periodic: undefined,
+          }).decodedCall,
+        ],
+      });
+
+      return combineLatest([proposal.getEncodedData(), amount$]).pipe(
+        map(([proposal, amount]) => {
+          const refTx = referendaSdk.createReferenda(
+            {
+              type: "Origins",
+              value: {
+                type: "Treasurer",
+                value: undefined,
+              },
+            },
+            proposal
+          );
+
+          return amount > 0
+            ? typedApi.tx.Utility.batch_all({
+                calls: [
+                  typedApi.tx.Balances.transfer_keep_alive({
+                    dest: MultiAddress.Id(multisigAddr),
+                    value: amount,
+                  }).decodedCall,
+                  refTx.decodedCall,
+                ],
+              })
+            : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (refTx as unknown as Transaction<any, any, any, any>);
+        }),
         dismissable()
       );
     })
@@ -200,7 +261,7 @@ const referendumCreationTx$ = state(
 );
 
 export const [referendumCreationProcess$, submitReferendumCreation] =
-  createTxProcess(bountyCreationTx$);
+  createTxProcess(referendumCreationTx$);
 
 export const activeTxStep$ = state(
   combineLatest([
@@ -211,7 +272,7 @@ export const activeTxStep$ = state(
   ]).pipe(
     map(([bountyTx, bountyProcess, referendumTx, referendumProcess]) => {
       if (referendumProcess) {
-        if (referendumProcess.type === "finalized") {
+        if (referendumProcess.type === "finalized" && referendumProcess.ok) {
           const referendum =
             referendaSdk.getSubmittedReferendum(referendumProcess);
           return {
@@ -244,14 +305,6 @@ export const activeTxStep$ = state(
       }
 
       if (bountyProcess) {
-        if (bountyProcess.type === "finalized") {
-          return {
-            type: "bountyDone" as const,
-            value: {
-              txEvent: bountyProcess,
-            },
-          };
-        }
         if (
           bountyProcess.type !== "error" ||
           bountyProcess.err.message !== "Cancelled"

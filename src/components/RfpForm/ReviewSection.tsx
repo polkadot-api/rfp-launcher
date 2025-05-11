@@ -201,7 +201,7 @@ export const calculatePriceTotals = (
     .reduce((a, b) => a + b, 0);
   const totalAmountToken = conversionRate ? totalAmount / conversionRate : null;
   const totalAmountWithBuffer = totalAmountToken
-    ? totalAmountToken * (1 + REFERENDUM_PRICE_BUFFER)
+    ? Math.ceil(totalAmountToken * (1 + REFERENDUM_PRICE_BUFFER))
     : null;
 
   return { totalAmount, totalAmountToken, totalAmountWithBuffer };
