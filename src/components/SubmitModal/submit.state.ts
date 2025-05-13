@@ -11,7 +11,7 @@ import {
 } from "@polkadot-api/substrate-bindings";
 import { state } from "@react-rxjs/core";
 import { createSignal } from "@react-rxjs/utils";
-import { Binary, Transaction } from "polkadot-api";
+import { Binary, CompatibilityLevel, Transaction } from "polkadot-api";
 import {
   catchError,
   combineLatest,
@@ -27,7 +27,6 @@ import {
   of,
   switchMap,
   takeUntil,
-  tap,
   withLatestFrom,
 } from "rxjs";
 import { FormSchema } from "../RfpForm/formSchema";
@@ -145,9 +144,8 @@ const createTxProcess = (
 export const [bountyCreationProcess$, submitBountyCreation] =
   createTxProcess(bountyCreationTx$);
 
-// TODO
-const referendaSdk = createReferendaSdk(typedApi as any);
-const bountiesSdk = createBountiesSdk(typedApi as any);
+const referendaSdk = createReferendaSdk(typedApi);
+const bountiesSdk = createBountiesSdk(typedApi);
 
 const accountCodec = AccountId();
 
@@ -207,27 +205,45 @@ const referendumCreationTx$ = state(
         })
       );
 
-      const proposal = typedApi.tx.Utility.batch({
-        calls: [
-          typedApi.tx.Bounties.approve_bounty({ bounty_id: bounty.id })
-            .decodedCall,
-          typedApi.tx.Scheduler.schedule({
-            // As we're using the scheduler, we might run before it's funded... better schedule for the next block.
-            // TODO check if this is true
-            when: bountyFunding + 1,
-            // Maybe it can be done with priority? But then it's also weak since it's hard-coded?
-            priority: 255,
-            call: typedApi.tx.Bounties.propose_curator({
-              bounty_id: bounty.id,
-              curator: MultiAddress.Id(multisigAddr),
-              fee: 0n,
-            }).decodedCall,
-            maybe_periodic: undefined,
-          }).decodedCall,
-        ],
-      });
+      const getReferendumProposal = async () => {
+        if (
+          await typedApi.tx.Bounties.approve_bounty_with_curator.isCompatible(
+            CompatibilityLevel.Partial
+          )
+        ) {
+          return typedApi.tx.Bounties.approve_bounty_with_curator({
+            bounty_id: bounty.id,
+            curator: MultiAddress.Id(multisigAddr),
+            fee: 0n,
+          });
+        }
 
-      return combineLatest([proposal.getEncodedData(), amount$]).pipe(
+        return typedApi.tx.Utility.batch({
+          calls: [
+            typedApi.tx.Bounties.approve_bounty({ bounty_id: bounty.id })
+              .decodedCall,
+            typedApi.tx.Scheduler.schedule({
+              // As we're using the scheduler, we might run before it's funded... better schedule for the next block.
+              // TODO check if this is true
+              when: bountyFunding + 1,
+              // Maybe it can be done with priority? But then it's also weak since it's hard-coded?
+              priority: 255,
+              call: typedApi.tx.Bounties.propose_curator({
+                bounty_id: bounty.id,
+                curator: MultiAddress.Id(multisigAddr),
+                fee: 0n,
+              }).decodedCall,
+              maybe_periodic: undefined,
+            }).decodedCall,
+          ],
+        });
+      };
+
+      const proposalCallData = getReferendumProposal().then((r) =>
+        r.getEncodedData()
+      );
+
+      return combineLatest([proposalCallData, amount$]).pipe(
         map(([proposal, amount]) => {
           const refTx = referendaSdk.createReferenda(
             {
