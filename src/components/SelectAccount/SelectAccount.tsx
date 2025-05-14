@@ -22,9 +22,10 @@ export const SelectAccount = () => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {selectedAccount ? (
-          <Button variant="outline">
+          <Button variant="outline" forceSvgSize={false}>
             <PolkadotIdenticon
               publicKey={selectedAccount.polkadotSigner.publicKey}
+              size={24}
             />
             {selectedAccount.name ? (
               <div>{selectedAccount.name}</div>

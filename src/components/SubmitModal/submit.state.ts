@@ -194,15 +194,10 @@ const referendumCreationTx$ = state(
           typedApi.constants.Bounties.CuratorDepositMin(),
         ])
       ).pipe(
-        map(([account, ed, minDeposit = 0n]) => {
-          if (!account.data.free) {
-            return minDeposit > ed ? minDeposit : ed;
-          }
-          // The account already exists, therefore we don't care about the existential deposit anymore
-          // But make sure it will have enough tokens to lock to accept curator
-          // TODO
-          return minDeposit - account.data.free;
-        })
+        map(
+          ([account, existentialDeposit, minCuratorDeposit = 0n]) =>
+            existentialDeposit + minCuratorDeposit - account.data.free
+        )
       );
 
       const getReferendumProposal = async () => {

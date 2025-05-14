@@ -5,14 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev-local": "VITE_WITH_CHOPSTICKS=true vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "postinstall": "papi"
   },
   "dependencies": {
+    "@acala-network/chopsticks-core": "^1.0.5",
     "@hookform/resolvers": "^5.0.1",
     "@polkadot-api/descriptors": "file:.papi/descriptors",
+    "@polkadot-api/json-rpc-provider-proxy": "^0.2.4",
     "@polkadot-api/react-components": "0.1.0",
     "@polkadot-api/sdk-accounts": "0.1.0",
     "@polkadot-api/sdk-governance": "0.1.0",
@@ -34,6 +37,7 @@
     "react-day-picker": "8.10.1",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.56.1",
+    "react-svg": "^16.3.0",
     "rxjs": "^7.8.2",
     "tailwind-merge": "^3.2.0",
     "tailwindcss": "^4.1.5",
