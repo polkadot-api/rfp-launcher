@@ -183,17 +183,22 @@ const referendumCreationTx$ = state(
       referendumExecutionBlocks$.pipe(filter((v) => !!v))
     ),
     switchMap(([bounty, formData, { bountyFunding }]) => {
-      // This is for the second step
-      const multisigAddr = accountCodec.dec(
-        getMultisigAccountId({
-          threshold: 2,
-          signatories: formData.supervisors.map(accountCodec.enc),
-        })
-      );
+      const curatorAddr =
+        formData.supervisors.length === 1
+          ? formData.supervisors[0]
+          : accountCodec.dec(
+              getMultisigAccountId({
+                threshold: Math.min(
+                  formData.signatoriesThreshold,
+                  formData.supervisors.length
+                ),
+                signatories: formData.supervisors.map(accountCodec.enc),
+              })
+            );
 
       const amount$ = from(
         Promise.all([
-          typedApi.query.System.Account.getValue(multisigAddr),
+          typedApi.query.System.Account.getValue(curatorAddr),
           typedApi.constants.Balances.ExistentialDeposit(),
           typedApi.constants.Bounties.CuratorDepositMin(),
         ])
@@ -212,7 +217,7 @@ const referendumCreationTx$ = state(
         ) {
           return typedApi.tx.Bounties.approve_bounty_with_curator({
             bounty_id: bounty.id,
-            curator: MultiAddress.Id(multisigAddr),
+            curator: MultiAddress.Id(curatorAddr),
             fee: 0n,
           });
         }
@@ -226,7 +231,7 @@ const referendumCreationTx$ = state(
               priority: 255,
               call: typedApi.tx.Bounties.propose_curator({
                 bounty_id: bounty.id,
-                curator: MultiAddress.Id(multisigAddr),
+                curator: MultiAddress.Id(curatorAddr),
                 fee: 0n,
               }).decodedCall,
               maybe_periodic: undefined,
@@ -256,7 +261,7 @@ const referendumCreationTx$ = state(
             ? typedApi.tx.Utility.batch_all({
                 calls: [
                   typedApi.tx.Balances.transfer_keep_alive({
-                    dest: MultiAddress.Id(multisigAddr),
+                    dest: MultiAddress.Id(curatorAddr),
                     value: amount,
                   }).decodedCall,
                   refTx.decodedCall,

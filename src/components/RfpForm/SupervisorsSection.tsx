@@ -6,7 +6,7 @@ import { state, useStateObservable } from "@react-rxjs/core";
 import { CheckCircle, Trash2 } from "lucide-react";
 import { getSs58AddressInfo, SS58String } from "polkadot-api";
 import { FC, useState } from "react";
-import { ControllerRenderProps } from "react-hook-form";
+import { ControllerRenderProps, useWatch } from "react-hook-form";
 import { from, map, startWith, tap } from "rxjs";
 import { Button } from "../ui/button";
 import {
@@ -16,36 +16,52 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
-import { FormControl, FormField, FormItem } from "../ui/form";
+import { FormControl, FormField, FormItem, FormMessage } from "../ui/form";
 import { Input } from "../ui/input";
 import { FormSchema, RfpControlType } from "./formSchema";
+import { FormInputField } from "./FormInputField";
 
 export const SupervisorsSection: FC<{ control: RfpControlType }> = ({
   control,
-}) => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Supervisors</CardTitle>
-      <CardDescription>
-        Curators for this bounty, responsible of choosing the implementors and
-        evaluating the development
-      </CardDescription>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      <FormField
-        control={control}
-        name="supervisors"
-        render={({ field }) => (
-          <FormItem>
-            <FormControl>
-              <SupervisorsControl {...field} />
-            </FormControl>
-          </FormItem>
-        )}
-      />
-    </CardContent>
-  </Card>
-);
+}) => {
+  const supervisors = useWatch({ name: "supervisors", control });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Supervisors</CardTitle>
+        <CardDescription>
+          Curators for this bounty, responsible of choosing the implementors and
+          evaluating the development
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <FormField
+          control={control}
+          name="supervisors"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <SupervisorsControl {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        {supervisors.length > 1 ? (
+          <FormInputField
+            type="number"
+            min={1}
+            control={control}
+            name="signatoriesThreshold"
+            label="Signatories threshold"
+            description="Minimum required amount of supervisors to sign and perform decisions"
+          />
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+};
 
 const SupervisorsControl: FC<
   ControllerRenderProps<FormSchema, "supervisors">

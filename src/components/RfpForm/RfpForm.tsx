@@ -16,6 +16,7 @@ const defaultValues: Partial<FormSchema> = {
   findersFee: emptyNumeric,
   supervisorsFee: emptyNumeric,
   supervisors: [],
+  signatoriesThreshold: 2,
   projectCompletion: undefined,
   fundsExpiry: 1,
   projectTitle: "",

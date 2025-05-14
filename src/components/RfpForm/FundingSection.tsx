@@ -1,16 +1,5 @@
-import { FINDERS_FEE_VALUES } from "@/constants";
 import { FC } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import {
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../ui/form";
-import { SelectItem } from "../ui/select";
-import { SelectInput } from "../ui/selectInput";
 import { FormInputField } from "./FormInputField";
 import { RfpControlType } from "./formSchema";
 
@@ -28,31 +17,11 @@ export const FundingSection: FC<{ control: RfpControlType }> = ({
         label="Prize Pool (USD)"
         description="Amount awarded to implementors"
       />
-      <FormField
+      <FormInputField
         control={control}
         name="findersFee"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Finder's Fee (USD)</FormLabel>
-            <FormControl>
-              <SelectInput
-                {...field}
-                value={String(field.value)}
-                placeholder="Value"
-              >
-                {FINDERS_FEE_VALUES.map((value) => (
-                  <SelectItem key={value} value={String(value)}>
-                    {value.toLocaleString()}
-                  </SelectItem>
-                ))}
-              </SelectInput>
-            </FormControl>
-            <FormDescription>
-              Amount awarded to the referral of the implementors
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
+        label="Finder's Fee (USD)"
+        description="Amount awarded to the referral of the implementors"
       />
       <FormInputField
         control={control}
