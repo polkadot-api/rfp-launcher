@@ -70,8 +70,11 @@ const track = typedApi.constants.Referenda.Tracks().then((tracks) => {
   return { id: track[0], ...track[1] };
 });
 const referendaDuration = track.then(
-  (value) => value.prepare_period + value.decision_period + value.confirm_period
-  // TODO minimum enactment period?
+  (value) =>
+    value.prepare_period +
+    value.decision_period +
+    value.confirm_period +
+    value.min_enactment_period
 );
 
 const getNextTreasurySpend = async (block: number) => {

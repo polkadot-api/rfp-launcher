@@ -54,7 +54,7 @@ const totalAmount$ = (formData: FormSchema) =>
     ),
     filter((v) => v != null),
     map((v) => {
-      // It's approximate after all, but probably for correctness TODO refactor to use bigints (planks) on every amount
+      // The amount is an approximation (with the +25% buffer), no need to have accurate math
       return BigInt(Math.round(v * Math.pow(10, TOKEN_DECIMALS)));
     })
   );
@@ -166,7 +166,11 @@ const rfpBounty$ = merge(
     filter((v) => !!v),
     switchMap(async (v) => [v, await bountiesSdk.getBounties()] as const),
     map(([formData, bounties]) =>
-      bounties.find((bounty) => bounty.description === formData.projectTitle)
+      bounties.find(
+        (bounty) =>
+          bounty.status.type === "Proposed" &&
+          bounty.description === formData.projectTitle
+      )
     ),
     filter((v) => !!v)
   )
@@ -218,10 +222,7 @@ const referendumCreationTx$ = state(
             typedApi.tx.Bounties.approve_bounty({ bounty_id: bounty.id })
               .decodedCall,
             typedApi.tx.Scheduler.schedule({
-              // As we're using the scheduler, we might run before it's funded... better schedule for the next block.
-              // TODO check if this is true
-              when: bountyFunding + 1,
-              // Maybe it can be done with priority? But then it's also weak since it's hard-coded?
+              when: bountyFunding,
               priority: 255,
               call: typedApi.tx.Bounties.propose_curator({
                 bounty_id: bounty.id,
