@@ -16,20 +16,20 @@ import { Circle, CircleCheck, CircleX } from "lucide-react";
 export const ChopsticksController = () => {
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="secondary">
+      <DialogTrigger>
+        <Button variant="outline" forceSvgSize={false}>
           <ReactSVG
             src={logo}
             beforeInjection={(svg) => {
-              svg.setAttribute("width", String(16));
-              svg.setAttribute("height", String(16));
+              svg.setAttribute("width", String(24));
+              svg.setAttribute("height", String(24));
             }}
           />
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Chopsticks Controller</DialogTitle>
+          <DialogTitle>Chopsticks operations</DialogTitle>
         </DialogHeader>
         <ApproveReferendum />
         <TreasurySpend />
@@ -122,13 +122,21 @@ const TreasurySpend = () => {
 };
 
 const ResetBalance = () => {
+  const { handler, status } = useControllerAction(
+    (evt: FormEvent<HTMLFormElement>) =>
+      fetch(
+        CONTROLLER_URL + "/reset_balance/" + evt.currentTarget.address.value
+      )
+  );
+
   return (
     <div>
       <h3 className="text-sm font-bold">Reset balance of account</h3>
-      <form>
+      <form onSubmit={handler}>
         <div className="flex items-center gap-2">
-          <Input placeholder="Address" />
+          <Input name="address" placeholder="Address" />
           <Input className="shrink-0 w-auto" type="submit" value="Reset" />
+          <ControllerStatusIndicator status={status} />
         </div>
       </form>
     </div>

@@ -28,7 +28,12 @@ export const RfpForm = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       ...defaultValues,
-      ...JSON.parse(localStorage.getItem("rfp-form") ?? "{}"),
+      ...JSON.parse(localStorage.getItem("rfp-form") ?? "{}", (key, value) => {
+        if (key === "projectCompletion" && value) {
+          return new Date(value);
+        }
+        return value;
+      }),
     },
   });
 
