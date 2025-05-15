@@ -133,7 +133,7 @@ const FundingSummary: FC<{
             </TableCell>
           </TableRow>
           {(formFields.milestones ?? []).map((milestone, i) => (
-            <TableRow>
+            <TableRow key={i}>
               <TableCell className="pl-4">Milestone #{i + 1}</TableCell>
               <TableCell className="text-right tabular-nums">
                 {formatUsd(milestone.amount)}

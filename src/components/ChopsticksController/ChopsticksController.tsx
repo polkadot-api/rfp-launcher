@@ -16,7 +16,7 @@ import { Circle, CircleCheck, CircleX } from "lucide-react";
 export const ChopsticksController = () => {
   return (
     <Dialog>
-      <DialogTrigger>
+      <DialogTrigger asChild>
         <Button variant="outline" forceSvgSize={false}>
           <ReactSVG
             src={logo}

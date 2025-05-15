@@ -3,7 +3,7 @@ import { stringify } from "@/lib/json";
 import { state, useStateObservable } from "@react-rxjs/core";
 import { mergeWithKey } from "@react-rxjs/utils";
 import { CircleCheck, OctagonAlert } from "lucide-react";
-import { Transaction, TxEvent } from "polkadot-api";
+import { TxEvent } from "polkadot-api";
 import { FC, PropsWithChildren, useEffect } from "react";
 import { filter, map, merge, of, switchMap, take, withLatestFrom } from "rxjs";
 import { ExternalLink } from "../ExternalLink";
