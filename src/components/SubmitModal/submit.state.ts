@@ -1,6 +1,8 @@
 import { typedApi } from "@/chain";
 import { TOKEN_DECIMALS } from "@/constants";
+import { formatToken } from "@/lib/formatToken";
 import { MultiAddress } from "@polkadot-api/descriptors";
+import { novasamaProvider } from "@polkadot-api/sdk-accounts";
 import {
   createBountiesSdk,
   createReferendaSdk,
@@ -32,15 +34,14 @@ import {
   withLatestFrom,
 } from "rxjs";
 import { FormSchema } from "../RfpForm/formSchema";
+import { generateMarkdown } from "../RfpForm/markdown";
 import {
   calculatePriceTotals,
   conversionRate$,
 } from "../RfpForm/ReviewSection";
+import { identity$ } from "../RfpForm/SupervisorsSection";
 import { referendumExecutionBlocks$ } from "../RfpForm/TimelineSection";
 import { selectedAccount$ } from "../SelectAccount";
-import { generateMarkdown } from "../RfpForm/markdown";
-import { identity$ } from "../RfpForm/SupervisorsSection";
-import { novasamaProvider } from "@polkadot-api/sdk-accounts";
 
 export const [formDataChange$, submit] = createSignal<FormSchema>();
 export const [dismiss$, dismiss] = createSignal<void>();
@@ -48,6 +49,18 @@ export const submittedFormData$ = state(
   merge(formDataChange$, dismiss$.pipe(map(() => null))),
   null
 );
+
+export type TxExplanation = {
+  text: string;
+  params?: Record<string | number, string | TxExplanation>;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyTx = Transaction<any, any, any, any>;
+type TxWithExplanation = {
+  tx: AnyTx;
+  explanation: TxExplanation;
+};
 
 const totalAmount$ = (formData: FormSchema) =>
   conversionRate$.pipe(
@@ -68,6 +81,7 @@ const getCreationMultisigCallMetadata = (
   selectedAccount: string
 ) => {
   const codec = AccountId();
+  const multisigAddr = getMultisigAddress(formData);
   const sortedSignatories = sortMultisigSignatories(
     formData.supervisors.map(codec.enc)
   );
@@ -79,6 +93,7 @@ const getCreationMultisigCallMetadata = (
   if (otherSignatories.length === sortedSignatories.length) return null;
 
   return {
+    multisigAddr,
     call_hash: multisigCreationHash,
     threshold: formData.signatoriesThreshold,
     other_signatories: otherSignatories.map(codec.dec),
@@ -90,7 +105,6 @@ const bountyCreationTx$ = state(
     switchMap((formData) => {
       if (!formData) return [null];
 
-      console.log(getMultisigAddress(formData));
       const needsMultisigCreation$ =
         formData.supervisors.length > 1
           ? from(novasamaProvider("kusama")(getMultisigAddress(formData))).pipe(
@@ -135,15 +149,27 @@ const bountyCreationTx$ = state(
       );
 
       return combineLatest([totalAmount$(formData), multisigMetadata$]).pipe(
-        map(([value, multisigMeta]) => {
+        map(([value, multisigMeta]): TxWithExplanation => {
           const proposeBounty = typedApi.tx.Bounties.propose_bounty({
             value,
             description: Binary.fromText(formData.projectTitle),
           });
 
-          if (!multisigMeta) return proposeBounty;
+          const proposeBountyExplanation: TxExplanation = {
+            text: "Propose bounty",
+            params: {
+              title: formData.projectTitle,
+              value: formatToken(value),
+            },
+          };
 
-          return typedApi.tx.Utility.batch({
+          if (!multisigMeta)
+            return {
+              tx: proposeBounty,
+              explanation: proposeBountyExplanation,
+            };
+
+          const tx = typedApi.tx.Utility.batch({
             calls: [
               proposeBounty.decodedCall,
               typedApi.tx.Multisig.approve_as_multi({
@@ -153,6 +179,22 @@ const bountyCreationTx$ = state(
               }).decodedCall,
             ],
           });
+
+          return {
+            tx,
+            explanation: {
+              text: "batch",
+              params: {
+                0: proposeBountyExplanation,
+                1: {
+                  text: "Multisig call to have the curator indexed",
+                  params: {
+                    address: multisigMeta.multisigAddr,
+                  },
+                },
+              },
+            },
+          };
         })
       );
     })
@@ -198,10 +240,7 @@ const dismissable =
   (source$: Observable<T>) =>
     concat(source$, NEVER).pipe(takeUntil(dismiss$), endWith(null));
 
-const createTxProcess = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tx$: Observable<Transaction<any, any, any, any> | null>
-) => {
+const createTxProcess = (tx$: Observable<AnyTx | null>) => {
   const [submitTx$, submitTx] = createSignal();
   const txProcess$ = state(
     submitTx$.pipe(
@@ -225,8 +264,9 @@ const createTxProcess = (
   return [txProcess$, submitTx] as const;
 };
 
-export const [bountyCreationProcess$, submitBountyCreation] =
-  createTxProcess(bountyCreationTx$);
+export const [bountyCreationProcess$, submitBountyCreation] = createTxProcess(
+  bountyCreationTx$.pipe(map((v) => v?.tx ?? null))
+);
 
 const referendaSdk = createReferendaSdk(typedApi);
 const bountiesSdk = createBountiesSdk(typedApi);
@@ -321,20 +361,28 @@ const referendumCreationTx$ = state(
           )
         );
 
-        const getReferendumProposal = async () => {
+        const getReferendumProposal = async (): Promise<TxWithExplanation> => {
           if (
             await typedApi.tx.Bounties.approve_bounty_with_curator.isCompatible(
               CompatibilityLevel.Partial
             )
           ) {
-            return typedApi.tx.Bounties.approve_bounty_with_curator({
-              bounty_id: bounty.id,
-              curator: MultiAddress.Id(curatorAddr),
-              fee: 0n,
-            });
+            return {
+              tx: typedApi.tx.Bounties.approve_bounty_with_curator({
+                bounty_id: bounty.id,
+                curator: MultiAddress.Id(curatorAddr),
+                fee: 0n,
+              }),
+              explanation: {
+                text: "Approve with curator",
+                params: {
+                  curator: curatorAddr,
+                },
+              },
+            };
           }
 
-          return typedApi.tx.Utility.batch({
+          const tx = typedApi.tx.Utility.batch({
             calls: [
               typedApi.tx.Bounties.approve_bounty({ bounty_id: bounty.id })
                 .decodedCall,
@@ -350,32 +398,62 @@ const referendumCreationTx$ = state(
               }).decodedCall,
             ],
           });
+          return {
+            tx,
+            explanation: {
+              text: "batch",
+              params: {
+                0: {
+                  text: "Approve bounty",
+                },
+                1: {
+                  text: "Schedule",
+                  params: {
+                    when: "After bounty funding",
+                    call: {
+                      text: "Propose curator",
+                      params: {
+                        curator: curatorAddr,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          };
         };
 
-        const proposalCallData = getReferendumProposal().then((r) =>
-          r.getEncodedData()
-        );
+        const proposal = getReferendumProposal();
+        const proposalCallData = proposal.then((r) => r.tx.getEncodedData());
+        const proposalTxExplanation = proposal.then((r) => r.explanation);
 
         return combineLatest([
           proposalCallData,
+          proposalTxExplanation,
           amount$,
           selectedAccount$.pipe(filter((v) => !!v)),
         ]).pipe(
-          map(([proposal, amount, selectedAccount]) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const calls: Transaction<any, any, any, any>[] = [];
+          map(([proposal, proposalExplanation, amount, selectedAccount]) => {
+            const calls: TxWithExplanation[] = [];
 
             if (amount > 0) {
-              calls.push(
-                typedApi.tx.Balances.transfer_keep_alive({
+              calls.push({
+                tx: typedApi.tx.Balances.transfer_keep_alive({
                   dest: MultiAddress.Id(curatorAddr),
                   value: amount,
-                })
-              );
+                }),
+                explanation: {
+                  text: "Transfer balance to curator",
+                  params: {
+                    destination: curatorAddr,
+                    value: formatToken(amount),
+                  },
+                },
+              });
             }
 
-            calls.push(
-              referendaSdk.createReferenda(
+            calls.push({
+              tx: referendaSdk.createReferenda(
                 {
                   type: "Origins",
                   value: {
@@ -384,8 +462,15 @@ const referendumCreationTx$ = state(
                   },
                 },
                 proposal
-              )
-            );
+              ),
+              explanation: {
+                text: "Create referendum",
+                params: {
+                  track: "Treasurer",
+                  call: proposalExplanation,
+                },
+              },
+            });
 
             if (multisigTimepoint) {
               const metadata = getCreationMultisigCallMetadata(
@@ -393,19 +478,30 @@ const referendumCreationTx$ = state(
                 selectedAccount.address
               );
               if (metadata) {
-                calls.push(
-                  typedApi.tx.Multisig.cancel_as_multi({
+                calls.push({
+                  tx: typedApi.tx.Multisig.cancel_as_multi({
                     ...metadata,
                     timepoint: multisigTimepoint,
-                  })
-                );
+                  }),
+                  explanation: {
+                    text: "Unlock deposit from indexing curator multisig",
+                  },
+                });
               }
             }
 
             if (calls.length > 1) {
-              return typedApi.tx.Utility.batch_all({
-                calls: calls.map((c) => c.decodedCall),
-              });
+              return {
+                tx: typedApi.tx.Utility.batch_all({
+                  calls: calls.map((c) => c.tx.decodedCall),
+                }),
+                explanation: {
+                  text: "batch",
+                  params: Object.fromEntries(
+                    calls.map((v, i) => [i, v.explanation])
+                  ),
+                },
+              };
             }
             return calls[0];
           }),
@@ -418,7 +514,7 @@ const referendumCreationTx$ = state(
 );
 
 export const [referendumCreationProcess$, submitReferendumCreation] =
-  createTxProcess(referendumCreationTx$);
+  createTxProcess(referendumCreationTx$.pipe(map((v) => v?.tx ?? null)));
 
 export const activeTxStep$ = state(
   combineLatest([
@@ -456,7 +552,7 @@ export const activeTxStep$ = state(
         return {
           type: "refTx" as const,
           value: {
-            tx: referendumTx,
+            ...referendumTx,
           },
         };
       }
@@ -479,7 +575,7 @@ export const activeTxStep$ = state(
         ? {
             type: "bountyTx" as const,
             value: {
-              tx: bountyTx,
+              ...bountyTx,
             },
           }
         : null;

@@ -29,6 +29,7 @@ import {
   submitBountyCreation,
   submitReferendumCreation,
   submittedFormData$,
+  TxExplanation,
 } from "./submit.state";
 
 const submitModal$ = state(
@@ -113,7 +114,7 @@ const SubmitModalContent = () => {
           1. Submit the transaction to create the bounty
         </h3>
         <SubmitTxStep
-          tx={activeTxStep.value.tx}
+          explanation={activeTxStep.value.explanation}
           submit={submitBountyCreation}
         />
       </div>
@@ -127,7 +128,7 @@ const SubmitModalContent = () => {
           2. Submit the transaction to create the referendum
         </h3>
         <SubmitTxStep
-          tx={activeTxStep.value.tx}
+          explanation={activeTxStep.value.explanation}
           submit={submitReferendumCreation}
         />
       </div>
@@ -172,23 +173,51 @@ const SubmitModalContent = () => {
 };
 
 const SubmitTxStep: FC<{
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tx: Transaction<any, any, any, any>;
+  explanation: TxExplanation;
   submit: () => void;
-}> = ({ tx, submit }) => {
+}> = ({ explanation, submit }) => {
   return (
     <div className="space-y-2">
-      <Textarea
-        className="max-h-72 font-mono text-xs"
-        readOnly
-        value={stringify(tx.decodedCall)}
-      />
+      <TxExplanationView explanation={explanation} />
       <Button className="mx-auto" onClick={submit}>
         Sign and submit
       </Button>
     </div>
   );
 };
+
+const TxExplanationView: FC<{ explanation: TxExplanation }> = ({
+  explanation,
+}) =>
+  explanation.text === "batch" ? (
+    <ol className="text-sm space-y-1 overflow-hidden">
+      {Object.values(explanation.params ?? {}).map((param, i) => (
+        <li key={i}>
+          {typeof param === "string" ? (
+            param
+          ) : (
+            <TxExplanationView explanation={param} />
+          )}
+        </li>
+      ))}
+    </ol>
+  ) : (
+    <div className="text-sm rounded border px-2 py-1 space-y-1 overflow-hidden">
+      <div className="font-bold">{explanation.text}</div>
+      <ul className="space-y-1">
+        {Object.entries(explanation.params ?? {}).map(([key, value]) => (
+          <li key={key} className="flex gap-1">
+            <div className="font-medium">{key}:</div>
+            {typeof value === "string" ? (
+              <div className="overflow-hidden text-ellipsis">{value}</div>
+            ) : (
+              <TxExplanationView explanation={value} />
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 
 const currentFinalized$ = state(client.finalizedBlock$, null);
 
