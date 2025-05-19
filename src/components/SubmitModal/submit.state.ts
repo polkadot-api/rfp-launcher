@@ -335,6 +335,18 @@ const getMultisigAddress = (formData: FormSchema) =>
     })
   );
 
+export const curatorDeposit$ = from(
+  Promise.all([
+    typedApi.constants.Balances.ExistentialDeposit(),
+    typedApi.constants.Bounties.CuratorDepositMin(),
+  ])
+).pipe(
+  map(
+    ([existentialDeposit, minCuratorDeposit = 0n]) =>
+      existentialDeposit + minCuratorDeposit
+  )
+);
+
 const referendumCreationTx$ = state(
   rfpBounty$.pipe(
     withLatestFrom(
@@ -348,18 +360,10 @@ const referendumCreationTx$ = state(
             ? formData.supervisors[0]
             : getMultisigAddress(formData);
 
-        const amount$ = from(
-          Promise.all([
-            typedApi.query.System.Account.getValue(curatorAddr),
-            typedApi.constants.Balances.ExistentialDeposit(),
-            typedApi.constants.Bounties.CuratorDepositMin(),
-          ])
-        ).pipe(
-          map(
-            ([account, existentialDeposit, minCuratorDeposit = 0n]) =>
-              existentialDeposit + minCuratorDeposit - account.data.free
-          )
-        );
+        const amount$ = combineLatest([
+          curatorDeposit$,
+          typedApi.query.System.Account.getValue(curatorAddr),
+        ]).pipe(map(([deposit, account]) => deposit - account.data.free));
 
         const getReferendumProposal = async (): Promise<TxWithExplanation> => {
           if (
@@ -436,6 +440,25 @@ const referendumCreationTx$ = state(
           map(([proposal, proposalExplanation, amount, selectedAccount]) => {
             const calls: TxWithExplanation[] = [];
 
+            if (multisigTimepoint) {
+              // First unlock the deposit, as it could prevent having enough funds for the following transactions.
+              const metadata = getCreationMultisigCallMetadata(
+                formData,
+                selectedAccount.address
+              );
+              if (metadata) {
+                calls.push({
+                  tx: typedApi.tx.Multisig.cancel_as_multi({
+                    ...metadata,
+                    timepoint: multisigTimepoint,
+                  }),
+                  explanation: {
+                    text: "Unlock deposit from indexing curator multisig",
+                  },
+                });
+              }
+            }
+
             if (amount > 0) {
               calls.push({
                 tx: typedApi.tx.Balances.transfer_keep_alive({
@@ -471,24 +494,6 @@ const referendumCreationTx$ = state(
                 },
               },
             });
-
-            if (multisigTimepoint) {
-              const metadata = getCreationMultisigCallMetadata(
-                formData,
-                selectedAccount.address
-              );
-              if (metadata) {
-                calls.push({
-                  tx: typedApi.tx.Multisig.cancel_as_multi({
-                    ...metadata,
-                    timepoint: multisigTimepoint,
-                  }),
-                  explanation: {
-                    text: "Unlock deposit from indexing curator multisig",
-                  },
-                });
-              }
-            }
 
             if (calls.length > 1) {
               return {

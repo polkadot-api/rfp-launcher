@@ -1,7 +1,7 @@
 import { sliceMiddleAddr } from "@/lib/ss58";
 import { PolkadotIdenticon } from "@polkadot-api/react-components";
-import { useStateObservable } from "@react-rxjs/core";
-import { useState } from "react";
+import { state, useStateObservable } from "@react-rxjs/core";
+import { createSignal } from "@react-rxjs/utils";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -14,8 +14,12 @@ import {
 import { PickExtension } from "./PickExtension";
 import { PickExtensionAccount, selectedAccount$ } from "./PickExtensionAccount";
 
+const [openChange$, setOpen] = createSignal<boolean>();
+export const openSelectAccount = () => setOpen(true);
+const open$ = state(openChange$, false);
+
 export const SelectAccount = () => {
-  const [open, setOpen] = useState(false);
+  const open = useStateObservable(open$);
   const selectedAccount = useStateObservable(selectedAccount$);
 
   return (

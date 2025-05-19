@@ -1,3 +1,4 @@
+import { HTMLInputTypeAttribute } from "react";
 import { Control, FieldValues, Path } from "react-hook-form";
 import {
   FormControl,
@@ -8,7 +9,6 @@ import {
   FormMessage,
 } from "../ui/form";
 import { Input } from "../ui/input";
-import { HTMLInputTypeAttribute, MouseEvent } from "react";
 
 export const FormInputField = <T extends FieldValues>({
   control,

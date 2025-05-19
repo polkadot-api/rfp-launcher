@@ -10,6 +10,7 @@ import { ReviewSection } from "./ReviewSection";
 import { ScopeSection } from "./ScopeSection";
 import { SupervisorsSection } from "./SupervisorsSection";
 import { TimelineSection } from "./TimelineSection";
+import { WelcomeSection } from "./WelcomeSection";
 
 const defaultValues: Partial<FormSchema> = {
   prizePool: emptyNumeric,
@@ -49,6 +50,7 @@ export const RfpForm = () => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(submit)} className="space-y-4">
+        <WelcomeSection />
         <FundingSection control={form.control} />
         <SupervisorsSection control={form.control} />
         <TimelineSection control={form.control} />
