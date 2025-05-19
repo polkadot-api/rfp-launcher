@@ -8,7 +8,7 @@ import {
   FormMessage,
 } from "../ui/form";
 import { Input } from "../ui/input";
-import { HTMLInputTypeAttribute } from "react";
+import { HTMLInputTypeAttribute, MouseEvent } from "react";
 
 export const FormInputField = <T extends FieldValues>({
   control,
@@ -36,6 +36,9 @@ export const FormInputField = <T extends FieldValues>({
             type={type}
             min={min}
             placeholder="Value"
+            onWheel={
+              type === "number" ? (evt) => evt.currentTarget.blur() : undefined
+            }
             {...field}
             value={field.value ?? ""}
           />
