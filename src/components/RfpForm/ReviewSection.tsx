@@ -1,14 +1,13 @@
-import {
-  KRAKEN_SYMBOL_PAIR,
-  REFERENDUM_PRICE_BUFFER,
-  TOKEN_SYMBOL,
-} from "@/constants";
-import { state, useStateObservable } from "@react-rxjs/core";
+import { REFERENDUM_PRICE_BUFFER, TOKEN_SYMBOL } from "@/constants";
+import { formatDate } from "@/lib/date";
+import { formatCurrency, formatUsd } from "@/lib/formatToken";
+import { currencyRate$ } from "@/services/currencyRate";
+import { useStateObservable } from "@react-rxjs/core";
 import { addWeeks, differenceInDays, format } from "date-fns";
 import { BadgeInfo, OctagonAlert, TriangleAlert } from "lucide-react";
 import { FC, useEffect, useState } from "react";
 import { DeepPartialSkipArrayKey, useWatch } from "react-hook-form";
-import { catchError, combineLatest, map, of, switchMap, timer } from "rxjs";
+import { combineLatest, map } from "rxjs";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import {
@@ -20,41 +19,13 @@ import {
   TableRow,
 } from "../ui/table";
 import { Textarea } from "../ui/textarea";
+import { estimatedTimeline$, generateMarkdown, identity$ } from "./data";
 import {
   FormSchema,
   Milestone,
   parseNumber,
   RfpControlType,
 } from "./formSchema";
-import { generateMarkdown } from "./markdown";
-import { identity$ } from "./SupervisorsSection";
-import { estimatedTimeline$ } from "./TimelineSection";
-
-export const conversionRate$ = state(
-  timer(0, 60_000).pipe(
-    switchMap(() =>
-      fetch(
-        `https://api.kraken.com/0/public/Ticker?pair=${KRAKEN_SYMBOL_PAIR}`,
-        {
-          headers: {
-            Accept: "application/json",
-          },
-        }
-      ).then((r) => r.json())
-    ),
-    map((v) => {
-      if (v.error?.length) {
-        throw new Error(v.error[0]);
-      }
-      return Number(v.result[KRAKEN_SYMBOL_PAIR].p[1]);
-    }),
-    catchError((err) => {
-      console.error(err);
-      return of(null);
-    })
-  ),
-  null
-);
 
 export const ReviewSection: FC<{
   control: RfpControlType;
@@ -112,9 +83,9 @@ const FundingSummary: FC<{
 
   const milestonesTotal = getMilestonesTotal(formFields.milestones);
 
-  const conversionRate = useStateObservable(conversionRate$);
+  const currencyRate = useStateObservable(currencyRate$);
   const { totalAmount, totalAmountToken, totalAmountWithBuffer } =
-    calculatePriceTotals(formFields, conversionRate);
+    calculatePriceTotals(formFields, currencyRate);
 
   return (
     <div className="max-w-xl mx-auto">
@@ -167,21 +138,23 @@ const FundingSummary: FC<{
             </TableCell>
           </TableRow>
           <TableRow>
-            <TableCell className="font-medium">Total Amount (KSM)</TableCell>
+            <TableCell className="font-medium">
+              Total Amount ({TOKEN_SYMBOL})
+            </TableCell>
             <TableCell className="font-medium text-right tabular-nums">
-              {formatToken(totalAmountToken)}
+              {formatCurrency(totalAmountToken, TOKEN_SYMBOL)}
             </TableCell>
           </TableRow>
           <TableRow>
             <TableCell className="font-bold">Total +25% Buffer</TableCell>
             <TableCell className="font-bold text-right tabular-nums">
-              {formatToken(totalAmountWithBuffer)}
+              {formatCurrency(totalAmountWithBuffer, TOKEN_SYMBOL)}
             </TableCell>
           </TableRow>
         </TableBody>
       </Table>
       <div className="text-right text-sm text-foreground/60">
-        1 {TOKEN_SYMBOL} = {formatToken(conversionRate, "USD")}
+        1 {TOKEN_SYMBOL} = {formatCurrency(currencyRate, "USD")}
       </div>
       {milestonesMatchesPrize ? null : (
         <div className="text-destructive py-2 flex items-center gap-2">
@@ -218,26 +191,6 @@ const getMilestonesTotal = (milestones: Partial<Milestone>[] | undefined) =>
     .map((milestone) => parseNumber(milestone.amount))
     .filter((v) => v != null)
     .reduce((a, b) => a + b, 0);
-
-const formatUsd = (value: string | number | undefined) => {
-  const numericValue = parseNumber(value);
-  if (numericValue == null) return "";
-
-  return `$${numericValue.toLocaleString(undefined, {
-    maximumFractionDigits: 2,
-  })}`;
-};
-
-const formatToken = (
-  value: number | null | undefined,
-  token = TOKEN_SYMBOL
-) => {
-  if (value == null) return "";
-
-  return `${value.toLocaleString(undefined, {
-    maximumFractionDigits: 4,
-  })} ${token}`;
-};
 
 const TimelineSummary: FC<{
   control: RfpControlType;
@@ -345,19 +298,17 @@ const TimelineSummary: FC<{
     </div>
   );
 };
-const formatDate = (value: Date | undefined | null) =>
-  value ? format(value, "PPP") : "";
 
 const ResultingMarkdown: FC<{
   control: RfpControlType;
 }> = ({ control }) => {
   const formFields = useWatch({ control });
-  const conversionRate = useStateObservable(conversionRate$);
+  const currencyRate = useStateObservable(currencyRate$);
   const identities = useIdentities(formFields.supervisors);
 
   const { totalAmountWithBuffer } = calculatePriceTotals(
     formFields,
-    conversionRate
+    currencyRate
   );
   const markdown = generateMarkdown(
     formFields,

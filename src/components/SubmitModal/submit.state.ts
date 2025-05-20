@@ -1,6 +1,7 @@
 import { typedApi } from "@/chain";
 import { TOKEN_DECIMALS } from "@/constants";
 import { formatToken } from "@/lib/formatToken";
+import { currencyRate$ } from "@/services/currencyRate";
 import { MultiAddress } from "@polkadot-api/descriptors";
 import { novasamaProvider } from "@polkadot-api/sdk-accounts";
 import {
@@ -29,18 +30,18 @@ import {
   Observable,
   of,
   switchMap,
-  take,
   takeUntil,
   withLatestFrom,
 } from "rxjs";
-import { FormSchema } from "../RfpForm/formSchema";
-import { generateMarkdown } from "../RfpForm/markdown";
 import {
-  calculatePriceTotals,
-  conversionRate$,
-} from "../RfpForm/ReviewSection";
-import { identity$ } from "../RfpForm/SupervisorsSection";
-import { referendumExecutionBlocks$ } from "../RfpForm/TimelineSection";
+  curatorDeposit$,
+  generateMarkdown,
+  identity$,
+  referendumExecutionBlocks$,
+  signerBalance$,
+} from "../RfpForm/data";
+import { FormSchema } from "../RfpForm/formSchema";
+import { calculatePriceTotals } from "../RfpForm/ReviewSection";
 import { selectedAccount$ } from "../SelectAccount";
 
 export const [formDataChange$, submit] = createSignal<FormSchema>();
@@ -63,10 +64,10 @@ type TxWithExplanation = {
 };
 
 const totalAmount$ = (formData: FormSchema) =>
-  conversionRate$.pipe(
+  currencyRate$.pipe(
     map(
-      (conversionRate) =>
-        calculatePriceTotals(formData, conversionRate).totalAmountWithBuffer
+      (currencyRate) =>
+        calculatePriceTotals(formData, currencyRate).totalAmountWithBuffer
     ),
     filter((v) => v != null),
     map((v) => {
@@ -112,18 +113,9 @@ const bountyCreationTx$ = state(
             )
           : of(false);
 
-      const signerFunds$ = selectedAccount$.pipe(
-        filter((v) => !!v),
-        take(1),
-        switchMap((account) =>
-          typedApi.query.System.Account.getValue(account.address)
-        ),
-        map((v) => v.data.free)
-      );
-
       const shouldCreateMultisig$ = combineLatest([
         needsMultisigCreation$,
-        signerFunds$,
+        signerBalance$.pipe(filter((v) => v != null)),
         typedApi.constants.Multisig.DepositBase(),
         typedApi.constants.Multisig.DepositFactor(),
       ]).pipe(
@@ -204,12 +196,12 @@ const bountyCreationTx$ = state(
 export const bountyMarkdown$ = state(
   combineLatest([
     submittedFormData$.pipe(filter((v) => !!v)),
-    conversionRate$,
+    currencyRate$,
   ]).pipe(
-    switchMap(([formFields, conversionRate]) => {
+    switchMap(([formFields, currencyRate]) => {
       const { totalAmountWithBuffer } = calculatePriceTotals(
         formFields,
-        conversionRate
+        currencyRate
       );
 
       const identities$ = combineLatest(
@@ -334,18 +326,6 @@ const getMultisigAddress = (formData: FormSchema) =>
       signatories: formData.supervisors.map(accountCodec.enc),
     })
   );
-
-export const curatorDeposit$ = from(
-  Promise.all([
-    typedApi.constants.Balances.ExistentialDeposit(),
-    typedApi.constants.Bounties.CuratorDepositMin(),
-  ])
-).pipe(
-  map(
-    ([existentialDeposit, minCuratorDeposit = 0n]) =>
-      existentialDeposit + minCuratorDeposit
-  )
-);
 
 const referendumCreationTx$ = state(
   rfpBounty$.pipe(

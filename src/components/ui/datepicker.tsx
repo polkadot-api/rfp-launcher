@@ -1,5 +1,5 @@
+import { formatDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { FC } from "react";
 import { Matcher } from "react-day-picker";
@@ -23,7 +23,7 @@ export const DatePicker: FC<{
             !value && "text-muted-foreground"
           )}
         >
-          {value ? format(value, "PPP") : <span>Pick a date</span>}
+          {value ? formatDate(value) : <span>Pick a date</span>}
           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
         </Button>
       </FormControl>

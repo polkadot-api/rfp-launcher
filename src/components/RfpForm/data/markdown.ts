@@ -1,7 +1,7 @@
 import { REFERENDUM_PRICE_BUFFER, TOKEN_SYMBOL } from "@/constants";
-import { formSchema, FormSchema } from "./formSchema";
 import { format } from "date-fns";
 import { DeepPartialSkipArrayKey } from "react-hook-form";
+import { formSchema, FormSchema } from "../formSchema";
 
 export function generateMarkdown(
   data: DeepPartialSkipArrayKey<FormSchema>,
