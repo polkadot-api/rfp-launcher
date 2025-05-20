@@ -2,7 +2,7 @@ import { useStateObservable } from "@react-rxjs/core";
 import { FC } from "react";
 import { ExternalLink } from "../ExternalLink";
 import { Textarea } from "../ui/textarea";
-import { bountyMarkdown$ } from "./submit.state";
+import { bountyMarkdown$ } from "./tx/bountyCreation";
 
 export const StepFinish: FC<{
   refIdx?: number;

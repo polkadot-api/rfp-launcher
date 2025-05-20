@@ -1,6 +1,6 @@
 import { FC, PropsWithChildren } from "react";
 import { Button } from "../ui/button";
-import { TxExplanation } from "./submit.state";
+import { TxExplanation } from "./tx/types";
 
 export const StepSubmitTx: FC<
   PropsWithChildren<{

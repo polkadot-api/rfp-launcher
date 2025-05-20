@@ -12,18 +12,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
-import { StepBroadcastingTx } from "./StepBroadcastingTx";
-import { StepFinish } from "./StepFinish";
-import { StepSubmitTx } from "./StepSubmitTx";
 import {
-  activeTxStep$,
   dismiss,
   dismiss$,
   formDataChange$,
-  submitBountyCreation,
-  submitReferendumCreation,
   submittedFormData$,
-} from "./submit.state";
+} from "./modalActions";
+import { StepBroadcastingTx } from "./StepBroadcastingTx";
+import { StepFinish } from "./StepFinish";
+import { StepSubmitTx } from "./StepSubmitTx";
+import { activeTxStep$ } from "./submit.state";
+import { submitBountyCreation } from "./tx/bountyCreation";
+import { submitReferendumCreation } from "./tx/referendumCreation";
 
 const submitModal$ = state(
   mergeWithKey({ formDataChange$, dismiss$ }).pipe(

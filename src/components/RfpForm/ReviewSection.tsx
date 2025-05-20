@@ -1,4 +1,4 @@
-import { REFERENDUM_PRICE_BUFFER, TOKEN_SYMBOL } from "@/constants";
+import { TOKEN_SYMBOL } from "@/constants";
 import { formatDate } from "@/lib/date";
 import { formatCurrency, formatUsd } from "@/lib/formatToken";
 import { currencyRate$ } from "@/services/currencyRate";
@@ -6,7 +6,7 @@ import { useStateObservable } from "@react-rxjs/core";
 import { addWeeks, differenceInDays, format } from "date-fns";
 import { BadgeInfo, OctagonAlert, TriangleAlert } from "lucide-react";
 import { FC, useEffect, useState } from "react";
-import { DeepPartialSkipArrayKey, useWatch } from "react-hook-form";
+import { useWatch } from "react-hook-form";
 import { combineLatest, map } from "rxjs";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
@@ -20,12 +20,8 @@ import {
 } from "../ui/table";
 import { Textarea } from "../ui/textarea";
 import { estimatedTimeline$, generateMarkdown, identity$ } from "./data";
-import {
-  FormSchema,
-  Milestone,
-  parseNumber,
-  RfpControlType,
-} from "./formSchema";
+import { calculatePriceTotals } from "./data/price";
+import { Milestone, parseNumber, RfpControlType } from "./formSchema";
 
 export const ReviewSection: FC<{
   control: RfpControlType;
@@ -164,26 +160,6 @@ const FundingSummary: FC<{
       )}
     </div>
   );
-};
-
-export const calculatePriceTotals = (
-  formFields: DeepPartialSkipArrayKey<FormSchema>,
-  conversionRate: number | null
-) => {
-  const totalAmount = [
-    formFields.prizePool,
-    formFields.findersFee,
-    formFields.supervisorsFee,
-  ]
-    .map(parseNumber)
-    .filter((v) => v != null)
-    .reduce((a, b) => a + b, 0);
-  const totalAmountToken = conversionRate ? totalAmount / conversionRate : null;
-  const totalAmountWithBuffer = totalAmountToken
-    ? Math.ceil(totalAmountToken * (1 + REFERENDUM_PRICE_BUFFER))
-    : null;
-
-  return { totalAmount, totalAmountToken, totalAmountWithBuffer };
 };
 
 const getMilestonesTotal = (milestones: Partial<Milestone>[] | undefined) =>

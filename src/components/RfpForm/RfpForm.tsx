@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { SubmitModal } from "../SubmitModal";
-import { submit } from "../SubmitModal/submit.state";
+import { submit } from "../SubmitModal/modalActions";
 import { Form } from "../ui/form";
 import { emptyNumeric, FormSchema, formSchema } from "./formSchema";
 import { FundingSection } from "./FundingSection";
