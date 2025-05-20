@@ -48,11 +48,11 @@ export const selectedExtension$ = state(
   merge(
     availableExtensions$.pipe(
       filter((v) => v.includes(getPersistedSelectedExtension()!)),
-      map(() => getPersistedSelectedExtension()!)
+      map(() => getPersistedSelectedExtension()!),
+      distinctUntilChanged()
     ),
     selectExtension$.pipe(tap(setPersistedSelectedExtension))
   ).pipe(
-    distinctUntilChanged(),
     switchMap((name) => {
       const connect$ = defer(() => connectInjectedExtension(name)).pipe(
         // PolkadotJS rejects the promise straight away instead of waiting for user input
