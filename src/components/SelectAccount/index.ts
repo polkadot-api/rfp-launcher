@@ -1,2 +1,2 @@
-export { SelectAccount } from "./SelectAccount";
-export { selectedAccount$ } from "./PickExtensionAccount";
+export { SelectAccount, openSelectAccount } from "./SelectAccount";
+export { selectedAccount$ } from "./account.state";

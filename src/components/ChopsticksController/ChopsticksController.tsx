@@ -1,3 +1,6 @@
+import { CHOPSTICKS_URL } from "@/constants";
+import { FormEvent } from "react";
+import { ReactSVG } from "react-svg";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -7,11 +10,9 @@ import {
   DialogTrigger,
 } from "../ui/dialog";
 import { Input } from "../ui/input";
-import { ReactSVG } from "react-svg";
 import logo from "./chopsticks.svg";
-import { FC, FormEvent, useState } from "react";
-import { Spinner } from "../Spinner";
-import { Circle, CircleCheck, CircleX } from "lucide-react";
+import { useControllerAction } from "./controllerAction";
+import { ControllerStatusIndicator } from "./ControllerStatusIndicator";
 
 export const ChopsticksController = () => {
   return (
@@ -39,53 +40,11 @@ export const ChopsticksController = () => {
   );
 };
 
-const CONTROLLER_URL = `http://localhost:8133`;
-type ControllerStatus = null | "loading" | "success" | "error";
-const useControllerAction = <T extends FormEvent | MouseEvent>(
-  action: (evt: T) => Promise<Response>
-) => {
-  const [status, setStatus] = useState<ControllerStatus>(null);
-
-  return {
-    status,
-    handler: (evt: T) => {
-      evt.preventDefault();
-
-      setStatus("loading");
-      action(evt)
-        .then((res) => res.json())
-        .then(
-          (res) => {
-            console.log(res);
-            setStatus("success");
-          },
-          (err) => {
-            console.error(err);
-            setStatus("error");
-          }
-        );
-    },
-  };
-};
-
-const ControllerStatusIndicator: FC<{ status: ControllerStatus }> = ({
-  status,
-}) =>
-  !status ? (
-    <Circle className="shrink-0 text-foreground/30" />
-  ) : status === "loading" ? (
-    <Spinner className="shrink-0" />
-  ) : status === "success" ? (
-    <CircleCheck className="shrink-0 text-green-600" />
-  ) : (
-    <CircleX className="shrink-0 text-red-600" />
-  );
-
 const ApproveReferendum = () => {
   const { handler, status } = useControllerAction(
     (evt: FormEvent<HTMLFormElement>) =>
       fetch(
-        CONTROLLER_URL + "/approve_referendum/" + evt.currentTarget.number.value
+        CHOPSTICKS_URL + "/approve_referendum/" + evt.currentTarget.number.value
       )
   );
 
@@ -105,7 +64,7 @@ const ApproveReferendum = () => {
 
 const TreasurySpend = () => {
   const { handler, status } = useControllerAction(() =>
-    fetch(CONTROLLER_URL + "/treasury_spend")
+    fetch(CHOPSTICKS_URL + "/treasury_spend")
   );
 
   return (
@@ -125,7 +84,7 @@ const ResetBalance = () => {
   const { handler, status } = useControllerAction(
     (evt: FormEvent<HTMLFormElement>) =>
       fetch(
-        CONTROLLER_URL + "/reset_balance/" + evt.currentTarget.address.value
+        CHOPSTICKS_URL + "/reset_balance/" + evt.currentTarget.address.value
       )
   );
 

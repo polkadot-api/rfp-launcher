@@ -7,8 +7,7 @@ import { TriangleAlert } from "lucide-react";
 import { Binary } from "polkadot-api";
 import { FC } from "react";
 import { combineLatest, map, of, switchMap } from "rxjs";
-import { selectedAccount$ } from "../SelectAccount";
-import { openSelectAccount } from "../SelectAccount/SelectAccount";
+import { openSelectAccount, selectedAccount$ } from "../SelectAccount";
 import { curatorDeposit$ } from "../SubmitModal/submit.state";
 import { Card, CardContent } from "../ui/card";
 

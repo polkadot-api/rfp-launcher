@@ -12,7 +12,8 @@ import {
   DialogTrigger,
 } from "../ui/dialog";
 import { PickExtension } from "./PickExtension";
-import { PickExtensionAccount, selectedAccount$ } from "./PickExtensionAccount";
+import { PickExtensionAccount } from "./PickExtensionAccount";
+import { selectedAccount$ } from "./account.state";
 
 const [openChange$, setOpen] = createSignal<boolean>();
 export const openSelectAccount = () => setOpen(true);
