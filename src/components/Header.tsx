@@ -1,6 +1,6 @@
-import { USE_CHOPSTICKS } from "./chain";
-import { ChopsticksController } from "./components/ChopsticksController";
-import { SelectAccount } from "./components/SelectAccount";
+import { USE_CHOPSTICKS } from "@/chain";
+import { ChopsticksController } from "./ChopsticksController";
+import { SelectAccount } from "./SelectAccount";
 
 export const Header = () => {
   return (
