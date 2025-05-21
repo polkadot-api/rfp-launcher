@@ -46,6 +46,12 @@ pnpm dev-local
 
 This configures the project to target the local Chopsticks process and enables additional features such as approving referenda, skipping to the next treasury spend period, or minting balances to test accounts.
 
+## Theming
+
+This project uses the standard setup from [shadcn/ui](https://ui.shadcn.com) for theming, which uses TailwindCSS.
+
+For basic theming changes, the variables can be set up in src/index.css. For more advanced usages, refer to [shadcn/ui docs](https://ui.shadcn.com/docs).
+
 ## Project Structure
 
 The project follows a co-location principle. Components are grouped by functionality, and most of the state related to a component is kept close to it, with the exception of some shared utilities.
