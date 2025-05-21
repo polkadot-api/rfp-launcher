@@ -29,7 +29,9 @@ export const WelcomeSection: FC = () => {
     }
     if (currentBalance == null) return null;
 
-    if (currentBalance < estimatedCost) {
+    const totalCost = estimatedCost.deposits + estimatedCost.fees;
+
+    if (currentBalance < totalCost) {
       return (
         <div>
           <TriangleAlert className="text-amber-600 inline-block" size={20} />
@@ -58,7 +60,12 @@ export const WelcomeSection: FC = () => {
         <p>
           Please note that you'll need a minimum of{" "}
           {estimatedCost ? (
-            <b>{formatToken(estimatedCost)}</b>
+            <span>
+              <b>{formatToken(estimatedCost.deposits + estimatedCost.fees)}</b>{" "}
+              ({formatToken(estimatedCost.fees)} in fees, you'll get{" "}
+              {formatToken(estimatedCost.deposits)} in deposits back once the
+              RFP ends)
+            </span>
           ) : (
             <span className="text-muted-foreground">(calculating…)</span>
           )}{" "}

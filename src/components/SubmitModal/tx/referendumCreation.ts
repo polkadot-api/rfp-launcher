@@ -8,7 +8,14 @@ import {
 } from "@polkadot-api/substrate-bindings";
 import { state } from "@react-rxjs/core";
 import { CompatibilityLevel } from "polkadot-api";
-import { combineLatest, filter, map, switchMap, withLatestFrom } from "rxjs";
+import {
+  combineLatest,
+  filter,
+  map,
+  merge,
+  switchMap,
+  withLatestFrom,
+} from "rxjs";
 import {
   curatorDeposit$,
   referendumExecutionBlocks$,
@@ -208,3 +215,39 @@ export const referendumCreationTx$ = state(
 
 export const [referendumCreationProcess$, submitReferendumCreation] =
   createTxProcess(referendumCreationTx$.pipe(map((v) => v?.tx ?? null)));
+
+export const rfpReferendum$ = state(
+  merge(
+    referendumCreationProcess$.pipe(
+      filter((v) => v?.type === "finalized" && v.ok),
+      switchMap(async (v) => {
+        const referendum = referendaSdk.getSubmittedReferendum(v);
+        if (!referendum) {
+          throw new Error("Submitted referendum could not be found");
+        }
+        return referendum;
+      })
+    ),
+    // try and load existing one if it's there
+    rfpBounty$.pipe(
+      switchMap(({ bounty }) => {
+        if (bounty.type !== "Proposed") return [];
+
+        return referendaSdk
+          .getReferenda()
+          .then((referenda) =>
+            bounty.filterApprovingReferenda(
+              referenda.filter((ref) => ref.type === "Ongoing")
+            )
+          );
+      }),
+      map((v) => v[0]?.referendum),
+      filter((v) => !!v),
+      map((v) => ({
+        index: v.id,
+        track: v.track,
+        proposal: v.proposal.rawValue,
+      }))
+    )
+  )
+);

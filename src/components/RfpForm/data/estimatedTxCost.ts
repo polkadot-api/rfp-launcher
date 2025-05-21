@@ -1,9 +1,11 @@
 import { typedApi } from "@/chain";
+import { sum } from "@/lib/math";
 import { MultiAddress } from "@polkadot-api/descriptors";
 import { createReferendaSdk } from "@polkadot-api/sdk-governance";
 import { state } from "@react-rxjs/core";
 import { Binary } from "polkadot-api";
 import { combineLatest, from, map, switchMap } from "rxjs";
+import { decisionDeposit, submissionDeposit } from "./referendaConstants";
 
 const TITLE_LENGTH = 100;
 const ALICE = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY";
@@ -27,15 +29,6 @@ export const curatorDeposit$ = from(
   map(
     ([existentialDeposit, minCuratorDeposit = 0n]) =>
       existentialDeposit + minCuratorDeposit
-  )
-);
-
-const depositCosts$ = combineLatest([
-  typedApi.constants.Referenda.SubmissionDeposit(),
-  curatorDeposit$,
-]).pipe(
-  map(
-    ([referendumDeposit, curatorDeposit]) => referendumDeposit + curatorDeposit
   )
 );
 
@@ -80,12 +73,28 @@ const submitReferendumFee$ = combineLatest([
   )
 );
 
+const decisionDepositFee$ = typedApi.tx.Referenda.place_decision_deposit({
+  index: 0,
+}).getEstimatedFees(ALICE);
+
+const depositCosts$ = combineLatest([
+  bountyDeposit$,
+  submissionDeposit,
+  decisionDeposit,
+]).pipe(map((r) => r.reduce(sum, 0n)));
+
+const feeCosts$ = combineLatest([
+  proposeBountyFee$,
+  submitReferendumFee$,
+  // Counting curator deposit as a "fee", because it's balance being transfered from the signer to the curator
+  curatorDeposit$,
+  decisionDepositFee$,
+]).pipe(map((v) => v.reduce(sum, 0n)));
+
 export const estimatedCost$ = state(
-  combineLatest([
-    bountyDeposit$,
-    proposeBountyFee$,
-    depositCosts$,
-    submitReferendumFee$,
-  ]).pipe(map((v) => v.reduce((a, b) => a + b, 0n))),
+  combineLatest({
+    deposits: depositCosts$,
+    fees: feeCosts$,
+  }),
   null
 );

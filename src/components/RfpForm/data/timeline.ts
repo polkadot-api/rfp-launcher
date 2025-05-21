@@ -1,21 +1,9 @@
 import { client, typedApi } from "@/chain";
-import { BLOCK_LENGTH, TRACK_ID } from "@/constants";
+import { BLOCK_LENGTH } from "@/constants";
 import { state, withDefault } from "@react-rxjs/core";
 import { add } from "date-fns";
 import { filter, map, switchMap } from "rxjs";
-
-const track = typedApi.constants.Referenda.Tracks().then((tracks) => {
-  const track = tracks.find(([, value]) => value.name === TRACK_ID);
-  if (!track) throw new Error("Couldn't find track");
-  return { id: track[0], ...track[1] };
-});
-const referendaDuration = track.then(
-  (value) =>
-    value.prepare_period +
-    value.decision_period +
-    value.confirm_period +
-    value.min_enactment_period
-);
+import { referendaDuration } from "./referendaConstants";
 
 const getNextTreasurySpend = async (block: number) => {
   const period = await typedApi.constants.Treasury.SpendPeriod();

@@ -21,8 +21,9 @@ import {
 import { StepBroadcastingTx } from "./StepBroadcastingTx";
 import { StepFinish } from "./StepFinish";
 import { StepSubmitTx } from "./StepSubmitTx";
-import { activeTxStep$ } from "./submit.state";
+import { activeTxStep$, referendumIndex$ } from "./submit.state";
 import { submitBountyCreation } from "./tx/bountyCreation";
+import { submitdecisionDeposit } from "./tx/decisionDeposit";
 import { submitReferendumCreation } from "./tx/referendumCreation";
 
 const submitModal$ = state(
@@ -84,8 +85,8 @@ export const SubmitModal = () => {
         <DialogHeader>
           <DialogTitle>Submit RFP</DialogTitle>
           <DialogDescription>
-            This is a two-step process: Create the bounty, then submit the
-            referendum
+            This is a three-step process: Create the bounty, submit the
+            referendum, and place the decision deposit
           </DialogDescription>
         </DialogHeader>
         <SubmitModalContent />
@@ -96,44 +97,55 @@ export const SubmitModal = () => {
 
 const SubmitModalContent = () => {
   const activeTxStep = useStateObservable(activeTxStep$);
+  const refIdx = useStateObservable(referendumIndex$);
 
   if (!activeTxStep) return null;
 
-  if (activeTxStep.type === "bountyTx") {
-    return (
-      <div className="space-y-2 overflow-hidden">
-        <h3 className="text-sm font-bold">
-          1. Submit the transaction to create the bounty
-        </h3>
-        <StepSubmitTx
-          explanation={activeTxStep.value.explanation}
-          submit={submitBountyCreation}
-        />
-      </div>
-    );
+  if (activeTxStep.type === "tx") {
+    switch (activeTxStep.tag) {
+      case "bounty":
+        return (
+          <div className="space-y-2 overflow-hidden">
+            <h3 className="text-sm font-bold">
+              1. Submit the transaction to create the bounty
+            </h3>
+            <StepSubmitTx
+              explanation={activeTxStep.value.explanation}
+              submit={submitBountyCreation}
+            />
+          </div>
+        );
+      case "ref":
+        return (
+          <div className="space-y-2 overflow-hidden">
+            <h3 className="text-sm font-bold">
+              2. Submit the transaction to create the referendum
+            </h3>
+            <StepSubmitTx
+              explanation={activeTxStep.value.explanation}
+              submit={submitReferendumCreation}
+            />
+          </div>
+        );
+      case "decision":
+        return (
+          <div className="space-y-2 overflow-hidden">
+            <h3 className="text-sm font-bold">
+              3. Place the decision deposit on the referendum to start it
+            </h3>
+            <StepSubmitTx
+              explanation={activeTxStep.value.explanation}
+              submit={submitdecisionDeposit}
+            />
+          </div>
+        );
+    }
+    return null;
   }
 
-  if (activeTxStep.type === "refTx") {
-    return (
-      <div className="space-y-2 overflow-hidden">
-        <h3 className="text-sm font-bold">
-          2. Submit the transaction to create the referendum
-        </h3>
-        <StepSubmitTx
-          explanation={activeTxStep.value.explanation}
-          submit={submitReferendumCreation}
-        />
-      </div>
-    );
-  }
-
-  if (
-    activeTxStep.type === "bountySubmitting" ||
-    activeTxStep.type === "refSubmitting" ||
-    !activeTxStep.value.txEvent.ok
-  ) {
+  if (activeTxStep.type === "submitting" || !activeTxStep.value.txEvent.ok) {
     return <StepBroadcastingTx txEvt={activeTxStep.value.txEvent} />;
   }
 
-  return <StepFinish refIdx={activeTxStep.value.referendum?.index} />;
+  return <StepFinish refIdx={refIdx} />;
 };

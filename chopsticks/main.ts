@@ -228,6 +228,7 @@ Bun.serve({
           },
         },
       ]);
+      await client._request("dev_newBlock", []);
 
       return Response.json({}, CORS_HEADERS);
     },

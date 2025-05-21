@@ -7,7 +7,7 @@ export const signerBalance$ = state(
   selectedAccount$.pipe(
     switchMap((account) =>
       account
-        ? typedApi.query.System.Account.getValue(account.address)
+        ? typedApi.query.System.Account.watchValue(account.address)
         : of(null)
     ),
     map((v) => (v ? v.data.free : null))

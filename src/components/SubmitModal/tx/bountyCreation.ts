@@ -202,53 +202,55 @@ const getMultisigAddress = (formData: FormSchema) =>
   );
 
 const bountiesSdk = createBountiesSdk(typedApi);
-export const rfpBounty$ = merge(
-  bountyCreationProcess$.pipe(
-    filter((v) => v?.type === "finalized" && v.ok),
-    switchMap(async (v) => {
-      const bounty = await bountiesSdk.getProposedBounty(v);
-      if (!bounty) {
-        // TODO check error boundaries
-        throw new Error("Bounty could not be found");
-      }
+export const rfpBounty$ = state(
+  merge(
+    bountyCreationProcess$.pipe(
+      filter((v) => v?.type === "finalized" && v.ok),
+      switchMap(async (v) => {
+        const bounty = await bountiesSdk.getProposedBounty(v);
+        if (!bounty) {
+          // TODO check error boundaries
+          throw new Error("Bounty could not be found");
+        }
 
-      const [multisig] = typedApi.event.Multisig.NewMultisig.filter(v.events);
+        const [multisig] = typedApi.event.Multisig.NewMultisig.filter(v.events);
 
-      return {
-        bounty,
-        multisigTimepoint: multisig
-          ? {
-              height: v.block.number,
-              index: v.block.index,
-            }
-          : null,
-      };
-    })
-  ),
-  // try and load existing one if it's there
-  submittedFormData$.pipe(
-    filter((v) => !!v),
-    switchMap(async (formData) => {
-      const multisigAddr =
-        formData.supervisors.length > 1 ? getMultisigAddress(formData) : null;
+        return {
+          bounty,
+          multisigTimepoint: multisig
+            ? {
+                height: v.block.number,
+                index: v.block.index,
+              }
+            : null,
+        };
+      })
+    ),
+    // try and load existing one if it's there
+    submittedFormData$.pipe(
+      filter((v) => !!v),
+      switchMap(async (formData) => {
+        const multisigAddr =
+          formData.supervisors.length > 1 ? getMultisigAddress(formData) : null;
 
-      const [bounties, multisig] = await Promise.all([
-        bountiesSdk.getBounties(),
-        multisigAddr
-          ? typedApi.query.Multisig.Multisigs.getValue(
-              multisigAddr,
-              multisigCreationHash
-            )
-          : Promise.resolve(null),
-      ]);
-      const bounty = bounties.find(
-        (bounty) =>
-          bounty.status.type === "Proposed" &&
-          bounty.description === formData.projectTitle
-      );
+        const [bounties, multisig] = await Promise.all([
+          bountiesSdk.getBounties(),
+          multisigAddr
+            ? typedApi.query.Multisig.Multisigs.getValue(
+                multisigAddr,
+                multisigCreationHash
+              )
+            : Promise.resolve(null),
+        ]);
+        const bounty = bounties.find(
+          (bounty) =>
+            bounty.status.type === "Proposed" &&
+            bounty.description === formData.projectTitle
+        );
 
-      return { bounty: bounty!, multisigTimepoint: multisig?.when ?? null };
-    }),
-    filter((v) => !!v.bounty)
+        return { bounty: bounty!, multisigTimepoint: multisig?.when ?? null };
+      }),
+      filter((v) => !!v.bounty)
+    )
   )
 );

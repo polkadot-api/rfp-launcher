@@ -1,79 +1,82 @@
 import { typedApi } from "@/chain";
 import { createReferendaSdk } from "@polkadot-api/sdk-governance";
 import { state } from "@react-rxjs/core";
-import { combineLatest, map } from "rxjs";
+import { TxEvent } from "polkadot-api";
+import { combineLatest, map, Observable } from "rxjs";
 import { bountyCreationProcess$, bountyCreationTx$ } from "./tx/bountyCreation";
+import {
+  decisionDepositProcess$,
+  decisionDepositTx$,
+} from "./tx/decisionDeposit";
 import {
   referendumCreationProcess$,
   referendumCreationTx$,
+  rfpReferendum$,
 } from "./tx/referendumCreation";
+import { TxWithExplanation } from "./tx/types";
 
 const referendaSdk = createReferendaSdk(typedApi);
 
-export const activeTxStep$ = state(
-  combineLatest([
-    bountyCreationTx$,
-    bountyCreationProcess$,
-    referendumCreationTx$,
-    referendumCreationProcess$,
-  ]).pipe(
-    map(([bountyTx, bountyProcess, referendumTx, referendumProcess]) => {
-      if (referendumProcess) {
-        if (referendumProcess.type === "finalized" && referendumProcess.ok) {
-          const referendum =
-            referendaSdk.getSubmittedReferendum(referendumProcess);
+const txProcessState = (
+  tx$: Observable<TxWithExplanation | null>,
+  process$: Observable<
+    | TxEvent
+    | {
+        type: "error";
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        err: any;
+      }
+    | null
+  >,
+  tag: string
+) =>
+  combineLatest([tx$, process$]).pipe(
+    map(([tx, process]) => {
+      if (process) {
+        if (process.type === "finalized" && process.ok) {
+          const referendum = referendaSdk.getSubmittedReferendum(process);
           return {
-            type: "refDone" as const,
+            type: "done" as const,
+            tag,
             value: {
-              txEvent: referendumProcess,
+              txEvent: process,
               referendum,
             },
           };
         }
-        if (
-          referendumProcess.type !== "error" ||
-          referendumProcess.err.message !== "Cancelled"
-        ) {
+        if (process.type !== "error" || process.err.message !== "Cancelled") {
           return {
-            type: "refSubmitting" as const,
+            type: "submitting" as const,
+            tag,
             value: {
-              txEvent: referendumProcess,
-            },
-          };
-        }
-      }
-      if (referendumTx) {
-        return {
-          type: "refTx" as const,
-          value: {
-            ...referendumTx,
-          },
-        };
-      }
-
-      if (bountyProcess) {
-        if (
-          bountyProcess.type !== "error" ||
-          bountyProcess.err.message !== "Cancelled"
-        ) {
-          return {
-            type: "bountySubmitting" as const,
-            value: {
-              txEvent: bountyProcess,
+              txEvent: process,
             },
           };
         }
       }
 
-      return bountyTx
+      return tx
         ? {
-            type: "bountyTx" as const,
+            type: "tx" as const,
+            tag,
             value: {
-              ...bountyTx,
+              ...tx,
             },
           }
         : null;
     })
-  ),
+  );
+
+export const activeTxStep$ = state(
+  combineLatest([
+    txProcessState(bountyCreationTx$, bountyCreationProcess$, "bounty"),
+    txProcessState(referendumCreationTx$, referendumCreationProcess$, "ref"),
+    txProcessState(decisionDepositTx$, decisionDepositProcess$, "decision"),
+  ]).pipe(map((steps) => steps.reverse().reduce((a, b) => a || b, null))),
   null
+);
+
+export const referendumIndex$ = state(
+  rfpReferendum$.pipe(map((v) => v.index)),
+  undefined
 );
