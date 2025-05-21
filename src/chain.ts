@@ -1,9 +1,11 @@
 import { ksm, polkadot_people } from "@polkadot-api/descriptors";
 import { createClient } from "polkadot-api";
+import { withPolkadotSdkCompat } from "polkadot-api/polkadot-sdk-compat";
 import { getSmProvider } from "polkadot-api/sm-provider";
 import { startFromWorker } from "polkadot-api/smoldot/from-worker";
 import SmWorker from "polkadot-api/smoldot/worker?worker";
 import { getWsProvider } from "polkadot-api/ws-provider/web";
+import { FEATURE_LIGHT_CLIENT } from "./constants";
 import { withChopsticksEnhancer } from "./lib/chopsticksEnhancer";
 
 export const USE_CHOPSTICKS = import.meta.env.VITE_WITH_CHOPSTICKS;
@@ -19,9 +21,24 @@ const kusamaChainSpec = import("polkadot-api/chains/ksmcc3");
 const polkadotChainSpec = import("polkadot-api/chains/polkadot");
 const peopleChainSpec = import("polkadot-api/chains/polkadot_people");
 
-const kusamaChain = kusamaChainSpec.then(({ chainSpec }) =>
-  smoldot.addChain({ chainSpec })
-);
+const getMainChainProvider = () => {
+  if (!FEATURE_LIGHT_CLIENT) {
+    return withPolkadotSdkCompat(
+      getWsProvider([
+        "wss://kusama-rpc.publicnode.com",
+        "wss://kusama-rpc.dwellir.com",
+        "wss://rpc.ibp.network/kusama",
+        "wss://kusama-rpc-tn.dwellir.com",
+        "wss://rpc-kusama.luckyfriday.io",
+      ])
+    );
+  }
+
+  const kusamaChain = kusamaChainSpec.then(({ chainSpec }) =>
+    smoldot.addChain({ chainSpec })
+  );
+  return getSmProvider(kusamaChain);
+};
 const polkadotChain = polkadotChainSpec.then(({ chainSpec }) =>
   smoldot.addChain({ chainSpec })
 );
@@ -36,6 +53,6 @@ export const peopleApi = peopleClient.getTypedApi(polkadot_people);
 export const client = createClient(
   USE_CHOPSTICKS
     ? withChopsticksEnhancer(getWsProvider("ws://localhost:8132"))
-    : getSmProvider(kusamaChain)
+    : getMainChainProvider()
 );
 export const typedApi = client.getTypedApi(ksm);
