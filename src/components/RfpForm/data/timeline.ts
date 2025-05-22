@@ -1,8 +1,9 @@
 import { client, typedApi } from "@/chain";
-import { BLOCK_LENGTH } from "@/constants";
+import { BLOCK_LENGTH, TOKEN_DECIMALS } from "@/constants";
 import { state, withDefault } from "@react-rxjs/core";
 import { add } from "date-fns";
-import { filter, map, switchMap } from "rxjs";
+import { combineLatest, filter, map, switchMap } from "rxjs";
+import { bountyValue$ } from "./price";
 import { referendaDuration } from "./referendaConstants";
 
 const getNextTreasurySpend = async (block: number) => {
@@ -15,10 +16,12 @@ const getNextTreasurySpend = async (block: number) => {
 };
 
 export const referendumExecutionBlocks$ = state(
-  client.finalizedBlock$.pipe(
-    switchMap(async (currentBlock) => {
+  combineLatest([client.finalizedBlock$, bountyValue$]).pipe(
+    switchMap(async ([currentBlock, bountyValue]) => {
       const currentBlockDate = new Date();
-      const refDuration = await referendaDuration;
+      const refDuration = await referendaDuration(
+        bountyValue ? BigInt(bountyValue * 10 ** TOKEN_DECIMALS) : null
+      );
 
       const referendumEnd = currentBlock.number + refDuration;
 

@@ -6,6 +6,8 @@ import { state } from "@react-rxjs/core";
 import { Binary } from "polkadot-api";
 import { combineLatest, from, map, switchMap } from "rxjs";
 import { decisionDeposit, submissionDeposit } from "./referendaConstants";
+import { bountyValue$ } from "./price";
+import { TOKEN_DECIMALS } from "@/constants";
 
 const TITLE_LENGTH = 100;
 const ALICE = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY";
@@ -80,7 +82,11 @@ const decisionDepositFee$ = typedApi.tx.Referenda.place_decision_deposit({
 const depositCosts$ = combineLatest([
   bountyDeposit$,
   submissionDeposit,
-  decisionDeposit,
+  bountyValue$.pipe(
+    switchMap((v) =>
+      decisionDeposit(v ? BigInt(v * 10 ** TOKEN_DECIMALS) : null)
+    )
+  ),
 ]).pipe(map((r) => r.reduce(sum, 0n)));
 
 const feeCosts$ = combineLatest([

@@ -1,6 +1,8 @@
 import { REFERENDUM_PRICE_BUFFER } from "@/constants";
 import { DeepPartialSkipArrayKey } from "react-hook-form";
 import { FormSchema, parseNumber } from "../formSchema";
+import { createSignal } from "@react-rxjs/utils";
+import { state } from "@react-rxjs/core";
 
 export const calculatePriceTotals = (
   formFields: DeepPartialSkipArrayKey<FormSchema>,
@@ -21,3 +23,6 @@ export const calculatePriceTotals = (
 
   return { totalAmount, totalAmountToken, totalAmountWithBuffer };
 };
+
+export const [setBountyValue$, setBountyValue] = createSignal<number | null>();
+export const bountyValue$ = state(setBountyValue$, null);

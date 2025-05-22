@@ -26,6 +26,7 @@ import { dismissable, submittedFormData$ } from "../modalActions";
 import { getCreationMultisigCallMetadata, rfpBounty$ } from "./bountyCreation";
 import { createTxProcess } from "./txProcess";
 import { TxWithExplanation } from "./types";
+import { getTrack } from "@/components/RfpForm/data/referendaConstants";
 
 const referendaSdk = createReferendaSdk(typedApi);
 
@@ -131,80 +132,80 @@ export const referendumCreationTx$ = state(
           proposalTxExplanation,
           amount$,
           selectedAccount$.pipe(filter((v) => !!v)),
+          getTrack(bounty.value),
         ]).pipe(
-          map(([proposal, proposalExplanation, amount, selectedAccount]) => {
-            const calls: TxWithExplanation[] = [];
+          map(
+            ([
+              proposal,
+              proposalExplanation,
+              amount,
+              selectedAccount,
+              track,
+            ]) => {
+              const calls: TxWithExplanation[] = [];
 
-            if (multisigTimepoint) {
-              // First unlock the deposit, as it could prevent having enough funds for the following transactions.
-              const metadata = getCreationMultisigCallMetadata(
-                formData,
-                selectedAccount.address
-              );
-              if (metadata) {
+              if (multisigTimepoint) {
+                // First unlock the deposit, as it could prevent having enough funds for the following transactions.
+                const metadata = getCreationMultisigCallMetadata(
+                  formData,
+                  selectedAccount.address
+                );
+                if (metadata) {
+                  calls.push({
+                    tx: typedApi.tx.Multisig.cancel_as_multi({
+                      ...metadata,
+                      timepoint: multisigTimepoint,
+                    }),
+                    explanation: {
+                      text: "Unlock deposit from indexing curator multisig",
+                    },
+                  });
+                }
+              }
+
+              if (amount > 0) {
                 calls.push({
-                  tx: typedApi.tx.Multisig.cancel_as_multi({
-                    ...metadata,
-                    timepoint: multisigTimepoint,
+                  tx: typedApi.tx.Balances.transfer_keep_alive({
+                    dest: MultiAddress.Id(curatorAddr),
+                    value: amount,
                   }),
                   explanation: {
-                    text: "Unlock deposit from indexing curator multisig",
+                    text: "Transfer balance to curator",
+                    params: {
+                      destination: curatorAddr,
+                      value: formatToken(amount),
+                    },
                   },
                 });
               }
-            }
 
-            if (amount > 0) {
               calls.push({
-                tx: typedApi.tx.Balances.transfer_keep_alive({
-                  dest: MultiAddress.Id(curatorAddr),
-                  value: amount,
-                }),
+                tx: referendaSdk.createReferenda(track.origin, proposal),
                 explanation: {
-                  text: "Transfer balance to curator",
+                  text: "Create referendum",
                   params: {
-                    destination: curatorAddr,
-                    value: formatToken(amount),
+                    track: formatTrackName(track.track.name),
+                    call: proposalExplanation,
                   },
                 },
               });
-            }
 
-            calls.push({
-              tx: referendaSdk.createReferenda(
-                {
-                  type: "Origins",
-                  value: {
-                    type: "Treasurer",
-                    value: undefined,
+              if (calls.length > 1) {
+                return {
+                  tx: typedApi.tx.Utility.batch_all({
+                    calls: calls.map((c) => c.tx.decodedCall),
+                  }),
+                  explanation: {
+                    text: "batch",
+                    params: Object.fromEntries(
+                      calls.map((v, i) => [i, v.explanation])
+                    ),
                   },
-                },
-                proposal
-              ),
-              explanation: {
-                text: "Create referendum",
-                params: {
-                  track: "Treasurer",
-                  call: proposalExplanation,
-                },
-              },
-            });
-
-            if (calls.length > 1) {
-              return {
-                tx: typedApi.tx.Utility.batch_all({
-                  calls: calls.map((c) => c.tx.decodedCall),
-                }),
-                explanation: {
-                  text: "batch",
-                  params: Object.fromEntries(
-                    calls.map((v, i) => [i, v.explanation])
-                  ),
-                },
-              };
+                };
+              }
+              return calls[0];
             }
-            return calls[0];
-          }),
+          ),
           dismissable()
         );
       }
@@ -212,6 +213,8 @@ export const referendumCreationTx$ = state(
   ),
   null
 );
+
+const formatTrackName = (track: string) => track.replace(/_/g, " ");
 
 export const [referendumCreationProcess$, submitReferendumCreation] =
   createTxProcess(referendumCreationTx$.pipe(map((v) => v?.tx ?? null)));

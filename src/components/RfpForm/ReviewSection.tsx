@@ -20,7 +20,7 @@ import {
 } from "../ui/table";
 import { Textarea } from "../ui/textarea";
 import { estimatedTimeline$, generateMarkdown, identity$ } from "./data";
-import { calculatePriceTotals } from "./data/price";
+import { calculatePriceTotals, setBountyValue } from "./data/price";
 import { Milestone, parseNumber, RfpControlType } from "./formSchema";
 
 export const ReviewSection: FC<{
@@ -82,6 +82,10 @@ const FundingSummary: FC<{
   const currencyRate = useStateObservable(currencyRate$);
   const { totalAmount, totalAmountToken, totalAmountWithBuffer } =
     calculatePriceTotals(formFields, currencyRate);
+
+  useEffect(() => {
+    setBountyValue(totalAmountWithBuffer);
+  }, [totalAmountWithBuffer]);
 
   return (
     <div className="max-w-xl mx-auto">

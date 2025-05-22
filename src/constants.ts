@@ -1,4 +1,3 @@
-export const TRACK_ID = "treasurer";
 export const BLOCK_LENGTH = 6;
 export const KRAKEN_SYMBOL_PAIR = "KSMUSD";
 export const TOKEN_SYMBOL = "KSM";
