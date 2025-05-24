@@ -10,6 +10,7 @@ import { useWatch } from "react-hook-form";
 import { combineLatest, map } from "rxjs";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Checkbox } from "../ui/checkbox";
 import {
   Table,
   TableBody,
@@ -27,6 +28,7 @@ export const ReviewSection: FC<{
   control: RfpControlType;
   onReset: () => void;
 }> = ({ control, onReset }) => {
+  const [willReturnFunds, setWillReturnFunds] = useState(false);
   const estimatedTimeline = useStateObservable(estimatedTimeline$);
   const milestones = useWatch({ control, name: "milestones" });
   const prizePool = useWatch({ control, name: "prizePool" });
@@ -55,13 +57,38 @@ export const ReviewSection: FC<{
         />
         <TimelineSummary control={control} enoughDevDays={enoughDevDays} />
         <ResultingMarkdown control={control} />
+        <div>
+          <div className="flex items-center space-x-2 px-1">
+            <Checkbox
+              id="return-funds"
+              checked={willReturnFunds}
+              onCheckedChange={() => setWillReturnFunds(!willReturnFunds)}
+            />
+            <label
+              htmlFor="return-funds"
+              className="text-sm font-medium leading-none"
+            >
+              I agree that any unused funds will be returned to the treasury.
+            </label>
+          </div>
+          {willReturnFunds ? null : (
+            <div className="py-2 flex items-center gap-2 text-sm mt-2">
+              <TriangleAlert className="inline-block text-amber-600" />
+              <div>
+                You have to agree to returning funds back to the treasury.
+              </div>
+            </div>
+          )}
+        </div>
         <div className="flex items-center justify-between">
           <Button type="button" variant="secondary" onClick={onReset}>
             Reset form
           </Button>
           <Button
             type="submit"
-            disabled={!milestonesMatchesPrize || !enoughDevDays}
+            disabled={
+              !milestonesMatchesPrize || !enoughDevDays || !willReturnFunds
+            }
           >
             Submit
           </Button>

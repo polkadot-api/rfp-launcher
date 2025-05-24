@@ -20,6 +20,7 @@
     "@polkadot-api/sdk-accounts": "0.2.0",
     "@polkadot-api/sdk-governance": "0.2.0",
     "@polkadot-api/substrate-bindings": "^0.13.0",
+    "@radix-ui/react-checkbox": "^1.3.2",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-popover": "^1.1.14",

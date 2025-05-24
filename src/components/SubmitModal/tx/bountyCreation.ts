@@ -22,7 +22,7 @@ import { Binary } from "polkadot-api";
 import { combineLatest, filter, from, map, merge, of, switchMap } from "rxjs";
 import { submittedFormData$ } from "../modalActions";
 import { createTxProcess } from "./txProcess";
-import { TxExplanation, TxWithExplanation } from "./types";
+import { TxWithExplanation } from "./types";
 
 const totalAmount$ = (formData: FormSchema) =>
   currencyRate$.pipe(
@@ -62,6 +62,8 @@ export const getCreationMultisigCallMetadata = (
   };
 };
 
+export const REMARK_TEXT =
+  "Unused funds from the bounty will be returned to the treasury";
 export const bountyCreationTx$ = state(
   submittedFormData$.pipe(
     switchMap((formData) => {
@@ -103,49 +105,58 @@ export const bountyCreationTx$ = state(
 
       return combineLatest([totalAmount$(formData), multisigMetadata$]).pipe(
         map(([value, multisigMeta]): TxWithExplanation => {
-          const proposeBounty = typedApi.tx.Bounties.propose_bounty({
-            value,
-            description: Binary.fromText(formData.projectTitle),
-          });
-
-          const proposeBountyExplanation: TxExplanation = {
-            text: "Propose bounty",
-            params: {
-              title: formData.projectTitle,
-              value: formatToken(value),
+          const proposeBounty: TxWithExplanation = {
+            tx: typedApi.tx.Bounties.propose_bounty({
+              value,
+              description: Binary.fromText(formData.projectTitle),
+            }),
+            explanation: {
+              text: "Propose bounty",
+              params: {
+                title: formData.projectTitle,
+                value: formatToken(value),
+              },
             },
           };
 
-          if (!multisigMeta)
-            return {
-              tx: proposeBounty,
-              explanation: proposeBountyExplanation,
-            };
+          const remark: TxWithExplanation = {
+            tx: typedApi.tx.System.remark_with_event({
+              remark: Binary.fromText(REMARK_TEXT),
+            }),
+            explanation: {
+              text: "Remark",
+              params: {
+                text: REMARK_TEXT,
+              },
+            },
+          };
 
-          const tx = typedApi.tx.Utility.batch({
-            calls: [
-              proposeBounty.decodedCall,
+          const calls = [proposeBounty.tx, remark.tx];
+          const explanations = [proposeBounty.explanation, remark.explanation];
+
+          if (multisigMeta) {
+            calls.push(
               typedApi.tx.Multisig.approve_as_multi({
                 ...multisigMeta,
                 max_weight: { proof_size: 0n, ref_time: 0n },
                 maybe_timepoint: undefined,
-              }).decodedCall,
-            ],
-          });
+              })
+            );
+            explanations.push({
+              text: "Multisig call to have the curator indexed",
+              params: {
+                address: multisigMeta.multisigAddr,
+              },
+            });
+          }
 
           return {
-            tx,
+            tx: typedApi.tx.Utility.batch({
+              calls: calls.map((v) => v.decodedCall),
+            }),
             explanation: {
               text: "batch",
-              params: {
-                0: proposeBountyExplanation,
-                1: {
-                  text: "Multisig call to have the curator indexed",
-                  params: {
-                    address: multisigMeta.multisigAddr,
-                  },
-                },
-              },
+              params: Object.fromEntries(Object.entries(explanations)),
             },
           };
         })

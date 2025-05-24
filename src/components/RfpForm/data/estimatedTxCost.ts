@@ -1,13 +1,14 @@
 import { typedApi } from "@/chain";
+import { REMARK_TEXT } from "@/components/SubmitModal/tx/bountyCreation";
+import { TOKEN_DECIMALS } from "@/constants";
 import { sum } from "@/lib/math";
 import { MultiAddress } from "@polkadot-api/descriptors";
 import { createReferendaSdk } from "@polkadot-api/sdk-governance";
 import { state } from "@react-rxjs/core";
 import { Binary } from "polkadot-api";
 import { combineLatest, from, map, switchMap } from "rxjs";
-import { decisionDeposit, submissionDeposit } from "./referendaConstants";
 import { bountyValue$ } from "./price";
-import { TOKEN_DECIMALS } from "@/constants";
+import { decisionDeposit, submissionDeposit } from "./referendaConstants";
 
 const TITLE_LENGTH = 100;
 const ALICE = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY";
@@ -17,9 +18,16 @@ const bountyDeposit$ = combineLatest([
   typedApi.constants.Bounties.DataDepositPerByte(),
 ]).pipe(map(([base, perByte]) => base + perByte * BigInt(TITLE_LENGTH)));
 
-const proposeBountyFee$ = typedApi.tx.Bounties.propose_bounty({
-  value: 0n,
-  description: Binary.fromBytes(new Uint8Array(TITLE_LENGTH)),
+const proposeBountyFee$ = typedApi.tx.Utility.batch({
+  calls: [
+    typedApi.tx.System.remark_with_event({
+      remark: Binary.fromText(REMARK_TEXT),
+    }).decodedCall,
+    typedApi.tx.Bounties.propose_bounty({
+      value: 0n,
+      description: Binary.fromBytes(new Uint8Array(TITLE_LENGTH)),
+    }).decodedCall,
+  ],
 }).getEstimatedFees(ALICE);
 
 export const curatorDeposit$ = from(
