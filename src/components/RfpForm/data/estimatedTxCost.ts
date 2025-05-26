@@ -1,6 +1,5 @@
 import { typedApi } from "@/chain";
-import { REMARK_TEXT } from "@/components/SubmitModal/tx/bountyCreation";
-import { TOKEN_DECIMALS } from "@/constants";
+import { REMARK_TEXT, TOKEN_DECIMALS } from "@/constants";
 import { sum } from "@/lib/math";
 import { MultiAddress } from "@polkadot-api/descriptors";
 import { createReferendaSdk } from "@polkadot-api/sdk-governance";

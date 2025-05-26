@@ -7,7 +7,7 @@ import {
 } from "@/components/RfpForm/data";
 import { FormSchema } from "@/components/RfpForm/formSchema";
 import { selectedAccount$ } from "@/components/SelectAccount";
-import { TOKEN_DECIMALS } from "@/constants";
+import { REMARK_TEXT, TOKEN_DECIMALS } from "@/constants";
 import { formatToken } from "@/lib/formatToken";
 import { currencyRate$ } from "@/services/currencyRate";
 import { novasamaProvider } from "@polkadot-api/sdk-accounts";
@@ -23,9 +23,6 @@ import { combineLatest, filter, from, map, merge, of, switchMap } from "rxjs";
 import { submittedFormData$ } from "../modalActions";
 import { createTxProcess } from "./txProcess";
 import { TxWithExplanation } from "./types";
-
-export const REMARK_TEXT =
-  "Unused funds from the bounty will be returned to the treasury";
 
 const totalAmount$ = (formData: FormSchema) =>
   currencyRate$.pipe(
@@ -197,7 +194,7 @@ export const bountyMarkdown$ = state(
 );
 
 export const [bountyCreationProcess$, submitBountyCreation] = createTxProcess(
-  bountyCreationTx$.pipe(map((v) => v?.tx ?? null)),
+  bountyCreationTx$.pipe(map((v) => v?.tx ?? null))
 );
 
 const accountCodec = AccountId();
@@ -207,10 +204,10 @@ const getMultisigAddress = (formData: FormSchema) =>
     getMultisigAccountId({
       threshold: Math.min(
         formData.signatoriesThreshold,
-        formData.supervisors.length,
+        formData.supervisors.length
       ),
       signatories: formData.supervisors.map(accountCodec.enc),
-    }),
+    })
   );
 
 const bountiesSdk = createBountiesSdk(typedApi);
@@ -236,7 +233,7 @@ export const rfpBounty$ = state(
               }
             : null,
         };
-      }),
+      })
     ),
     // try and load existing one if it's there
     submittedFormData$.pipe(
@@ -250,19 +247,19 @@ export const rfpBounty$ = state(
           multisigAddr
             ? typedApi.query.Multisig.Multisigs.getValue(
                 multisigAddr,
-                multisigCreationHash,
+                multisigCreationHash
               )
             : Promise.resolve(null),
         ]);
         const bounty = bounties.find(
           (bounty) =>
             bounty.status.type === "Proposed" &&
-            bounty.description === formData.projectTitle,
+            bounty.description === formData.projectTitle
         );
 
         return { bounty: bounty!, multisigTimepoint: multisig?.when ?? null };
       }),
-      filter((v) => !!v.bounty),
-    ),
-  ),
+      filter((v) => !!v.bounty)
+    )
+  )
 );

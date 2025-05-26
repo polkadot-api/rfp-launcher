@@ -7,3 +7,6 @@ export const CHOPSTICKS_URL = `http://localhost:8133`;
 
 // Light client disabled while https://github.com/paritytech/litep2p/pull/393, which can cause transactions through smoldot to not get included in blocks.
 export const FEATURE_LIGHT_CLIENT = false;
+
+export const REMARK_TEXT =
+  "Unused funds from the bounty will be returned to the treasury";
