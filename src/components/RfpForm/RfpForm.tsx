@@ -29,12 +29,12 @@ const defaultValues: Partial<FormSchema> = {
 }
 
 const steps = [
-  { id: "welcome", title: "welcome", Component: WelcomeSection },
-  { id: "funding", title: "funding", Component: FundingSection },
-  { id: "supervisors", title: "supervisors", Component: SupervisorsSection },
-  { id: "timeline", title: "timeline", Component: TimelineSection },
-  { id: "scope", title: "project scope", Component: ScopeSection },
-  { id: "review", title: "review & submit", Component: ReviewSection },
+  { id: "welcome", title: "Welcome", Component: WelcomeSection },
+  { id: "funding", title: "Funding", Component: FundingSection },
+  { id: "supervisors", title: "Supervisors", Component: SupervisorsSection },
+  { id: "timeline", title: "Timeline", Component: TimelineSection },
+  { id: "scope", title: "Project Scope", Component: ScopeSection },
+  { id: "review", title: "Review & Submit", Component: ReviewSection },
 ]
 
 export const RfpForm = () => {
@@ -78,7 +78,7 @@ export const RfpForm = () => {
   }
 
   const handleResetForm = () => {
-    if (!confirm("are you sure you want to reset the form? this will clear all your progress.")) return
+    if (!confirm("Are you sure you want to reset the form? This will clear all your progress.")) return
     Object.entries(defaultValues).forEach(([key, value]) => setValue(key as keyof FormSchema, value as any))
     setCurrentStepIndex(0)
   }
@@ -108,19 +108,19 @@ export const RfpForm = () => {
                     className="poster-btn btn-secondary flex items-center gap-2"
                   >
                     <ArrowLeft size={16} />
-                    previous
+                    Previous
                   </button>
                 )}
               </div>
 
               <div className="text-sm text-pine-shadow-60 font-medium">
-                step {currentStepIndex + 1} of {steps.length} — {steps[currentStepIndex].title}
+                Step {currentStepIndex + 1} of {steps.length} — {steps[currentStepIndex].title}
               </div>
 
               <div>
                 {currentStepIndex < steps.length - 1 && (
                   <button type="button" onClick={handleNext} className="poster-btn btn-primary flex items-center gap-2">
-                    next
+                    Next
                     <ArrowRight size={16} />
                   </button>
                 )}
@@ -132,7 +132,7 @@ export const RfpForm = () => {
                     }`}
                     disabled={isSubmitDisabled}
                   >
-                    launch rfp
+                    Launch RFP
                     <Rocket size={16} />
                   </button>
                 )}
@@ -146,7 +146,7 @@ export const RfpForm = () => {
                   onClick={handleResetForm}
                   className="text-sm text-tomato-stamp hover:text-midnight-koi transition-colors"
                 >
-                  reset entire form
+                  Reset Entire Form
                 </button>
               </div>
             )}

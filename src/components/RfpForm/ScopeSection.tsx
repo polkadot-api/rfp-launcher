@@ -24,10 +24,10 @@ export const ScopeSection: FC<{ control: RfpControlType }> = ({ control }) => {
 
   return (
     <div className="poster-card">
-      <h3 className="text-3xl font-medium mb-8 text-midnight-koi">project scope</h3>
+      <h3 className="text-3xl font-medium mb-8 text-midnight-koi">Project Scope</h3>
 
       <p className="text-lg text-pine-shadow mb-8 leading-relaxed">
-        define your project's goals, deliverables, and milestones. think of this as your project's roadmap — where
+        Define your project's goals, deliverables, and milestones. Think of this as your project's roadmap — where
         you're going and how you'll get there.
       </p>
 
@@ -37,9 +37,9 @@ export const ScopeSection: FC<{ control: RfpControlType }> = ({ control }) => {
           name="projectTitle"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="poster-label">project title</FormLabel>
+              <FormLabel className="poster-label">Project Title</FormLabel>
               <FormControl>
-                <Input placeholder="enter a descriptive project title" className="poster-input" {...field} />
+                <Input placeholder="Enter a descriptive project title" className="poster-input" {...field} />
               </FormControl>
               <FormMessage className="text-tomato-stamp text-xs" />
             </FormItem>
@@ -51,10 +51,10 @@ export const ScopeSection: FC<{ control: RfpControlType }> = ({ control }) => {
           name="projectScope"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="poster-label">project description</FormLabel>
+              <FormLabel className="poster-label">Project Description</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="describe the project scope, objectives, and deliverables in markdown format..."
+                  placeholder="Describe the project scope, objectives, and deliverables in Markdown format..."
                   className="poster-textarea min-h-32"
                   {...field}
                 />
@@ -69,24 +69,24 @@ export const ScopeSection: FC<{ control: RfpControlType }> = ({ control }) => {
           <div className="bg-canvas-cream border border-pine-shadow-20 rounded-lg p-6">
             <div className="flex items-center gap-2 mb-4">
               <DollarSign size={20} className="text-lake-haze" />
-              <h4 className="text-lg font-medium text-midnight-koi">budget allocation</h4>
+              <h4 className="text-lg font-medium text-midnight-koi">Budget Allocation</h4>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div className="text-center">
-                <div className="text-xs font-medium text-pine-shadow-60 uppercase tracking-wide mb-1">prize pool</div>
+                <div className="text-xs font-medium text-pine-shadow-60 uppercase tracking-wide mb-1">Prize Pool</div>
                 <div className="text-xl font-semibold text-midnight-koi">${prizePoolAmount.toLocaleString()}</div>
               </div>
 
               <div className="text-center">
-                <div className="text-xs font-medium text-pine-shadow-60 uppercase tracking-wide mb-1">allocated</div>
+                <div className="text-xs font-medium text-pine-shadow-60 uppercase tracking-wide mb-1">Allocated</div>
                 <div className={`text-xl font-semibold ${isOverBudget ? "text-tomato-stamp" : "text-midnight-koi"}`}>
                   ${milestonesTotal.toLocaleString()}
                 </div>
               </div>
 
               <div className="text-center">
-                <div className="text-xs font-medium text-pine-shadow-60 uppercase tracking-wide mb-1">remaining</div>
+                <div className="text-xs font-medium text-pine-shadow-60 uppercase tracking-wide mb-1">Remaining</div>
                 <div
                   className={`text-xl font-semibold flex items-center justify-center gap-1 ${
                     isOverBudget ? "text-tomato-stamp" : isBudgetMatched ? "text-lilypad" : "text-midnight-koi"
@@ -102,7 +102,7 @@ export const ScopeSection: FC<{ control: RfpControlType }> = ({ control }) => {
               <div className="mt-4 poster-alert alert-error">
                 <div className="flex items-center gap-2 text-sm">
                   <AlertTriangle size={16} />
-                  <span>milestones exceed prize pool by ${Math.abs(remainingBudget).toLocaleString()}</span>
+                  <span>Milestones exceed prize pool by ${Math.abs(remainingBudget).toLocaleString()}</span>
                 </div>
               </div>
             )}
@@ -111,7 +111,7 @@ export const ScopeSection: FC<{ control: RfpControlType }> = ({ control }) => {
               <div className="mt-4 poster-alert alert-success">
                 <div className="flex items-center gap-2 text-sm">
                   <CheckCircle size={16} />
-                  <span>perfect! milestones match the prize pool exactly.</span>
+                  <span>Perfect! Milestones match the prize pool exactly.</span>
                 </div>
               </div>
             )}
@@ -123,7 +123,7 @@ export const ScopeSection: FC<{ control: RfpControlType }> = ({ control }) => {
           name="milestones"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="poster-label">project milestones</FormLabel>
+              <FormLabel className="poster-label">Project Milestones</FormLabel>
               <FormControl>
                 <MilestonesControl {...field} remainingBudget={remainingBudget} />
               </FormControl>
@@ -155,7 +155,7 @@ const MilestonesControl: FC<ControllerRenderProps<FormSchema, "milestones"> & { 
     <div className="space-y-4">
       {value.length === 0 ? (
         <div className="text-center py-8 text-pine-shadow-60">
-          <p className="mb-4">no milestones defined yet. add your first milestone to get started.</p>
+          <p className="mb-4">No milestones defined yet. Add your first milestone to get started.</p>
         </div>
       ) : (
         <ul className="space-y-4">
@@ -169,7 +169,7 @@ const MilestonesControl: FC<ControllerRenderProps<FormSchema, "milestones"> & { 
                       {i + 1}
                     </span>
                     <h4 className="text-lg font-medium text-midnight-koi">
-                      milestone {i + 1}
+                      Milestone {i + 1}
                       {milestoneAmount > 0 && (
                         <span className="text-pine-shadow-60 text-sm font-normal ml-2">
                           ${milestoneAmount.toLocaleString()}
@@ -188,10 +188,10 @@ const MilestonesControl: FC<ControllerRenderProps<FormSchema, "milestones"> & { 
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                   <FormItem>
-                    <FormLabel className="poster-label">title</FormLabel>
+                    <FormLabel className="poster-label">Title</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="milestone title"
+                        placeholder="Milestone title"
                         className="poster-input"
                         {...editProps(milestone, i, "title")}
                       />
@@ -199,7 +199,7 @@ const MilestonesControl: FC<ControllerRenderProps<FormSchema, "milestones"> & { 
                   </FormItem>
 
                   <FormItem>
-                    <FormLabel className="poster-label">amount (usd)</FormLabel>
+                    <FormLabel className="poster-label">Amount (USD)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -212,11 +212,11 @@ const MilestonesControl: FC<ControllerRenderProps<FormSchema, "milestones"> & { 
                 </div>
 
                 <FormItem>
-                  <FormLabel className="poster-label">deliverables</FormLabel>
+                  <FormLabel className="poster-label">Deliverables</FormLabel>
                   <FormControl>
                     <Textarea
                       {...editProps(milestone, i, "description")}
-                      placeholder="describe what will be delivered in this milestone..."
+                      placeholder="Describe what will be delivered in this milestone..."
                       className="poster-textarea min-h-20"
                     />
                   </FormControl>
@@ -243,7 +243,7 @@ const MilestonesControl: FC<ControllerRenderProps<FormSchema, "milestones"> & { 
           }
         >
           <Plus size={16} />
-          add milestone
+          Add Milestone
         </button>
       </div>
 

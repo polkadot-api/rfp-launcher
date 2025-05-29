@@ -232,7 +232,6 @@
     color: var(--midnight-koi);
     letter-spacing: 0.02em;
     line-height: 1;
-    text-transform: lowercase;
   }
 
   .poster-brand-subtitle {
@@ -342,7 +341,7 @@
 
   /* Form Elements - Minimal Underline Style */
   .poster-input {
-    @apply w-full bg-transparent border-0 border-b-2 px-0 py-3;
+    @apply w-full bg-transparent border-0 border-b-2 pl-3 pr-0 py-3; /* Changed px-0 to pl-3 pr-0 */
     border-color: var(--pine-shadow-20);
     color: var(--midnight-koi);
     font-family: var(--font-body);

@@ -6,30 +6,29 @@ export const WelcomeSection: FC = () => (
     <div
       className="absolute inset-0 opacity-30"
       style={{
-        backgroundImage: "url('/placeholder.svg?height=400&width=1200')",
+        backgroundImage: "url('/rocket.jpg?height=400&width=1200')",
         backgroundSize: "cover",
         backgroundPosition: "center",
-        filter: "blur(8px) saturate(0.7)",
+        filter: "blur(2px) saturate(0.95)",
         mixBlendMode: "multiply",
       }}
     />
 
     {/* Content overlay */}
     <div className="relative z-10 max-w-2xl">
-      <h2 className="text-4xl font-medium mb-6 text-midnight-koi">launch your request for proposal</h2>
+      <h2 className="text-4xl font-medium mb-6 text-midnight-koi">Launch your request for proposal</h2>
 
       <div className="space-y-4 text-lg leading-relaxed text-pine-shadow">
         <p>
-          this tool guides you through creating an rfp on kusama. think of it as your lakeside productivity companion —
-          technically working, but with bare feet on the dock.
+          This tool guides you through creating an RFP (request for proposal).
         </p>
         <p>
-          after completing the form, you'll submit three transactions to set up the rfp. then we'll provide a
+          After completing the form, you'll submit three transactions to set up the RFP. Then we'll provide a
           pre-formatted body for your referendum.
         </p>
       </div>
 
-      <div className="mt-8 text-sm text-pine-shadow-60">grab some lemonade and let's get started.</div>
+      <div className="mt-8 text-sm text-pine-shadow-60">Grab some lemonade and let's get started.</div>
     </div>
   </div>
 )

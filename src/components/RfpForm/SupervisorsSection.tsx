@@ -19,9 +19,9 @@ export const SupervisorsSection: FC<{ control: RfpControlType }> = ({ control })
 
   return (
     <div className="vintage-card supervisors-section section-divider">
-      <h3 className="text-3xl font-medium mb-6 text-midnight-koi">supervisors</h3>
+      <h3 className="text-3xl font-medium mb-6 text-midnight-koi">Supervisors</h3>
       <p className="text-lg text-pine-shadow/80 mb-12 leading-relaxed">
-        curators for this bounty, responsible of choosing the implementors and evaluating the development
+        Curators for this bounty, responsible of choosing the implementors and evaluating the development
       </p>
       <div className="space-y-8">
         <FormField
@@ -42,8 +42,8 @@ export const SupervisorsSection: FC<{ control: RfpControlType }> = ({ control })
             min={1}
             control={control}
             name="signatoriesThreshold"
-            label="signatories threshold"
-            description="minimum required amount of supervisors to sign and perform decisions"
+            label="Signatories Threshold"
+            description="Minimum required amount of supervisors to sign and perform decisions."
           />
         ) : null}
       </div>
@@ -86,19 +86,19 @@ const SupervisorsControl: FC<ControllerRenderProps<FormSchema, "supervisors">> =
       <div className="space-y-3">
         <div className="flex flex-col gap-4 sm:flex-row">
           <Input
-            placeholder="supervisor address"
+            placeholder="Supervisor address"
             value={newAddr}
             onChange={(evt) => setNewAddr(evt.target.value)}
             aria-invalid={addrInvalid}
             className="vintage-input flex-1"
           />
           <Button type="button" className="vintage-button btn-primary" onClick={addSupervisor}>
-            add supervisor
+            Add Supervisor
           </Button>
         </div>
         {addrInvalid ? (
           <div className="alert-box alert-danger">
-            <div className="text-base">value is not a valid ss58 address</div>
+            <div className="text-base">Value is not a valid SS58 address.</div>
           </div>
         ) : null}
       </div>

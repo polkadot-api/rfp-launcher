@@ -50,7 +50,7 @@ export const ReviewSection: FC<{
 
   return (
     <div className="poster-card">
-      <h3 className="text-3xl font-medium mb-8 text-midnight-koi">review & submit</h3>
+      <h3 className="text-3xl font-medium mb-8 text-midnight-koi">Review & Submit</h3>
 
       {/* Summary Grid - Three Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -72,14 +72,14 @@ export const ReviewSection: FC<{
             className="mt-1 border-pine-shadow data-[state=checked]:bg-lilypad data-[state=checked]:text-canvas-cream"
           />
           <label htmlFor="return-funds" className="text-pine-shadow leading-tight cursor-pointer text-sm">
-            i agree that any unused funds will be returned to the treasury.
+            I agree that any unused funds will be returned to the Treasury.
           </label>
         </div>
         {!willReturnFunds && (
           <div className="mt-3 poster-alert alert-error">
             <div className="flex items-center gap-2">
               <TriangleAlert size={16} />
-              <div className="text-sm font-medium">you must agree to return unused funds to the treasury.</div>
+              <div className="text-sm font-medium">You must agree to return unused funds to the Treasury.</div>
             </div>
           </div>
         )}
@@ -105,18 +105,18 @@ const FundingSummary: FC<{
     <div className="bg-canvas-cream border border-lake-haze rounded-lg p-6">
       <h4 className="flex items-center gap-2 text-lg font-medium text-midnight-koi mb-4">
         <DollarSign size={20} className="text-lake-haze" />
-        funding breakdown
+        Funding Breakdown
       </h4>
 
       <div className="space-y-3">
         <div className="flex justify-between items-center">
-          <span className="text-sm text-pine-shadow">prize pool</span>
+          <span className="text-sm text-pine-shadow">Prize Pool</span>
           <span className="font-medium text-midnight-koi">{formatUsd(formFields.prizePool)}</span>
         </div>
 
         {(formFields.milestones ?? []).map((milestone, i) => (
           <div key={i} className="flex justify-between items-center pl-4 text-xs">
-            <span className="text-pine-shadow-60">milestone #{i + 1}</span>
+            <span className="text-pine-shadow-60">Milestone #{i + 1}</span>
             <span className="text-pine-shadow">{formatUsd(milestone.amount)}</span>
           </div>
         ))}
@@ -126,22 +126,22 @@ const FundingSummary: FC<{
             milestonesMatchesPrize ? "text-lilypad" : "text-tomato-stamp"
           }`}
         >
-          <span className="text-sm font-medium">milestone sum</span>
+          <span className="text-sm font-medium">Milestone Sum</span>
           <span className="font-medium">{formatUsd(milestonesTotal)}</span>
         </div>
 
         <div className="flex justify-between items-center">
-          <span className="text-sm text-pine-shadow">finder's fee</span>
+          <span className="text-sm text-pine-shadow">Finder's Fee</span>
           <span className="text-midnight-koi">{formatUsd(formFields.findersFee)}</span>
         </div>
 
         <div className="flex justify-between items-center">
-          <span className="text-sm text-pine-shadow">supervisor's fee</span>
+          <span className="text-sm text-pine-shadow">Supervisor's Fee</span>
           <span className="text-midnight-koi">{formatUsd(formFields.supervisorsFee)}</span>
         </div>
 
         <div className="flex justify-between items-center pt-3 border-t border-pine-shadow-20">
-          <span className="font-semibold text-midnight-koi">total +25% buffer</span>
+          <span className="font-semibold text-midnight-koi">Total +25% Buffer</span>
           <span className="font-bold text-midnight-koi">{formatCurrency(totalAmountWithBuffer, TOKEN_SYMBOL)}</span>
         </div>
 
@@ -154,7 +154,7 @@ const FundingSummary: FC<{
         <div className="mt-4 poster-alert alert-error">
           <div className="flex items-center gap-2 text-xs">
             <OctagonAlert size={14} />
-            <div className="font-medium">milestones must add up to the total prize pool.</div>
+            <div className="font-medium">Milestones must add up to the total prize pool.</div>
           </div>
         </div>
       )}
@@ -184,31 +184,31 @@ const TimelineSummary: FC<{
     <div className="bg-canvas-cream border border-sun-bleach rounded-lg p-6">
       <h4 className="flex items-center gap-2 text-lg font-medium text-midnight-koi mb-4">
         <Clock size={20} className="text-sun-bleach" />
-        timeline
+        Timeline
       </h4>
 
       <div className="space-y-3">
         <div className="grid grid-cols-[1fr,auto] gap-4 items-center">
-          <span className="text-sm text-pine-shadow">referendum executed</span>
+          <span className="text-sm text-pine-shadow">Referendum Executed</span>
           <span className="text-xs text-midnight-koi font-mono tabular-nums">
             {formatDate(estimatedTimeline?.referendumDeadline)}
           </span>
         </div>
 
         <div className="grid grid-cols-[1fr,auto] gap-4 items-center py-2 bg-sun-bleach bg-opacity-10 px-3 rounded">
-          <span className="font-medium text-midnight-koi">bounty funding</span>
+          <span className="font-medium text-midnight-koi">Bounty Funding</span>
           <span className="font-medium text-midnight-koi text-xs font-mono tabular-nums">
             {formatDate(estimatedTimeline?.bountyFunding)}
           </span>
         </div>
 
         <div className="grid grid-cols-[1fr,auto] gap-4 items-center">
-          <span className="text-sm text-pine-shadow">submission deadline</span>
+          <span className="text-sm text-pine-shadow">Funds Expiry Deadline</span>
           <span className="text-xs text-midnight-koi font-mono tabular-nums">{formatDate(submissionDeadline)}</span>
         </div>
 
         <div className="grid grid-cols-[1fr,auto] gap-4 items-center">
-          <span className="text-sm text-pine-shadow">project completion</span>
+          <span className="text-sm text-pine-shadow">Project Completion</span>
           <span className="text-xs text-midnight-koi font-mono tabular-nums">{formatDate(projectCompletion)}</span>
         </div>
 
@@ -217,7 +217,7 @@ const TimelineSummary: FC<{
             enoughDevDays ? "text-lilypad" : "text-tomato-stamp"
           }`}
         >
-          <span className="font-medium">development time</span>
+          <span className="font-medium">Development Time</span>
           <span className="font-medium text-xs font-mono tabular-nums">
             {devDays != null ? `${Math.round(devDays)} days` : "—"}
           </span>
@@ -228,7 +228,7 @@ const TimelineSummary: FC<{
         <div className="mt-4 poster-alert alert-error">
           <div className="flex items-center gap-2 text-xs">
             <OctagonAlert size={14} />
-            <div className="font-medium">not enough development days</div>
+            <div className="font-medium">Not enough development days.</div>
           </div>
         </div>
       ) : devDays != null && daysToLateSubmission != null && daysToLateSubmission < 1 ? (
@@ -236,7 +236,7 @@ const TimelineSummary: FC<{
           <div className="flex items-center gap-2 text-xs">
             <TriangleAlert size={14} />
             <div className="font-medium">
-              late submission may delay funding by {Math.round(lateSubmissionDiff!)} days.
+              Late submission may delay funding by {Math.round(lateSubmissionDiff!)} days.
             </div>
           </div>
         </div>
@@ -256,36 +256,36 @@ const ProjectSummary: FC<{
     <div className="bg-canvas-cream border border-lilypad rounded-lg p-6">
       <h4 className="flex items-center gap-2 text-lg font-medium text-midnight-koi mb-4">
         <Users size={20} className="text-lilypad" />
-        project summary
+        Project Summary
       </h4>
 
       <div className="space-y-4">
         <div>
-          <div className="text-xs font-medium text-pine-shadow-60 uppercase tracking-wide mb-1">project title</div>
+          <div className="text-xs font-medium text-pine-shadow-60 uppercase tracking-wide mb-1">Project Title</div>
           <div className="text-sm font-medium text-midnight-koi break-words">
-            {formFields.projectTitle || "untitled project"}
+            {formFields.projectTitle || "Untitled Project"}
           </div>
         </div>
 
         <div>
-          <div className="text-xs font-medium text-pine-shadow-60 uppercase tracking-wide mb-1">supervisors</div>
+          <div className="text-xs font-medium text-pine-shadow-60 uppercase tracking-wide mb-1">Supervisors</div>
           <div className="text-sm text-pine-shadow">
-            {supervisors.length > 0 ? `${supervisors.length} supervisor${supervisors.length > 1 ? "s" : ""}` : "none"}
+            {supervisors.length > 0 ? `${supervisors.length} supervisor${supervisors.length > 1 ? "s" : ""}` : "None"}
           </div>
           {supervisors.length > 1 && (
-            <div className="text-xs text-pine-shadow-60">threshold: {formFields.signatoriesThreshold || 2}</div>
+            <div className="text-xs text-pine-shadow-60">Threshold: {formFields.signatoriesThreshold || 2}</div>
           )}
         </div>
 
         <div>
-          <div className="text-xs font-medium text-pine-shadow-60 uppercase tracking-wide mb-1">milestones</div>
+          <div className="text-xs font-medium text-pine-shadow-60 uppercase tracking-wide mb-1">Milestones</div>
           <div className="text-sm text-pine-shadow">
-            {milestones.length > 0 ? `${milestones.length} milestone${milestones.length > 1 ? "s" : ""}` : "none"}
+            {milestones.length > 0 ? `${milestones.length} milestone${milestones.length > 1 ? "s" : ""}` : "None"}
           </div>
         </div>
 
         <div>
-          <div className="text-xs font-medium text-pine-shadow-60 uppercase tracking-wide mb-1">submission window</div>
+          <div className="text-xs font-medium text-pine-shadow-60 uppercase tracking-wide mb-1">Submission Window</div>
           <div className="text-sm text-pine-shadow">
             {formFields.fundsExpiry || 1} week{(formFields.fundsExpiry || 1) > 1 ? "s" : ""} after funding
           </div>
@@ -294,7 +294,7 @@ const ProjectSummary: FC<{
         <div className="pt-3 border-t border-pine-shadow-20">
           <div className="flex items-center gap-2">
             <CheckCircle2 size={16} className="text-lilypad" />
-            <span className="text-sm text-pine-shadow font-medium">ready for submission</span>
+            <span className="text-sm text-pine-shadow font-medium">Ready for Submission</span>
           </div>
         </div>
       </div>
@@ -365,7 +365,7 @@ const ResultingMarkdown: FC<{
       <div className="flex items-center justify-between mb-4">
         <h4 className="flex items-center gap-2 text-lg font-medium text-midnight-koi">
           <FileText size={20} className="text-tomato-stamp" />
-          rfp body preview
+          RFP Body Preview
         </h4>
         <div className="flex items-center gap-2">
           <button
@@ -374,7 +374,7 @@ const ResultingMarkdown: FC<{
             className="poster-btn btn-secondary flex items-center gap-1 text-xs py-2 px-3"
           >
             <RefreshCw size={14} />
-            refresh
+            Refresh
           </button>
           <button
             type="button"
@@ -382,7 +382,7 @@ const ResultingMarkdown: FC<{
             className="poster-btn btn-primary flex items-center gap-1 text-xs py-2 px-3"
           >
             <Copy size={14} />
-            {copied ? "copied!" : "copy"}
+            {copied ? "Copied!" : "Copy"}
           </button>
         </div>
       </div>
@@ -393,7 +393,7 @@ const ResultingMarkdown: FC<{
         <div className="flex items-start gap-2">
           <BadgeInfo size={16} className="mt-0.5 shrink-0" />
           <div className="text-sm">
-            <strong>next step:</strong> copy this markdown content and paste it into the body of your referendum once
+            <strong>Next Step:</strong> Copy this Markdown content and paste it into the body of your referendum once
             submitted.
           </div>
         </div>

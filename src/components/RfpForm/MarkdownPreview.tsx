@@ -30,7 +30,7 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, onCo
           onClick={(e) => handleTabClick("rendered", e)}
         >
           <Eye size={14} className="inline mr-1" />
-          preview
+          Preview
         </button>
         <button
           type="button"
@@ -38,7 +38,7 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, onCo
           onClick={(e) => handleTabClick("raw", e)}
         >
           <Code size={14} className="inline mr-1" />
-          raw markdown
+          Raw Markdown
         </button>
       </div>
 
@@ -51,13 +51,13 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, onCo
         <div className="border border-pine-shadow-20 rounded-b-lg">
           <Textarea
             readOnly
-            value={markdown || "loading markdown preview..."}
+            value={markdown || "Loading Markdown preview..."}
             className="w-full min-h-[300px] font-mono text-sm border-0 rounded-b-lg resize-none"
             style={{
               fontFamily: '"SF Mono", "Monaco", "Inconsolata", "Roboto Mono", monospace',
               borderRadius: "0 0 0.5rem 0.5rem",
             }}
-            placeholder="markdown preview will appear here..."
+            placeholder="Markdown preview will appear here..."
           />
         </div>
       )}
@@ -68,7 +68,7 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, onCo
 // Simple markdown renderer component with normal fonts
 const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
   if (!content) {
-    return <div className="text-pine-shadow-60 italic text-sm">loading markdown preview...</div>
+    return <div className="text-pine-shadow-60 italic text-sm">Loading Markdown preview...</div>
   }
 
   // Simple markdown parsing

@@ -1,25 +1,17 @@
-import { formatDate } from "@/lib/date";
-import { useStateObservable } from "@react-rxjs/core";
-import { addWeeks, differenceInDays, format } from "date-fns";
-import { FC } from "react";
-import { useWatch } from "react-hook-form";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { DatePicker } from "../ui/datepicker";
-import {
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../ui/form";
-import { estimatedTimeline$ } from "./data";
-import { FormInputField } from "./FormInputField";
-import { RfpControlType } from "./formSchema";
+import { formatDate } from "@/lib/date"
+import { useStateObservable } from "@react-rxjs/core"
+import { addWeeks, differenceInDays, format } from "date-fns"
+import type { FC } from "react"
+import { useWatch } from "react-hook-form"
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
+import { DatePicker } from "../ui/datepicker"
+import { FormDescription, FormField, FormItem, FormLabel, FormMessage } from "../ui/form"
+import { estimatedTimeline$ } from "./data"
+import { FormInputField } from "./FormInputField"
+import type { RfpControlType } from "./formSchema"
 
-export const TimelineSection: FC<{ control: RfpControlType }> = ({
-  control,
-}) => {
-  const submissionDeadline = useSubmissionDeadline(control);
+export const TimelineSection: FC<{ control: RfpControlType }> = ({ control }) => {
+  const submissionDeadline = useSubmissionDeadline(control)
 
   return (
     <Card>
@@ -32,27 +24,20 @@ export const TimelineSection: FC<{ control: RfpControlType }> = ({
           type="number"
           min={1}
           name="fundsExpiry"
-          label="Submission Deadline"
-          description="Amount of weeks after bounty funding in which the bounty has to be cancelled if there were no implementors"
+          label="Funds Expiry (Weeks)"
+          description="Number of weeks after bounty funding until the bounty expires if no implementors are found."
         />
         <FormField
           control={control}
           name="projectCompletion"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel>Project Completion</FormLabel>
+              <FormLabel>Project Completion Date</FormLabel>
               <DatePicker
                 {...field}
-                disabled={(v) =>
-                  v.getTime() <=
-                  (submissionDeadline
-                    ? submissionDeadline.getTime()
-                    : Date.now())
-                }
+                disabled={(v) => v.getTime() <= (submissionDeadline ? submissionDeadline.getTime() : Date.now())}
               />
-              <FormDescription>
-                Deadline where the project must be completed
-              </FormDescription>
+              <FormDescription>The date by which the project must be fully completed.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -60,35 +45,30 @@ export const TimelineSection: FC<{ control: RfpControlType }> = ({
         <EstimatedTimeline control={control} />
       </CardContent>
     </Card>
-  );
-};
+  )
+}
 
 const useSubmissionDeadline = (control: RfpControlType) => {
-  const estimatedTimeline = useStateObservable(estimatedTimeline$);
+  const estimatedTimeline = useStateObservable(estimatedTimeline$)
   const fundsExpiry = useWatch({
     name: "fundsExpiry",
     control,
-  });
+  })
 
-  return estimatedTimeline
-    ? addWeeks(estimatedTimeline.bountyFunding, fundsExpiry || 1)
-    : null;
-};
+  return estimatedTimeline ? addWeeks(estimatedTimeline.bountyFunding, fundsExpiry || 1) : null
+}
 
 const EstimatedTimeline: FC<{ control: RfpControlType }> = ({ control }) => {
-  const estimatedTimeline = useStateObservable(estimatedTimeline$);
+  const estimatedTimeline = useStateObservable(estimatedTimeline$)
   const projectCompletion = useWatch({
     name: "projectCompletion",
     control,
-  });
-  const submissionDeadline = useSubmissionDeadline(control);
+  })
+  const submissionDeadline = useSubmissionDeadline(control)
 
   const lateSubmissionDiff = estimatedTimeline
-    ? differenceInDays(
-        estimatedTimeline.referendumSubmissionDeadline,
-        new Date()
-      )
-    : 0;
+    ? differenceInDays(estimatedTimeline.referendumSubmissionDeadline, new Date())
+    : 0
 
   return (
     <div>
@@ -96,44 +76,28 @@ const EstimatedTimeline: FC<{ control: RfpControlType }> = ({ control }) => {
       {estimatedTimeline ? (
         <ol className="text-sm text-foreground/80 list-disc pl-4 leading-normal">
           <li>
-            Referendum executed deadline:{" "}
-            <span className="text-foreground">
-              {formatDate(estimatedTimeline.referendumDeadline)}
-            </span>
+            Referendum Executed Deadline:{" "}
+            <span className="text-foreground">{formatDate(estimatedTimeline.referendumDeadline)}</span>
           </li>
           <li>
-            Bounty funding:{" "}
-            <span className="text-foreground">
-              {formatDate(estimatedTimeline.bountyFunding)}
-            </span>
+            Bounty Funding: <span className="text-foreground">{formatDate(estimatedTimeline.bountyFunding)}</span>
           </li>
           <li>
-            Bounty funding if RFP is submitted later than{" "}
-            {format(
-              estimatedTimeline.referendumSubmissionDeadline,
-              lateSubmissionDiff < 2 ? "LLL do kk:mm" : "LLL do"
-            )}
-            :{" "}
-            <span className="text-foreground">
-              {formatDate(estimatedTimeline.lateBountyFunding)}
-            </span>
+            Bounty Funding (if RFP submitted after deadline):{" "}
+            {format(estimatedTimeline.referendumSubmissionDeadline, lateSubmissionDiff < 2 ? "LLL do kk:mm" : "LLL do")}
+            : <span className="text-foreground">{formatDate(estimatedTimeline.lateBountyFunding)}</span>
           </li>
           <li>
-            Estimated submission deadline:{" "}
-            <span className="text-foreground">
-              {formatDate(submissionDeadline)}
-            </span>
+            Funds Expiry Deadline: <span className="text-foreground">{formatDate(submissionDeadline)}</span>
           </li>
           <li>
-            Project completion:{" "}
-            <span className="text-foreground">
-              {formatDate(projectCompletion)}
-            </span>
+            Project Completion Date: <span className="text-foreground">{formatDate(projectCompletion)}</span>
           </li>
         </ol>
       ) : (
-        <span className="text-sm text-foreground/60">Loading…</span>
+        <span className="text-sm text-foreground/60">Loading...</span>
       )}
     </div>
-  );
-};
+  )
+}
+
