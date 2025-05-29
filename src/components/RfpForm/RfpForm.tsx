@@ -39,6 +39,7 @@ const steps = [
 
 export const RfpForm = () => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
+  const [isReturnFundsAgreed, setIsReturnFundsAgreed] = useState(false)
 
   const methods = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
@@ -80,12 +81,14 @@ export const RfpForm = () => {
   const handleResetForm = () => {
     if (!confirm("Are you sure you want to reset the form? This will clear all your progress.")) return
     Object.entries(defaultValues).forEach(([key, value]) => setValue(key as keyof FormSchema, value as any))
+    setIsReturnFundsAgreed(false) // Reset agreement state as well
     setCurrentStepIndex(0)
   }
 
   const ActiveStepComponent = steps[currentStepIndex].Component
+  const isReviewStep = currentStepIndex === steps.length - 1
   const hasErrors = Object.keys(errors).length > 0
-  const isSubmitDisabled = hasErrors || !isValid
+  const isSubmitDisabled = hasErrors || !isValid || (isReviewStep && !isReturnFundsAgreed)
 
   return (
     <FormProvider {...methods}>
@@ -93,8 +96,17 @@ export const RfpForm = () => {
         <form onSubmit={handleSubmit(submit)} className="space-y-12">
           {/* Current step content */}
           <div className="poster-section">
-            {/* @ts-ignore */}
-            <ActiveStepComponent control={control} onReset={handleResetForm} />
+            {isReviewStep ? (
+              <ReviewSection
+                control={control}
+                onReset={handleResetForm}
+                isReturnFundsAgreed={isReturnFundsAgreed}
+                setIsReturnFundsAgreed={setIsReturnFundsAgreed}
+              />
+            ) : (
+              // @ts-ignore
+              <ActiveStepComponent control={control} onReset={handleResetForm} />
+            )}
           </div>
 
           {/* Navigation */}
@@ -124,7 +136,7 @@ export const RfpForm = () => {
                     <ArrowRight size={16} />
                   </button>
                 )}
-                {currentStepIndex === steps.length - 1 && (
+                {isReviewStep && (
                   <button
                     type="submit"
                     className={`poster-btn btn-success flex items-center gap-2 ${
@@ -139,7 +151,7 @@ export const RfpForm = () => {
               </div>
             </div>
 
-            {currentStepIndex === steps.length - 1 && (
+            {isReviewStep && (
               <div className="mt-6 text-center">
                 <button
                   type="button"

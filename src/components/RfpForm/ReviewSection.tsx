@@ -3,7 +3,9 @@
 import { TOKEN_SYMBOL } from "@/constants"
 import { formatDate } from "@/lib/date"
 import { formatCurrency, formatUsd } from "@/lib/formatToken"
+import { getPublicKey, sliceMiddleAddr } from "@/lib/ss58"
 import { currencyRate$ } from "@/services/currencyRate"
+import { PolkadotIdenticon } from "@polkadot-api/react-components"
 import { useStateObservable } from "@react-rxjs/core"
 import { addWeeks, differenceInDays } from "date-fns"
 import {
@@ -17,8 +19,9 @@ import {
   Users,
   CheckCircle2,
   Copy,
+  CheckCircle,
 } from "lucide-react"
-import { type FC, useEffect, useState, useMemo } from "react"
+import { type FC, useEffect, useState, useMemo, type Dispatch, type SetStateAction } from "react"
 import { useWatch } from "react-hook-form"
 import { combineLatest, map } from "rxjs"
 import { Checkbox } from "../ui/checkbox"
@@ -28,11 +31,19 @@ import { generateMarkdown } from "./data/markdown"
 import { MarkdownPreview } from "./MarkdownPreview"
 import { type Milestone, parseNumber, type RfpControlType } from "./formSchema"
 
-export const ReviewSection: FC<{
+interface ReviewSectionProps {
   control: RfpControlType
   onReset: () => void
-}> = ({ control }) => {
-  const [willReturnFunds, setWillReturnFunds] = useState(false)
+  isReturnFundsAgreed: boolean
+  setIsReturnFundsAgreed: Dispatch<SetStateAction<boolean>>
+}
+
+export const ReviewSection: FC<ReviewSectionProps> = ({
+  control,
+  onReset,
+  isReturnFundsAgreed,
+  setIsReturnFundsAgreed,
+}) => {
   const estimatedTimeline = useStateObservable(estimatedTimeline$)
 
   const milestones = useWatch({ control, name: "milestones" })
@@ -67,15 +78,15 @@ export const ReviewSection: FC<{
         <div className="flex items-start space-x-3">
           <Checkbox
             id="return-funds"
-            checked={willReturnFunds}
-            onCheckedChange={(checked) => setWillReturnFunds(!!checked)}
+            checked={isReturnFundsAgreed}
+            onCheckedChange={(checked) => setIsReturnFundsAgreed(!!checked)}
             className="mt-1 border-pine-shadow data-[state=checked]:bg-lilypad data-[state=checked]:text-canvas-cream"
           />
           <label htmlFor="return-funds" className="text-pine-shadow leading-tight cursor-pointer text-sm">
             I agree that any unused funds will be returned to the Treasury.
           </label>
         </div>
-        {!willReturnFunds && (
+        {!isReturnFundsAgreed && (
           <div className="mt-3 poster-alert alert-error">
             <div className="flex items-center gap-2">
               <TriangleAlert size={16} />
@@ -87,6 +98,21 @@ export const ReviewSection: FC<{
     </div>
   )
 }
+
+const FundingSummaryListItem: FC<{
+  label: string
+  value: string | number | null | undefined
+  isSubItem?: boolean
+  valueClass?: string
+  labelClass?: string
+}> = ({ label, value, isSubItem, valueClass, labelClass }) => (
+  <div className={`flex justify-between items-baseline ${isSubItem ? "pl-4" : ""}`}>
+    <span className={`text-sm ${isSubItem ? "text-pine-shadow-60" : "text-pine-shadow"} ${labelClass}`}>{label}</span>
+    <span className={`font-medium text-midnight-koi tabular-nums ${isSubItem ? "text-xs" : ""} ${valueClass}`}>
+      {value}
+    </span>
+  </div>
+)
 
 const FundingSummary: FC<{
   control: RfpControlType
@@ -101,6 +127,28 @@ const FundingSummary: FC<{
     setBountyValue(totalAmountWithBuffer)
   }, [totalAmountWithBuffer])
 
+  const formattedKsmString = formatCurrency(totalAmountWithBuffer, TOKEN_SYMBOL, 2)
+  let ksmValueDisplay = "Calculating..."
+  let ksmUnitDisplay = ""
+
+  if (totalAmountWithBuffer != null && formattedKsmString) {
+    const parts = formattedKsmString.split(" ")
+    if (parts.length >= 1) {
+      ksmValueDisplay = parts[0]
+      if (parts.length >= 2) {
+        ksmUnitDisplay = parts[1]
+      } else {
+        const symbolIndex = ksmValueDisplay.indexOf(TOKEN_SYMBOL)
+        if (symbolIndex > -1 && ksmValueDisplay.endsWith(TOKEN_SYMBOL)) {
+          ksmUnitDisplay = TOKEN_SYMBOL
+          ksmValueDisplay = ksmValueDisplay.substring(0, symbolIndex).trim()
+        } else {
+          ksmUnitDisplay = TOKEN_SYMBOL
+        }
+      }
+    }
+  }
+
   return (
     <div className="bg-canvas-cream border border-lake-haze rounded-lg p-6">
       <h4 className="flex items-center gap-2 text-lg font-medium text-midnight-koi mb-4">
@@ -109,43 +157,45 @@ const FundingSummary: FC<{
       </h4>
 
       <div className="space-y-3">
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-pine-shadow">Prize Pool</span>
-          <span className="font-medium text-midnight-koi">{formatUsd(formFields.prizePool)}</span>
-        </div>
+        <FundingSummaryListItem label="Prize Pool" value={formatUsd(formFields.prizePool)} />
 
         {(formFields.milestones ?? []).map((milestone, i) => (
-          <div key={i} className="flex justify-between items-center pl-4 text-xs">
-            <span className="text-pine-shadow-60">Milestone #{i + 1}</span>
-            <span className="text-pine-shadow">{formatUsd(milestone.amount)}</span>
-          </div>
+          <FundingSummaryListItem
+            key={i}
+            label={`Milestone #${i + 1}`}
+            value={formatUsd(milestone.amount)}
+            isSubItem
+            valueClass="text-pine-shadow"
+          />
         ))}
 
         <div
-          className={`flex justify-between items-center py-2 border-t border-pine-shadow-20 ${
+          className={`flex justify-between items-baseline py-2 border-t border-pine-shadow-20 ${
             milestonesMatchesPrize ? "text-lilypad" : "text-tomato-stamp"
           }`}
         >
           <span className="text-sm font-medium">Milestone Sum</span>
-          <span className="font-medium">{formatUsd(milestonesTotal)}</span>
+          <span className="font-medium tabular-nums">{formatUsd(milestonesTotal)}</span>
         </div>
 
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-pine-shadow">Finder's Fee</span>
-          <span className="text-midnight-koi">{formatUsd(formFields.findersFee)}</span>
+        <FundingSummaryListItem label="Finder's Fee" value={formatUsd(formFields.findersFee)} />
+        <FundingSummaryListItem label="Supervisor's Fee" value={formatUsd(formFields.supervisorsFee)} />
+
+        {/* Enhanced Total + Buffer Section */}
+        <div className="pt-4 mt-4 border-t-2 border-lake-haze">
+          <div className="flex justify-between items-start">
+            <div className="flex flex-col items-start">
+              <span className="text-base font-semibold text-midnight-koi">Total</span>
+              <span className="text-xs text-pine-shadow-60">+25% Buffer</span>
+            </div>
+            <div className="flex flex-col items-end">
+              <span className="text-xl font-bold text-midnight-koi tabular-nums">{ksmValueDisplay}</span>
+              {ksmUnitDisplay && <span className="text-xs text-pine-shadow-60">{ksmUnitDisplay}</span>}
+            </div>
+          </div>
         </div>
 
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-pine-shadow">Supervisor's Fee</span>
-          <span className="text-midnight-koi">{formatUsd(formFields.supervisorsFee)}</span>
-        </div>
-
-        <div className="flex justify-between items-center pt-3 border-t border-pine-shadow-20">
-          <span className="font-semibold text-midnight-koi">Total +25% Buffer</span>
-          <span className="font-bold text-midnight-koi">{formatCurrency(totalAmountWithBuffer, TOKEN_SYMBOL)}</span>
-        </div>
-
-        <div className="text-right text-xs text-pine-shadow-60">
+        <div className="text-right text-xs text-pine-shadow-60 mt-1 tabular-nums">
           1 {TOKEN_SYMBOL} = {formatCurrency(currencyRate, "USD")}
         </div>
       </div>
@@ -180,6 +230,9 @@ const TimelineSummary: FC<{
     ? differenceInDays(estimatedTimeline.lateBountyFunding, estimatedTimeline.bountyFunding)
     : null
 
+  const devDaysValue = devDays != null ? Math.round(devDays) : null
+  const devDaysUnit = "days"
+
   return (
     <div className="bg-canvas-cream border border-sun-bleach rounded-lg p-6">
       <h4 className="flex items-center gap-2 text-lg font-medium text-midnight-koi mb-4">
@@ -188,39 +241,46 @@ const TimelineSummary: FC<{
       </h4>
 
       <div className="space-y-3">
-        <div className="grid grid-cols-[1fr,auto] gap-4 items-center">
+        <div className="grid grid-cols-[1fr,auto] gap-x-4 items-baseline">
           <span className="text-sm text-pine-shadow">Referendum Executed</span>
-          <span className="text-xs text-midnight-koi font-mono tabular-nums">
+          <span className="text-xs text-midnight-koi font-mono tabular-nums text-right">
             {formatDate(estimatedTimeline?.referendumDeadline)}
           </span>
         </div>
 
-        <div className="grid grid-cols-[1fr,auto] gap-4 items-center py-2 bg-sun-bleach bg-opacity-10 px-3 rounded">
+        <div className="grid grid-cols-[1fr,auto] gap-x-4 items-baseline py-2 bg-sun-bleach bg-opacity-10 px-3 -mx-3 rounded">
           <span className="font-medium text-midnight-koi">Bounty Funding</span>
-          <span className="font-medium text-midnight-koi text-xs font-mono tabular-nums">
+          <span className="font-medium text-midnight-koi text-xs font-mono tabular-nums text-right">
             {formatDate(estimatedTimeline?.bountyFunding)}
           </span>
         </div>
 
-        <div className="grid grid-cols-[1fr,auto] gap-4 items-center">
+        <div className="grid grid-cols-[1fr,auto] gap-x-4 items-baseline">
           <span className="text-sm text-pine-shadow">Funds Expiry Deadline</span>
-          <span className="text-xs text-midnight-koi font-mono tabular-nums">{formatDate(submissionDeadline)}</span>
+          <span className="text-xs text-midnight-koi font-mono tabular-nums text-right">
+            {formatDate(submissionDeadline)}
+          </span>
         </div>
 
-        <div className="grid grid-cols-[1fr,auto] gap-4 items-center">
+        <div className="grid grid-cols-[1fr,auto] gap-x-4 items-baseline">
           <span className="text-sm text-pine-shadow">Project Completion</span>
-          <span className="text-xs text-midnight-koi font-mono tabular-nums">{formatDate(projectCompletion)}</span>
+          <span className="text-xs text-midnight-koi font-mono tabular-nums text-right">
+            {formatDate(projectCompletion)}
+          </span>
         </div>
 
         <div
-          className={`grid grid-cols-[1fr,auto] gap-4 items-center pt-3 border-t border-pine-shadow-20 ${
+          className={`flex justify-between items-start pt-3 border-t border-pine-shadow-20 ${
             enoughDevDays ? "text-lilypad" : "text-tomato-stamp"
           }`}
         >
-          <span className="font-medium">Development Time</span>
-          <span className="font-medium text-xs font-mono tabular-nums">
-            {devDays != null ? `${Math.round(devDays)} days` : "—"}
-          </span>
+          <span className="text-base font-semibold text-midnight-koi pt-1">Development Time</span>
+          <div className="flex flex-col items-end">
+            <span className="text-xl font-bold text-midnight-koi tabular-nums">
+              {devDaysValue != null ? devDaysValue : "—"}
+            </span>
+            {devDaysValue != null && <span className="text-xs text-pine-shadow-60">{devDaysUnit}</span>}
+          </div>
         </div>
       </div>
 
@@ -242,6 +302,31 @@ const TimelineSummary: FC<{
         </div>
       ) : null}
     </div>
+  )
+}
+
+const SupervisorListItem: FC<{ address: string }> = ({ address }) => {
+  const supervisorIdentity = useStateObservable(identity$(address))
+
+  return (
+    <li className="flex items-center gap-2 py-1">
+      <PolkadotIdenticon size={20} publicKey={getPublicKey(address)} className="shrink-0" />
+      <div className="text-xs leading-tight overflow-hidden">
+        {supervisorIdentity ? (
+          <>
+            <span className="font-medium text-pine-shadow truncate block">
+              {supervisorIdentity.value}
+              {supervisorIdentity.verified && <CheckCircle size={12} className="inline ml-1 text-lilypad" />}
+            </span>
+            {!supervisorIdentity.verified && (
+              <span className="text-pine-shadow-60 font-mono block truncate">{sliceMiddleAddr(address)}</span>
+            )}
+          </>
+        ) : (
+          <span className="text-pine-shadow font-mono truncate block">{sliceMiddleAddr(address)}</span>
+        )}
+      </div>
+    </li>
   )
 }
 
@@ -273,7 +358,14 @@ const ProjectSummary: FC<{
             {supervisors.length > 0 ? `${supervisors.length} supervisor${supervisors.length > 1 ? "s" : ""}` : "None"}
           </div>
           {supervisors.length > 1 && (
-            <div className="text-xs text-pine-shadow-60">Threshold: {formFields.signatoriesThreshold || 2}</div>
+            <div className="text-xs text-pine-shadow-60 mb-1">Threshold: {formFields.signatoriesThreshold || 2}</div>
+          )}
+          {supervisors.length > 0 && (
+            <ul className="mt-1 space-y-0.5">
+              {supervisors.map((addr) => (
+                <SupervisorListItem key={addr} address={addr} />
+              ))}
+            </ul>
           )}
         </div>
 

@@ -21,7 +21,7 @@ export const SupervisorsSection: FC<{ control: RfpControlType }> = ({ control })
     <div className="vintage-card supervisors-section section-divider">
       <h3 className="text-3xl font-medium mb-6 text-midnight-koi">Supervisors</h3>
       <p className="text-lg text-pine-shadow/80 mb-12 leading-relaxed">
-        Curators for this bounty, responsible of choosing the implementors and evaluating the development
+        Curators for this bounty, responsible of choosing the implementors and evaluating the development process.
       </p>
       <div className="space-y-8">
         <FormField
