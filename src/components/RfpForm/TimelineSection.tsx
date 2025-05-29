@@ -83,8 +83,8 @@ const EstimatedTimeline: FC<{ control: RfpControlType }> = ({ control }) => {
             Bounty Funding: <span className="text-foreground">{formatDate(estimatedTimeline.bountyFunding)}</span>
           </li>
           <li>
-            Bounty Funding (if RFP submitted after deadline):{" "}
-            {format(estimatedTimeline.referendumSubmissionDeadline, lateSubmissionDiff < 2 ? "LLL do kk:mm" : "LLL do")}
+            Bounty Funding (if RFP submitted after deadline of{" "}
+            {format(estimatedTimeline.referendumSubmissionDeadline, lateSubmissionDiff < 2 ? "LLL do kk:mm" : "LLL do")})
             : <span className="text-foreground">{formatDate(estimatedTimeline.lateBountyFunding)}</span>
           </li>
           <li>

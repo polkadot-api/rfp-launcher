@@ -2,7 +2,6 @@ import type { FC } from "react"
 
 export const WelcomeSection: FC = () => (
   <div className="poster-card relative overflow-hidden">
-    {/* Hero background - lakeside pier with 60% blur */}
     <div
       className="absolute inset-0 opacity-30"
       style={{
