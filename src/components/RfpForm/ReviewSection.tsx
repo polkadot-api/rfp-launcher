@@ -1,364 +1,404 @@
-import { TOKEN_SYMBOL } from "@/constants";
-import { formatDate } from "@/lib/date";
-import { formatCurrency, formatUsd } from "@/lib/formatToken";
-import { currencyRate$ } from "@/services/currencyRate";
-import { useStateObservable } from "@react-rxjs/core";
-import { addWeeks, differenceInDays, format } from "date-fns";
-import { BadgeInfo, OctagonAlert, TriangleAlert } from "lucide-react";
-import { FC, useEffect, useState } from "react";
-import { useWatch } from "react-hook-form";
-import { combineLatest, map } from "rxjs";
-import { Button } from "../ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Checkbox } from "../ui/checkbox";
+"use client"
+
+import { TOKEN_SYMBOL } from "@/constants"
+import { formatDate } from "@/lib/date"
+import { formatCurrency, formatUsd } from "@/lib/formatToken"
+import { currencyRate$ } from "@/services/currencyRate"
+import { useStateObservable } from "@react-rxjs/core"
+import { addWeeks, differenceInDays } from "date-fns"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../ui/table";
-import { Textarea } from "../ui/textarea";
-import { estimatedTimeline$, generateMarkdown, identity$ } from "./data";
-import { calculatePriceTotals, setBountyValue } from "./data/price";
-import { Milestone, parseNumber, RfpControlType } from "./formSchema";
+  BadgeInfo,
+  OctagonAlert,
+  TriangleAlert,
+  FileText,
+  RefreshCw,
+  DollarSign,
+  Clock,
+  Users,
+  CheckCircle2,
+  Copy,
+} from "lucide-react"
+import { type FC, useEffect, useState, useMemo } from "react"
+import { useWatch } from "react-hook-form"
+import { combineLatest, map } from "rxjs"
+import { Checkbox } from "../ui/checkbox"
+import { estimatedTimeline$, identity$ } from "./data"
+import { calculatePriceTotals, setBountyValue } from "./data/price"
+import { generateMarkdown } from "./data/markdown"
+import { MarkdownPreview } from "./MarkdownPreview"
+import { type Milestone, parseNumber, type RfpControlType } from "./formSchema"
 
 export const ReviewSection: FC<{
-  control: RfpControlType;
-  onReset: () => void;
-}> = ({ control, onReset }) => {
-  const [willReturnFunds, setWillReturnFunds] = useState(false);
-  const estimatedTimeline = useStateObservable(estimatedTimeline$);
-  const milestones = useWatch({ control, name: "milestones" });
-  const prizePool = useWatch({ control, name: "prizePool" });
-  const fundsExpiry = useWatch({ control, name: "fundsExpiry" });
-  const projectCompletion = useWatch({ control, name: "projectCompletion" });
+  control: RfpControlType
+  onReset: () => void
+}> = ({ control }) => {
+  const [willReturnFunds, setWillReturnFunds] = useState(false)
+  const estimatedTimeline = useStateObservable(estimatedTimeline$)
 
-  const milestonesTotal = getMilestonesTotal(milestones);
-  const milestonesMatchesPrize = parseNumber(prizePool) === milestonesTotal;
+  const milestones = useWatch({ control, name: "milestones" })
+  const prizePool = useWatch({ control, name: "prizePool" })
+  const fundsExpiry = useWatch({ control, name: "fundsExpiry" })
+  const projectCompletion = useWatch({ control, name: "projectCompletion" })
+
+  const milestonesTotal = getMilestonesTotal(milestones)
+  const milestonesMatchesPrize = parseNumber(prizePool) === milestonesTotal
 
   const submissionDeadline = estimatedTimeline
     ? addWeeks(estimatedTimeline.bountyFunding, fundsExpiry || 1)
-    : new Date();
-  const enoughDevDays = projectCompletion
-    ? differenceInDays(projectCompletion, submissionDeadline) >= 7
-    : true;
+    : new Date()
+  const enoughDevDays = projectCompletion ? differenceInDays(projectCompletion, submissionDeadline) >= 7 : true
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Review and Submit</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <FundingSummary
-          control={control}
-          milestonesMatchesPrize={milestonesMatchesPrize}
-        />
+    <div className="poster-card">
+      <h3 className="text-3xl font-medium mb-8 text-midnight-koi">review & submit</h3>
+
+      {/* Summary Grid - Three Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <FundingSummary control={control} milestonesMatchesPrize={milestonesMatchesPrize} />
         <TimelineSummary control={control} enoughDevDays={enoughDevDays} />
-        <ResultingMarkdown control={control} />
-        <div>
-          <div className="flex items-center space-x-2 px-1">
-            <Checkbox
-              id="return-funds"
-              checked={willReturnFunds}
-              onCheckedChange={() => setWillReturnFunds(!willReturnFunds)}
-            />
-            <label
-              htmlFor="return-funds"
-              className="text-sm font-medium leading-none"
-            >
-              I agree that any unused funds will be returned to the treasury.
-            </label>
-          </div>
-          {willReturnFunds ? null : (
-            <div className="py-2 flex items-center gap-2 text-sm mt-2">
-              <TriangleAlert className="inline-block text-amber-600" />
-              <div>
-                You have to agree to returning funds back to the treasury.
-              </div>
+        <ProjectSummary control={control} />
+      </div>
+
+      {/* Markdown Preview */}
+      <ResultingMarkdown control={control} />
+
+      {/* Final Confirmation */}
+      <div className="mt-8 bg-canvas-cream border border-pine-shadow-20 rounded-lg p-6">
+        <div className="flex items-start space-x-3">
+          <Checkbox
+            id="return-funds"
+            checked={willReturnFunds}
+            onCheckedChange={(checked) => setWillReturnFunds(!!checked)}
+            className="mt-1 border-pine-shadow data-[state=checked]:bg-lilypad data-[state=checked]:text-canvas-cream"
+          />
+          <label htmlFor="return-funds" className="text-pine-shadow leading-tight cursor-pointer text-sm">
+            i agree that any unused funds will be returned to the treasury.
+          </label>
+        </div>
+        {!willReturnFunds && (
+          <div className="mt-3 poster-alert alert-error">
+            <div className="flex items-center gap-2">
+              <TriangleAlert size={16} />
+              <div className="text-sm font-medium">you must agree to return unused funds to the treasury.</div>
             </div>
-          )}
-        </div>
-        <div className="flex items-center justify-between">
-          <Button type="button" variant="secondary" onClick={onReset}>
-            Reset form
-          </Button>
-          <Button
-            type="submit"
-            disabled={
-              !milestonesMatchesPrize || !enoughDevDays || !willReturnFunds
-            }
-          >
-            Submit
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 const FundingSummary: FC<{
-  control: RfpControlType;
-  milestonesMatchesPrize: boolean;
+  control: RfpControlType
+  milestonesMatchesPrize: boolean
 }> = ({ control, milestonesMatchesPrize }) => {
-  const formFields = useWatch({ control });
-
-  const milestonesTotal = getMilestonesTotal(formFields.milestones);
-
-  const currencyRate = useStateObservable(currencyRate$);
-  const { totalAmount, totalAmountToken, totalAmountWithBuffer } =
-    calculatePriceTotals(formFields, currencyRate);
+  const formFields = useWatch({ control })
+  const milestonesTotal = getMilestonesTotal(formFields.milestones)
+  const currencyRate = useStateObservable(currencyRate$)
+  const { totalAmountWithBuffer } = calculatePriceTotals(formFields, currencyRate)
 
   useEffect(() => {
-    setBountyValue(totalAmountWithBuffer);
-  }, [totalAmountWithBuffer]);
+    setBountyValue(totalAmountWithBuffer)
+  }, [totalAmountWithBuffer])
 
   return (
-    <div className="max-w-xl mx-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="font-bold">Funding</TableHead>
-            <TableHead className="font-bold text-right">Amount</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <TableRow>
-            <TableCell>Prize Pool</TableCell>
-            <TableCell className="text-right tabular-nums">
-              {formatUsd(formFields.prizePool)}
-            </TableCell>
-          </TableRow>
-          {(formFields.milestones ?? []).map((milestone, i) => (
-            <TableRow key={i}>
-              <TableCell className="pl-4">Milestone #{i + 1}</TableCell>
-              <TableCell className="text-right tabular-nums">
-                {formatUsd(milestone.amount)}
-              </TableCell>
-            </TableRow>
-          ))}
-          <TableRow
-            className={milestonesMatchesPrize ? "" : "bg-destructive/10"}
-          >
-            <TableCell className="font-medium">Milestone sum</TableCell>
-            <TableCell className="font-medium text-right tabular-nums">
-              {formatUsd(milestonesTotal)}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>Finder's Fee</TableCell>
-            <TableCell className="text-right tabular-nums">
-              {formatUsd(formFields.findersFee)}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>Supervisor's Fee</TableCell>
-            <TableCell className="text-right tabular-nums">
-              {formatUsd(formFields.supervisorsFee)}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell className="font-medium">Total Amount</TableCell>
-            <TableCell className="font-medium text-right tabular-nums">
-              {formatUsd(totalAmount)}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell className="font-medium">
-              Total Amount ({TOKEN_SYMBOL})
-            </TableCell>
-            <TableCell className="font-medium text-right tabular-nums">
-              {formatCurrency(totalAmountToken, TOKEN_SYMBOL)}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell className="font-bold">Total +25% Buffer</TableCell>
-            <TableCell className="font-bold text-right tabular-nums">
-              {formatCurrency(totalAmountWithBuffer, TOKEN_SYMBOL)}
-            </TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
-      <div className="text-right text-sm text-foreground/60">
-        1 {TOKEN_SYMBOL} = {formatCurrency(currencyRate, "USD")}
+    <div className="bg-canvas-cream border border-lake-haze rounded-lg p-6">
+      <h4 className="flex items-center gap-2 text-lg font-medium text-midnight-koi mb-4">
+        <DollarSign size={20} className="text-lake-haze" />
+        funding breakdown
+      </h4>
+
+      <div className="space-y-3">
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-pine-shadow">prize pool</span>
+          <span className="font-medium text-midnight-koi">{formatUsd(formFields.prizePool)}</span>
+        </div>
+
+        {(formFields.milestones ?? []).map((milestone, i) => (
+          <div key={i} className="flex justify-between items-center pl-4 text-xs">
+            <span className="text-pine-shadow-60">milestone #{i + 1}</span>
+            <span className="text-pine-shadow">{formatUsd(milestone.amount)}</span>
+          </div>
+        ))}
+
+        <div
+          className={`flex justify-between items-center py-2 border-t border-pine-shadow-20 ${
+            milestonesMatchesPrize ? "text-lilypad" : "text-tomato-stamp"
+          }`}
+        >
+          <span className="text-sm font-medium">milestone sum</span>
+          <span className="font-medium">{formatUsd(milestonesTotal)}</span>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-pine-shadow">finder's fee</span>
+          <span className="text-midnight-koi">{formatUsd(formFields.findersFee)}</span>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-pine-shadow">supervisor's fee</span>
+          <span className="text-midnight-koi">{formatUsd(formFields.supervisorsFee)}</span>
+        </div>
+
+        <div className="flex justify-between items-center pt-3 border-t border-pine-shadow-20">
+          <span className="font-semibold text-midnight-koi">total +25% buffer</span>
+          <span className="font-bold text-midnight-koi">{formatCurrency(totalAmountWithBuffer, TOKEN_SYMBOL)}</span>
+        </div>
+
+        <div className="text-right text-xs text-pine-shadow-60">
+          1 {TOKEN_SYMBOL} = {formatCurrency(currencyRate, "USD")}
+        </div>
       </div>
-      {milestonesMatchesPrize ? null : (
-        <div className="text-destructive py-2 flex items-center gap-2">
-          <OctagonAlert className="inline-block" />
-          <div>Milestones must add up to the total prize pool.</div>
+
+      {!milestonesMatchesPrize && (
+        <div className="mt-4 poster-alert alert-error">
+          <div className="flex items-center gap-2 text-xs">
+            <OctagonAlert size={14} />
+            <div className="font-medium">milestones must add up to the total prize pool.</div>
+          </div>
         </div>
       )}
     </div>
-  );
-};
+  )
+}
+
+const TimelineSummary: FC<{
+  control: RfpControlType
+  enoughDevDays: boolean
+}> = ({ control, enoughDevDays }) => {
+  const estimatedTimeline = useStateObservable(estimatedTimeline$)
+  const projectCompletion = useWatch({ name: "projectCompletion", control })
+  const fundsExpiry = parseNumber(useWatch({ name: "fundsExpiry", control }))
+
+  const submissionDeadline = estimatedTimeline ? addWeeks(estimatedTimeline.bountyFunding, fundsExpiry || 1) : null
+  const devDays = submissionDeadline && projectCompletion && differenceInDays(projectCompletion, submissionDeadline)
+
+  const daysToLateSubmission = estimatedTimeline
+    ? differenceInDays(estimatedTimeline.referendumSubmissionDeadline, new Date())
+    : null
+  const lateSubmissionDiff = estimatedTimeline
+    ? differenceInDays(estimatedTimeline.lateBountyFunding, estimatedTimeline.bountyFunding)
+    : null
+
+  return (
+    <div className="bg-canvas-cream border border-sun-bleach rounded-lg p-6">
+      <h4 className="flex items-center gap-2 text-lg font-medium text-midnight-koi mb-4">
+        <Clock size={20} className="text-sun-bleach" />
+        timeline
+      </h4>
+
+      <div className="space-y-3">
+        <div className="grid grid-cols-[1fr,auto] gap-4 items-center">
+          <span className="text-sm text-pine-shadow">referendum executed</span>
+          <span className="text-xs text-midnight-koi font-mono tabular-nums">
+            {formatDate(estimatedTimeline?.referendumDeadline)}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[1fr,auto] gap-4 items-center py-2 bg-sun-bleach bg-opacity-10 px-3 rounded">
+          <span className="font-medium text-midnight-koi">bounty funding</span>
+          <span className="font-medium text-midnight-koi text-xs font-mono tabular-nums">
+            {formatDate(estimatedTimeline?.bountyFunding)}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[1fr,auto] gap-4 items-center">
+          <span className="text-sm text-pine-shadow">submission deadline</span>
+          <span className="text-xs text-midnight-koi font-mono tabular-nums">{formatDate(submissionDeadline)}</span>
+        </div>
+
+        <div className="grid grid-cols-[1fr,auto] gap-4 items-center">
+          <span className="text-sm text-pine-shadow">project completion</span>
+          <span className="text-xs text-midnight-koi font-mono tabular-nums">{formatDate(projectCompletion)}</span>
+        </div>
+
+        <div
+          className={`grid grid-cols-[1fr,auto] gap-4 items-center pt-3 border-t border-pine-shadow-20 ${
+            enoughDevDays ? "text-lilypad" : "text-tomato-stamp"
+          }`}
+        >
+          <span className="font-medium">development time</span>
+          <span className="font-medium text-xs font-mono tabular-nums">
+            {devDays != null ? `${Math.round(devDays)} days` : "—"}
+          </span>
+        </div>
+      </div>
+
+      {!enoughDevDays ? (
+        <div className="mt-4 poster-alert alert-error">
+          <div className="flex items-center gap-2 text-xs">
+            <OctagonAlert size={14} />
+            <div className="font-medium">not enough development days</div>
+          </div>
+        </div>
+      ) : devDays != null && daysToLateSubmission != null && daysToLateSubmission < 1 ? (
+        <div className="mt-4 poster-alert alert-warning">
+          <div className="flex items-center gap-2 text-xs">
+            <TriangleAlert size={14} />
+            <div className="font-medium">
+              late submission may delay funding by {Math.round(lateSubmissionDiff!)} days.
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+const ProjectSummary: FC<{
+  control: RfpControlType
+}> = ({ control }) => {
+  const formFields = useWatch({ control })
+  const supervisors = formFields.supervisors || []
+  const milestones = formFields.milestones || []
+
+  return (
+    <div className="bg-canvas-cream border border-lilypad rounded-lg p-6">
+      <h4 className="flex items-center gap-2 text-lg font-medium text-midnight-koi mb-4">
+        <Users size={20} className="text-lilypad" />
+        project summary
+      </h4>
+
+      <div className="space-y-4">
+        <div>
+          <div className="text-xs font-medium text-pine-shadow-60 uppercase tracking-wide mb-1">project title</div>
+          <div className="text-sm font-medium text-midnight-koi break-words">
+            {formFields.projectTitle || "untitled project"}
+          </div>
+        </div>
+
+        <div>
+          <div className="text-xs font-medium text-pine-shadow-60 uppercase tracking-wide mb-1">supervisors</div>
+          <div className="text-sm text-pine-shadow">
+            {supervisors.length > 0 ? `${supervisors.length} supervisor${supervisors.length > 1 ? "s" : ""}` : "none"}
+          </div>
+          {supervisors.length > 1 && (
+            <div className="text-xs text-pine-shadow-60">threshold: {formFields.signatoriesThreshold || 2}</div>
+          )}
+        </div>
+
+        <div>
+          <div className="text-xs font-medium text-pine-shadow-60 uppercase tracking-wide mb-1">milestones</div>
+          <div className="text-sm text-pine-shadow">
+            {milestones.length > 0 ? `${milestones.length} milestone${milestones.length > 1 ? "s" : ""}` : "none"}
+          </div>
+        </div>
+
+        <div>
+          <div className="text-xs font-medium text-pine-shadow-60 uppercase tracking-wide mb-1">submission window</div>
+          <div className="text-sm text-pine-shadow">
+            {formFields.fundsExpiry || 1} week{(formFields.fundsExpiry || 1) > 1 ? "s" : ""} after funding
+          </div>
+        </div>
+
+        <div className="pt-3 border-t border-pine-shadow-20">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={16} className="text-lilypad" />
+            <span className="text-sm text-pine-shadow font-medium">ready for submission</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const getMilestonesTotal = (milestones: Partial<Milestone>[] | undefined) =>
   (milestones ?? [])
     .map((milestone) => parseNumber(milestone.amount))
     .filter((v) => v != null)
-    .reduce((a, b) => a + b, 0);
-
-const TimelineSummary: FC<{
-  control: RfpControlType;
-  enoughDevDays: boolean;
-}> = ({ control, enoughDevDays }) => {
-  const estimatedTimeline = useStateObservable(estimatedTimeline$);
-  const projectCompletion = useWatch({
-    name: "projectCompletion",
-    control,
-  });
-  const fundsExpiry = parseNumber(
-    useWatch({
-      name: "fundsExpiry",
-      control,
-    })
-  );
-
-  const submissionDeadline = estimatedTimeline
-    ? addWeeks(estimatedTimeline.bountyFunding, fundsExpiry || 1)
-    : null;
-  const devDays =
-    submissionDeadline &&
-    projectCompletion &&
-    differenceInDays(projectCompletion, submissionDeadline);
-
-  const daysToLateSubmission = estimatedTimeline
-    ? differenceInDays(
-        estimatedTimeline.referendumSubmissionDeadline,
-        new Date()
-      )
-    : null;
-  const lateSubmissionDiff = estimatedTimeline
-    ? differenceInDays(
-        estimatedTimeline.lateBountyFunding,
-        estimatedTimeline.bountyFunding
-      )
-    : null;
-
-  return (
-    <div className="max-w-xl mx-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="font-bold">Timeline</TableHead>
-            <TableHead className="font-bold text-right">Date</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <TableRow>
-            <TableCell>Referendum executed</TableCell>
-            <TableCell className="text-right">
-              {formatDate(estimatedTimeline?.referendumDeadline)}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell className="font-medium">Bounty funding</TableCell>
-            <TableCell className="font-medium text-right">
-              {formatDate(estimatedTimeline?.bountyFunding)}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>Submission deadline</TableCell>
-            <TableCell className="text-right">
-              {formatDate(submissionDeadline)}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>Project completion</TableCell>
-            <TableCell className="text-right">
-              {formatDate(projectCompletion)}
-            </TableCell>
-          </TableRow>
-          <TableRow className={enoughDevDays ? "" : "bg-destructive/10"}>
-            <TableCell>Total development days</TableCell>
-            <TableCell className="text-right">
-              {devDays != null
-                ? `${Math.round(devDays).toLocaleString()} days`
-                : ""}
-            </TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
-      {!enoughDevDays ? (
-        <div className="text-destructive py-2 flex items-center gap-2">
-          <OctagonAlert className="inline-block" />
-          <div>Dates don't match up: not enough development days</div>
-        </div>
-      ) : devDays != null &&
-        daysToLateSubmission != null &&
-        daysToLateSubmission < 1 ? (
-        <div className="text-amber-600 py-2 flex items-center gap-2">
-          <TriangleAlert className="shrink-0" />
-          <div>
-            If this RFP is submitted after{" "}
-            {format(
-              estimatedTimeline!.referendumSubmissionDeadline,
-              "LLL do kk:mm"
-            )}
-            , the funding might get delayed by {Math.round(lateSubmissionDiff!)}{" "}
-            days, which would leave total development days to{" "}
-            {Math.round(devDays - lateSubmissionDiff!)}.
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
-};
+    .reduce((a, b) => a + b, 0)
 
 const ResultingMarkdown: FC<{
-  control: RfpControlType;
+  control: RfpControlType
 }> = ({ control }) => {
-  const formFields = useWatch({ control });
-  const currencyRate = useStateObservable(currencyRate$);
-  const identities = useIdentities(formFields.supervisors);
+  const formFields = useWatch({ control })
+  const currencyRate = useStateObservable(currencyRate$)
+  const [copied, setCopied] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
 
-  const { totalAmountWithBuffer } = calculatePriceTotals(
-    formFields,
-    currencyRate
-  );
-  const markdown = generateMarkdown(
-    formFields,
-    totalAmountWithBuffer,
-    identities
-  );
-
-  return (
-    <div className="space-y-2">
-      <h3 className="text-sm font-bold">RFP Body</h3>
-      <Textarea readOnly value={markdown ?? ""} className="max-h-72" />
-      <div className="text-foreground/80 text-sm py-2 flex items-center gap-2">
-        <BadgeInfo className="shrink-0" />
-        <div>
-          This is the content you have to copy and paste into the body of the
-          referendum once it has been submitted.
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const useIdentities = (supervisors: Array<string> | undefined) => {
-  const [identities, setIdentities] = useState<
-    Record<string, string | undefined>
-  >({});
+  const [identities, setIdentities] = useState<Record<string, string | undefined>>({})
 
   useEffect(() => {
-    if (!supervisors) {
-      setIdentities({});
-      return;
+    const supervisors = formFields.supervisors || []
+    if (supervisors.length === 0) {
+      setIdentities({})
+      return
     }
 
     const subscription = combineLatest(
-      Object.fromEntries(
-        supervisors.map((addr) => [
-          addr,
-          identity$(addr).pipe(map((id) => id?.value)),
-        ])
-      )
-    ).subscribe((r) => setIdentities(r));
-    return () => subscription.unsubscribe();
-  }, [supervisors]);
+      Object.fromEntries(supervisors.map((addr) => [addr, identity$(addr).pipe(map((id) => id?.value))])),
+    ).subscribe((r) => setIdentities(r))
+    return () => subscription.unsubscribe()
+  }, [formFields.supervisors])
 
-  return identities;
-};
+  const markdown = useMemo(() => {
+    const { totalAmountWithBuffer } = calculatePriceTotals(formFields, currencyRate)
+    return generateMarkdown(formFields, totalAmountWithBuffer, identities)
+  }, [formFields, currencyRate, identities, refreshKey])
+
+  const copyToClipboard = async () => {
+    if (markdown) {
+      try {
+        await navigator.clipboard.writeText(markdown)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      } catch (err) {
+        console.error("Failed to copy:", err)
+        const textArea = document.createElement("textarea")
+        textArea.value = markdown
+        document.body.appendChild(textArea)
+        textArea.select()
+        try {
+          document.execCommand("copy")
+          setCopied(true)
+          setTimeout(() => setCopied(false), 2000)
+        } catch (execErr) {
+          console.error("Fallback copy failed:", execErr)
+        }
+        document.body.removeChild(textArea)
+      }
+    }
+  }
+
+  return (
+    <div className="mt-8">
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="flex items-center gap-2 text-lg font-medium text-midnight-koi">
+          <FileText size={20} className="text-tomato-stamp" />
+          rfp body preview
+        </h4>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setRefreshKey((prev) => prev + 1)}
+            className="poster-btn btn-secondary flex items-center gap-1 text-xs py-2 px-3"
+          >
+            <RefreshCw size={14} />
+            refresh
+          </button>
+          <button
+            type="button"
+            onClick={copyToClipboard}
+            className="poster-btn btn-primary flex items-center gap-1 text-xs py-2 px-3"
+          >
+            <Copy size={14} />
+            {copied ? "copied!" : "copy"}
+          </button>
+        </div>
+      </div>
+
+      <MarkdownPreview markdown={markdown} onCopy={copyToClipboard} copied={copied} />
+
+      <div className="mt-4 poster-alert alert-warning">
+        <div className="flex items-start gap-2">
+          <BadgeInfo size={16} className="mt-0.5 shrink-0" />
+          <div className="text-sm">
+            <strong>next step:</strong> copy this markdown content and paste it into the body of your referendum once
+            submitted.
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+

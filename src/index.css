@@ -1,125 +1,626 @@
 @import "tailwindcss";
-@import "tw-animate-css";
-
-@custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: 0;
+  --radius-md: 12px;
+  --radius-lg: 24px;
+  --radius-xl: 48px;
+
+  /* Define all the color classes that components will use */
+  --color-canvas-cream: #f8f3e7;
+  --color-lake-haze: #bfd7d2;
+  --color-sun-bleach: #f2d6a0;
+  --color-pine-shadow: #4c6659;
+  --color-midnight-koi: #2a2a2a;
+  --color-tomato-stamp: #d45d5d;
+  --color-lilypad: #8aa580;
+
+  --color-pine-shadow-90: rgba(76, 102, 89, 0.9);
+  --color-pine-shadow-60: rgba(76, 102, 89, 0.6);
+  --color-pine-shadow-20: rgba(76, 102, 89, 0.2);
+  --color-pine-shadow-10: rgba(76, 102, 89, 0.1);
+
+  --color-background: var(--color-canvas-cream);
+  --color-foreground: var(--color-pine-shadow-90);
+  --color-card: var(--color-canvas-cream);
+  --color-card-foreground: var(--color-pine-shadow-90);
+  --color-popover: var(--color-canvas-cream);
+  --color-popover-foreground: var(--color-pine-shadow-90);
+  --color-primary: var(--color-lake-haze);
+  --color-primary-foreground: var(--color-midnight-koi);
+  --color-secondary: var(--color-sun-bleach);
+  --color-secondary-foreground: var(--color-pine-shadow);
+  --color-muted: var(--color-lake-haze);
+  --color-muted-foreground: var(--color-pine-shadow-60);
+  --color-accent: var(--color-sun-bleach);
+  --color-accent-foreground: var(--color-pine-shadow);
+  --color-destructive: var(--color-tomato-stamp);
+  --color-destructive-foreground: var(--color-canvas-cream);
+  --color-border: var(--color-pine-shadow-20);
+  --color-input: var(--color-pine-shadow-20);
+  --color-ring: var(--color-lake-haze);
 }
 
+/* 70s-90s Poster-Core Design System */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: rgb(230,0,122);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
+  /* Color Palette */
+  --canvas-cream: #f8f3e7;
+  --lake-haze: #bfd7d2;
+  --sun-bleach: #f2d6a0;
+  --pine-shadow: #4c6659;
+  --midnight-koi: #2a2a2a;
+  --tomato-stamp: #d45d5d;
+  --lilypad: #8aa580;
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* Opacity Variants */
+  --pine-shadow-90: rgba(76, 102, 89, 0.9);
+  --pine-shadow-60: rgba(76, 102, 89, 0.6);
+  --pine-shadow-20: rgba(76, 102, 89, 0.2);
+  --pine-shadow-10: rgba(76, 102, 89, 0.1);
+
+  /* Typography */
+  --font-display: "Cooper Hewitt", "Georgia", serif;
+  --font-body: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", "SF Mono", "Monaco", "Inconsolata", monospace;
+
+  /* Layout */
+  --grid-margin-desktop: 96px;
+  --grid-margin-mobile: 16px;
+  --section-spacing: 32px;
+
+  /* Motion */
+  --transition-ease: 150ms ease-in-out;
+  --hover-lift: 4px;
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
 
   html {
-    @apply overflow-hidden
+    /* Ultra-subtle paper grain texture */
+    background-image: radial-gradient(circle at 1px 1px, rgba(76, 102, 89, 0.02) 1px, transparent 0),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234C6659' fill-opacity='0.02'%3E%3Ccircle cx='7' cy='7' r='1'/%3E%3Ccircle cx='27' cy='27' r='1'/%3E%3Ccircle cx='47' cy='47' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    background-size: 20px 20px, 60px 60px;
+    background-color: var(--canvas-cream);
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  
+
   body {
-    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    color: var(--pine-shadow-90);
+    line-height: var(--line-height-body, 1.55em);
+    letter-spacing: 0.01em;
+    background-color: transparent;
+  }
+
+  /* Typography Hierarchy */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    color: var(--midnight-koi);
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+  }
+
+  h1 {
+    font-size: 3rem;
+    font-weight: 600;
+  }
+  h2 {
+    font-size: 2.25rem;
+    font-weight: 500;
+  }
+  h3 {
+    font-size: 1.875rem;
+    font-weight: 500;
+  }
+  h4 {
+    font-size: 1.5rem;
+    font-weight: 500;
+  }
+
+  /* Links with poster-style underlines */
+  a {
+    color: var(--pine-shadow);
+    text-decoration: none;
+    position: relative;
+    transition: color var(--transition-ease);
+  }
+
+  a::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background-color: var(--tomato-stamp);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--transition-ease);
+  }
+
+  a:hover {
+    color: var(--midnight-koi);
+  }
+
+  a:hover::after {
+    transform: scaleX(1);
+  }
+
+  /* Code elements */
+  code,
+  pre {
+    font-family: var(--font-mono);
+  }
+
+  /* Smooth transitions for all interactive elements */
+  * {
+    transition-property: color, background-color, border-color, opacity, transform;
+    transition-timing-function: ease-in-out;
+    transition-duration: 150ms;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition-property: opacity;
+      transform: none !important;
+    }
   }
 }
+
+@layer utilities {
+  /* Poster-Core Layout System */
+  .poster-container {
+    max-width: calc(12 * 72px + 11 * 24px); /* 12 cols + 11 gutters */
+    margin: 0 auto;
+    padding: 0 var(--grid-margin-desktop);
+  }
+
+  @media (max-width: 768px) {
+    .poster-container {
+      padding: 0 var(--grid-margin-mobile);
+    }
+  }
+
+  .poster-section {
+    padding: var(--section-spacing) 0;
+    border-bottom: 1px solid var(--pine-shadow-20);
+  }
+
+  .poster-section:last-child {
+    border-bottom: none;
+  }
+
+  /* Header - Minimal Poster Style */
+  .poster-header {
+    @apply relative py-6 border-b;
+    border-color: var(--pine-shadow-20);
+    background-color: var(--canvas-cream);
+  }
+
+  .poster-header-content {
+    @apply flex items-center justify-between;
+    max-width: calc(12 * 72px + 11 * 24px);
+    margin: 0 auto;
+    padding: 0 var(--grid-margin-desktop);
+  }
+
+  @media (max-width: 768px) {
+    .poster-header-content {
+      padding: 0 var(--grid-margin-mobile);
+    }
+  }
+
+  .poster-brand {
+    @apply flex flex-col;
+  }
+
+  .poster-brand-title {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--midnight-koi);
+    letter-spacing: 0.02em;
+    line-height: 1;
+    text-transform: lowercase;
+  }
+
+  .poster-brand-subtitle {
+    font-size: 0.75rem;
+    color: var(--pine-shadow-60);
+    text-transform: lowercase;
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+  }
+
+  .poster-actions {
+    @apply flex items-center gap-4;
+  }
+
+  /* Kusama Network Badge - Poster Stamp Style */
+  .kusama-stamp {
+    background-color: var(--tomato-stamp);
+    color: var(--canvas-cream);
+    padding: 8px 16px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    box-shadow: 0 2px 4px rgba(212, 93, 93, 0.2);
+    transform: rotate(-1deg);
+    font-family: var(--font-display);
+  }
+
+  /* Cards - Cream with Subtle Shadows */
+  .poster-card {
+    background-color: var(--canvas-cream);
+    border: 1px solid var(--pine-shadow-20);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(76, 102, 89, 0.08);
+    transition: all var(--transition-ease);
+  }
+
+  .poster-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(76, 102, 89, 0.12);
+  }
+
+  /* Buttons - Minimal Poster Style */
+  .poster-btn {
+    @apply inline-flex items-center gap-2 px-6 py-3 font-medium text-sm;
+    font-family: var(--font-display);
+    border-radius: 6px;
+    transition: all var(--transition-ease);
+    text-transform: lowercase;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+
+  .poster-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .poster-btn:active {
+    transform: translateY(0);
+  }
+
+  /* Button Variants */
+  .btn-primary {
+    background-color: var(--lake-haze);
+    color: var(--midnight-koi);
+    border-color: var(--lake-haze);
+  }
+
+  .btn-primary:hover {
+    background-color: var(--sun-bleach);
+    border-color: var(--sun-bleach);
+  }
+
+  .btn-secondary {
+    background-color: transparent;
+    color: var(--pine-shadow);
+    border-color: var(--pine-shadow-20);
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--pine-shadow-10);
+    border-color: var(--pine-shadow);
+  }
+
+  .btn-success {
+    background-color: var(--lilypad);
+    color: var(--canvas-cream);
+    border-color: var(--lilypad);
+  }
+
+  .btn-success:hover {
+    background-color: #7a9470;
+  }
+
+  .btn-destructive {
+    background-color: var(--tomato-stamp);
+    color: var(--canvas-cream);
+    border-color: var(--tomato-stamp);
+  }
+
+  .btn-destructive:hover {
+    background-color: #c54545;
+  }
+
+  /* Form Elements - Minimal Underline Style */
+  .poster-input {
+    @apply w-full bg-transparent border-0 border-b-2 px-0 py-3;
+    border-color: var(--pine-shadow-20);
+    color: var(--midnight-koi);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    transition: border-color var(--transition-ease);
+  }
+
+  .poster-input:focus {
+    outline: none;
+    border-color: var(--lake-haze);
+    background-color: rgba(191, 215, 210, 0.05);
+  }
+
+  .poster-input::placeholder {
+    color: var(--pine-shadow-60);
+  }
+
+  .poster-textarea {
+    @apply w-full bg-transparent border border-pine-shadow-20 rounded-lg p-4;
+    color: var(--midnight-koi);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 120px;
+    transition: border-color var(--transition-ease);
+  }
+
+  .poster-textarea:focus {
+    outline: none;
+    border-color: var(--lake-haze);
+    background-color: rgba(191, 215, 210, 0.05);
+  }
+
+  .poster-textarea::placeholder {
+    color: var(--pine-shadow-60);
+  }
+
+  /* Labels - Small Caps Style */
+  .poster-label {
+    @apply block text-xs font-medium uppercase tracking-wider mb-2;
+    color: var(--pine-shadow-60);
+    font-variant-caps: small-caps;
+    font-family: var(--font-display);
+  }
+
+  /* Alert Boxes - Subtle Poster Style */
+  .poster-alert {
+    @apply p-4 rounded-lg border text-sm;
+    font-family: var(--font-body);
+  }
+
+  .alert-success {
+    background-color: rgba(138, 165, 128, 0.1);
+    border-color: var(--lilypad);
+    color: var(--pine-shadow);
+  }
+
+  .alert-warning {
+    background-color: rgba(242, 214, 160, 0.2);
+    border-color: var(--sun-bleach);
+    color: var(--pine-shadow);
+  }
+
+  .alert-error {
+    background-color: rgba(212, 93, 93, 0.1);
+    border-color: var(--tomato-stamp);
+    color: var(--tomato-stamp);
+  }
+
+  /* Markdown Preview - Perforation Effect */
+  .markdown-preview {
+    @apply border-2 border-dashed rounded-lg p-4;
+    border-color: var(--lake-haze);
+    background-color: rgba(191, 215, 210, 0.05);
+  }
+
+  .markdown-tabs {
+    @apply flex border-b mb-4;
+    border-color: var(--pine-shadow-20);
+  }
+
+  .markdown-tab {
+    @apply px-4 py-2 text-sm font-medium cursor-pointer;
+    color: var(--pine-shadow-60);
+    border-bottom: 2px solid transparent;
+    transition: all var(--transition-ease);
+    text-transform: lowercase;
+    font-family: var(--font-display);
+  }
+
+  .markdown-tab.active {
+    color: var(--midnight-koi);
+    border-bottom-color: var(--lake-haze);
+  }
+
+  .markdown-tab:hover:not(.active) {
+    color: var(--pine-shadow);
+  }
+
+  /* Review Section - Two Column Pamphlet Style */
+  .review-grid {
+    @apply grid grid-cols-1 lg:grid-cols-2 gap-8;
+  }
+
+  .review-column {
+    @apply space-y-6;
+  }
+
+  .review-summary {
+    @apply bg-canvas-cream border border-pine-shadow-20 rounded-lg p-6;
+    box-shadow: 0 2px 8px rgba(76, 102, 89, 0.06);
+  }
+
+  .review-table {
+    @apply w-full text-sm;
+  }
+
+  .review-table th {
+    @apply text-left py-2 font-medium uppercase tracking-wider text-xs;
+    color: var(--pine-shadow-60);
+    font-family: var(--font-display);
+    border-bottom: 1px solid var(--pine-shadow-20);
+  }
+
+  .review-table td {
+    @apply py-2;
+    border-bottom: 1px solid var(--pine-shadow-10);
+  }
+
+  .review-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* Success States - Subtle Lilypad Accent */
+  .success-indicator {
+    color: var(--lilypad);
+  }
+
+  .success-bg {
+    background-color: rgba(138, 165, 128, 0.1);
+  }
+
+  /* Loading States */
+  .loading-shimmer {
+    background: linear-gradient(90deg, var(--pine-shadow-10) 25%, var(--pine-shadow-20) 50%, var(--pine-shadow-10) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  /* Utility Classes */
+  .text-pine {
+    color: var(--pine-shadow);
+  }
+  .text-pine-60 {
+    color: var(--pine-shadow-60);
+  }
+  .text-midnight {
+    color: var(--midnight-koi);
+  }
+  .text-tomato {
+    color: var(--tomato-stamp);
+  }
+  .text-lilypad {
+    color: var(--lilypad);
+  }
+
+  .bg-cream {
+    background-color: var(--canvas-cream);
+  }
+  .bg-lake {
+    background-color: var(--lake-haze);
+  }
+  .bg-sun {
+    background-color: var(--sun-bleach);
+  }
+
+  .border-pine-20 {
+    border-color: var(--pine-shadow-20);
+  }
+  .border-lake {
+    border-color: var(--lake-haze);
+  }
+
+  /* Responsive Spacing */
+  .poster-spacing {
+    padding: 2rem var(--grid-margin-desktop);
+  }
+
+  @media (max-width: 768px) {
+    .poster-spacing {
+      padding: 1.5rem var(--grid-margin-mobile);
+    }
+  }
+
+  /* Tailwind-compatible color classes */
+  .bg-canvas-cream {
+    background-color: var(--color-canvas-cream);
+  }
+  .bg-lake-haze {
+    background-color: var(--color-lake-haze);
+  }
+  .bg-sun-bleach {
+    background-color: var(--color-sun-bleach);
+  }
+  .bg-pine-shadow {
+    background-color: var(--color-pine-shadow);
+  }
+  .bg-midnight-koi {
+    background-color: var(--color-midnight-koi);
+  }
+  .bg-tomato-stamp {
+    background-color: var(--color-tomato-stamp);
+  }
+  .bg-lilypad {
+    background-color: var(--color-lilypad);
+  }
+
+  .text-canvas-cream {
+    color: var(--color-canvas-cream);
+  }
+  .text-lake-haze {
+    color: var(--color-lake-haze);
+  }
+  .text-sun-bleach {
+    color: var(--color-sun-bleach);
+  }
+  .text-pine-shadow {
+    color: var(--color-pine-shadow);
+  }
+  .text-pine-shadow-90 {
+    color: var(--color-pine-shadow-90);
+  }
+  .text-pine-shadow-60 {
+    color: var(--color-pine-shadow-60);
+  }
+  .text-midnight-koi {
+    color: var(--color-midnight-koi);
+  }
+  .text-tomato-stamp {
+    color: var(--color-tomato-stamp);
+  }
+  .text-lilypad {
+    color: var(--color-lilypad);
+  }
+
+  .border-canvas-cream {
+    border-color: var(--color-canvas-cream);
+  }
+  .border-lake-haze {
+    border-color: var(--color-lake-haze);
+  }
+  .border-sun-bleach {
+    border-color: var(--color-sun-bleach);
+  }
+  .border-pine-shadow {
+    border-color: var(--color-pine-shadow);
+  }
+  .border-pine-shadow-20 {
+    border-color: var(--color-pine-shadow-20);
+  }
+  .border-midnight-koi {
+    border-color: var(--color-midnight-koi);
+  }
+  .border-tomato-stamp {
+    border-color: var(--color-tomato-stamp);
+  }
+  .border-lilypad {
+    border-color: var(--color-lilypad);
+  }
+}
+

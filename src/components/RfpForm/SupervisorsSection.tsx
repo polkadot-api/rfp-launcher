@@ -1,39 +1,29 @@
-import { getPublicKey, sliceMiddleAddr } from "@/lib/ss58";
-import { CopyText, PolkadotIdenticon } from "@polkadot-api/react-components";
-import { useStateObservable } from "@react-rxjs/core";
-import { CheckCircle, Trash2 } from "lucide-react";
-import { getSs58AddressInfo } from "polkadot-api";
-import { FC, useState } from "react";
-import { ControllerRenderProps, useWatch } from "react-hook-form";
-import { Button } from "../ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../ui/card";
-import { FormControl, FormField, FormItem, FormMessage } from "../ui/form";
-import { Input } from "../ui/input";
-import { identity$ } from "./data";
-import { FormInputField } from "./FormInputField";
-import { FormSchema, RfpControlType } from "./formSchema";
+"use client"
 
-export const SupervisorsSection: FC<{ control: RfpControlType }> = ({
-  control,
-}) => {
-  const supervisors = useWatch({ name: "supervisors", control });
+import { getPublicKey, sliceMiddleAddr } from "@/lib/ss58"
+import { CopyText, PolkadotIdenticon } from "@polkadot-api/react-components"
+import { useStateObservable } from "@react-rxjs/core"
+import { CheckCircle, Trash2 } from "lucide-react"
+import { getSs58AddressInfo } from "polkadot-api"
+import { type FC, useState } from "react"
+import { type ControllerRenderProps, useWatch } from "react-hook-form"
+import { Button } from "../ui/button"
+import { FormControl, FormField, FormItem, FormMessage } from "../ui/form"
+import { Input } from "../ui/input"
+import { identity$ } from "./data"
+import { FormInputField } from "./FormInputField"
+import type { FormSchema, RfpControlType } from "./formSchema"
+
+export const SupervisorsSection: FC<{ control: RfpControlType }> = ({ control }) => {
+  const supervisors = useWatch({ name: "supervisors", control })
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Supervisors</CardTitle>
-        <CardDescription>
-          Curators for this bounty, responsible of choosing the implementors and
-          evaluating the development
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="vintage-card supervisors-section section-divider">
+      <h3 className="text-3xl font-medium mb-6 text-midnight-koi">supervisors</h3>
+      <p className="text-lg text-pine-shadow/80 mb-12 leading-relaxed">
+        curators for this bounty, responsible of choosing the implementors and evaluating the development
+      </p>
+      <div className="space-y-8">
         <FormField
           control={control}
           name="supervisors"
@@ -52,110 +42,94 @@ export const SupervisorsSection: FC<{ control: RfpControlType }> = ({
             min={1}
             control={control}
             name="signatoriesThreshold"
-            label="Signatories threshold"
-            description="Minimum required amount of supervisors to sign and perform decisions"
+            label="signatories threshold"
+            description="minimum required amount of supervisors to sign and perform decisions"
           />
         ) : null}
-      </CardContent>
-    </Card>
-  );
-};
+      </div>
+    </div>
+  )
+}
 
-const SupervisorsControl: FC<
-  ControllerRenderProps<FormSchema, "supervisors">
-> = ({ value, onChange }) => {
-  const [newAddr, setNewAddr] = useState("");
-  const [addrInvalid, setAddrInvalid] = useState(false);
+const SupervisorsControl: FC<ControllerRenderProps<FormSchema, "supervisors">> = ({ value, onChange }) => {
+  const [newAddr, setNewAddr] = useState("")
+  const [addrInvalid, setAddrInvalid] = useState(false)
 
   const addSupervisor = () => {
-    const info = getSs58AddressInfo(newAddr);
-    setAddrInvalid(!info.isValid);
+    const info = getSs58AddressInfo(newAddr)
+    setAddrInvalid(!info.isValid)
 
     if (info.isValid) {
       if (!value.includes(newAddr)) {
-        onChange([...value, newAddr]);
+        onChange([...value, newAddr])
       }
-      setNewAddr("");
+      setNewAddr("")
     }
-  };
+  }
 
   return (
-    <div className="space-y-2">
-      <ul className="space-y-2">
+    <div className="space-y-6">
+      <ul className="space-y-4">
         {value.map((addr) => (
-          <li key={addr} className="flex items-center gap-1 overflow-hidden">
+          <li key={addr} className="flex items-center gap-4 p-4 budget-card">
             <Button
               type="button"
-              variant="outline"
-              className="mx-1 h-auto text-destructive border-destructive hover:bg-destructive/5 hover:text-destructive"
+              className="vintage-button btn-destructive"
               onClick={() => onChange(value.filter((v) => v !== addr))}
             >
-              <Trash2 />
+              <Trash2 size={18} />
             </Button>
             <AddressIdentity addr={addr} />
           </li>
         ))}
       </ul>
-      <div className="space-y-1">
-        <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="space-y-3">
+        <div className="flex flex-col gap-4 sm:flex-row">
           <Input
-            placeholder="Address"
+            placeholder="supervisor address"
             value={newAddr}
             onChange={(evt) => setNewAddr(evt.target.value)}
             aria-invalid={addrInvalid}
+            className="vintage-input flex-1"
           />
-          <Button type="button" variant="outline" onClick={addSupervisor}>
-            Add Supervisor
+          <Button type="button" className="vintage-button btn-primary" onClick={addSupervisor}>
+            add supervisor
           </Button>
         </div>
         {addrInvalid ? (
-          <div className="text-sm text-destructive">
-            Value is not a valid SS58 Address
+          <div className="alert-box alert-danger">
+            <div className="text-base">value is not a valid ss58 address</div>
           </div>
         ) : null}
       </div>
     </div>
-  );
-};
+  )
+}
 
 const AddressIdentity: FC<{ addr: string }> = ({ addr }) => {
-  const identity = useStateObservable(identity$(addr));
+  const identity = useStateObservable(identity$(addr))
 
   return (
-    <div className="flex items-center gap-1 overflow-hidden">
-      <CopyText
-        text={addr}
-        copiedContent={
-          <CheckCircle
-            size={16}
-            className="text-green-500 dark:text-green-300 w-8"
-          />
-        }
-      >
-        <PolkadotIdenticon size={32} publicKey={getPublicKey(addr)} />
+    <div className="flex items-center gap-3 overflow-hidden flex-1">
+      <CopyText text={addr} copiedContent={<CheckCircle size={18} className="text-lilypad-dark w-8" />}>
+        <PolkadotIdenticon size={36} publicKey={getPublicKey(addr)} />
       </CopyText>
       {identity ? (
         identity.verified ? (
-          <div className="flex items-center gap-1">
-            <span>{identity.value}</span>
-            <CheckCircle
-              size={16}
-              className="text-green-500 dark:text-green-400"
-            />
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-medium">{identity.value}</span>
+            <CheckCircle size={18} className="text-lilypad-dark" />
           </div>
         ) : (
           <div className="leading-tight">
-            <div>{identity.value}</div>
-            <div className="text-sm text-foreground/60">
-              {sliceMiddleAddr(addr)}
-            </div>
+            <div className="text-lg font-medium">{identity.value}</div>
+            <div className="text-base text-pine-shadow/60">{sliceMiddleAddr(addr)}</div>
           </div>
         )
       ) : (
-        <span className="text-sm text-foreground/60 overflow-hidden text-ellipsis">
-          {sliceMiddleAddr(addr)}
-        </span>
+        <span className="text-base text-pine-shadow/60 overflow-hidden text-ellipsis">{sliceMiddleAddr(addr)}</span>
       )}
     </div>
-  );
-};
+  )
+}
+

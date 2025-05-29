@@ -1,96 +1,102 @@
-import { formatToken } from "@/lib/formatToken";
-import { useStateObservable } from "@react-rxjs/core";
-import { TriangleAlert } from "lucide-react";
-import { FC } from "react";
-import { openSelectAccount, selectedAccount$ } from "../SelectAccount";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { estimatedCost$, signerBalance$ } from "./data";
-import { FormInputField } from "./FormInputField";
-import { RfpControlType } from "./formSchema";
+"use client"
 
-export const FundingSection: FC<{ control: RfpControlType }> = ({
-  control,
-}) => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Funding</CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4">
+import { formatToken } from "@/lib/formatToken"
+import { useStateObservable } from "@react-rxjs/core"
+import { TriangleAlert, CheckCircle2 } from "lucide-react"
+import type { FC } from "react"
+import { openSelectAccount, selectedAccount$ } from "../SelectAccount"
+import { estimatedCost$, signerBalance$ } from "./data"
+import { FormInputField } from "./FormInputField"
+import type { RfpControlType } from "./formSchema"
+
+export const FundingSection: FC<{ control: RfpControlType }> = ({ control }) => (
+  <div className="poster-card">
+    <h3 className="text-3xl font-medium mb-8 text-midnight-koi">funding</h3>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
       <FormInputField
         control={control}
         name="prizePool"
-        label="Prize Pool (USD)"
-        description="Amount awarded to implementors"
+        label="prize pool (usd)"
+        description="amount awarded to implementors"
+        type="number"
       />
       <FormInputField
         control={control}
         name="findersFee"
-        label="Finder's Fee (USD)"
-        description="Amount awarded to the referral of the implementors"
+        label="finder's fee (usd)"
+        description="amount awarded to the referral"
+        type="number"
       />
       <FormInputField
         control={control}
         name="supervisorsFee"
-        label="Supervisors' Fee (USD)"
-        description="Amount awarded split amongst the supervisors"
+        label="supervisors' fee (usd)"
+        description="amount split amongst supervisors"
+        type="number"
       />
-      <BalanceCheck />
-    </CardContent>
-  </Card>
-);
+    </div>
+    <BalanceCheck />
+  </div>
+)
 
 const BalanceCheck = () => {
-  const estimatedCost = useStateObservable(estimatedCost$);
-  const selectedAccount = useStateObservable(selectedAccount$);
-  const currentBalance = useStateObservable(signerBalance$);
+  const estimatedCost = useStateObservable(estimatedCost$)
+  const selectedAccount = useStateObservable(selectedAccount$)
+  const currentBalance = useStateObservable(signerBalance$)
 
   const renderBalanceCheck = () => {
-    if (estimatedCost == null) return null;
+    if (estimatedCost == null) return <div className="text-pine-shadow-60">calculating minimum cost...</div>
     if (!selectedAccount) {
       return (
-        <>
-          <button
-            type="button"
-            className="border border-primary rounded-full px-2 hover:bg-primary/5"
-            onClick={openSelectAccount}
-          >
-            Connect your wallet
-          </button>{" "}
-          to check if you have sufficient balance.
-        </>
-      );
+        <div className="flex items-center gap-4">
+          <button type="button" className="poster-btn btn-primary" onClick={openSelectAccount}>
+            connect wallet
+          </button>
+          <span className="text-pine-shadow">to check your balance</span>
+        </div>
+      )
     }
-    if (currentBalance == null) return null;
+    if (currentBalance == null) return <div className="text-pine-shadow-60">fetching your balance...</div>
 
-    const totalCost = estimatedCost.deposits + estimatedCost.fees;
+    const totalCost = estimatedCost.deposits + estimatedCost.fees
 
     if (currentBalance < totalCost) {
       return (
-        <div>
-          <TriangleAlert className="text-amber-600 inline-block" size={20} />
-          You don't have enough balance in your wallet (
-          {formatToken(currentBalance)}). Please, add funds or select another
-          one.
+        <div className="poster-alert alert-error flex items-center gap-3">
+          <TriangleAlert size={20} className="shrink-0" />
+          <div>
+            <strong>uh-oh:</strong> not enough balance ({formatToken(currentBalance)}). please add funds or select
+            another wallet.
+          </div>
         </div>
-      );
+      )
     }
-    return <>You have enough balance to launch the RFP 🚀</>;
-  };
+    return (
+      <div className="poster-alert alert-success flex items-center gap-3">
+        <CheckCircle2 size={20} className="shrink-0 text-lilypad" />
+        <div>
+          <strong>rad:</strong> you have enough balance ({formatToken(currentBalance)}) to launch the rfp 🚀
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <p>
-      Please note that you'll need a minimum of{" "}
-      {estimatedCost ? (
-        <span>
-          <b>{formatToken(estimatedCost.deposits + estimatedCost.fees)}</b> to
-          submit the RFP ({formatToken(estimatedCost.fees)} in fees, you'll get{" "}
-          {formatToken(estimatedCost.deposits)} in deposits back once the RFP
-          ends)
-        </span>
-      ) : (
-        <span className="text-muted-foreground">(calculating…)</span>
-      )}
-      . {renderBalanceCheck()}
-    </p>
-  );
-};
+    <div className="bg-canvas-cream border border-pine-shadow-20 rounded-lg p-6">
+      <p className="text-pine-shadow leading-relaxed mb-4">
+        you'll need a minimum of{" "}
+        {estimatedCost ? (
+          <strong className="text-midnight-koi font-semibold">
+            {formatToken(estimatedCost.deposits + estimatedCost.fees)}
+          </strong>
+        ) : (
+          <span className="text-pine-shadow-60">(calculating…)</span>
+        )}{" "}
+        to submit the rfp ({formatToken(estimatedCost?.fees)} in fees, you'll get {formatToken(estimatedCost?.deposits)}{" "}
+        in deposits back once the rfp ends).
+      </p>
+      <div>{renderBalanceCheck()}</div>
+    </div>
+  )
+}
+

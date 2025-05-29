@@ -1,19 +1,19 @@
-import { Header } from "./components/Header";
-import { RfpForm } from "./components/RfpForm";
+import { Header } from "./components/Header"
+import { RfpForm } from "./components/RfpForm"
 
 function App() {
   return (
-    <div className="flex flex-col items-center max-h-screen">
-      <div className="w-full border-b p-2 overflow-hidden shrink-0">
-        <Header />
-      </div>
-      <div className="w-full overflow-auto p-2">
-        <div className="max-w-5xl m-auto">
-          <RfpForm />
-        </div>
-      </div>
+    <div className="min-h-screen bg-canvas-cream">
+      {/* Poster-style header */}
+      <Header />
+
+      {/* Main content with poster spacing */}
+      <main className="poster-container">
+        <RfpForm />
+      </main>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App
+
