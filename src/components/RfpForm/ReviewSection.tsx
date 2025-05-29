@@ -2,7 +2,7 @@
 
 import { TOKEN_SYMBOL } from "@/constants"
 import { formatDate } from "@/lib/date"
-import { formatCurrency, formatUsd } from "@/lib/formatToken"
+import { formatCurrency, formatToken, formatUsd } from "@/lib/formatToken" // Added formatToken
 import { getPublicKey, sliceMiddleAddr } from "@/lib/ss58"
 import { currencyRate$ } from "@/services/currencyRate"
 import { PolkadotIdenticon } from "@polkadot-api/react-components"
@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   Copy,
   CheckCircle,
+  AlertCircle,
 } from "lucide-react"
 import { type FC, useEffect, useState, useMemo, type Dispatch, type SetStateAction } from "react"
 import { useWatch } from "react-hook-form"
@@ -30,12 +31,16 @@ import { calculatePriceTotals, setBountyValue } from "./data/price"
 import { generateMarkdown } from "./data/markdown"
 import { MarkdownPreview } from "./MarkdownPreview"
 import { type Milestone, parseNumber, type RfpControlType } from "./formSchema"
+import { selectedAccount$ } from "../SelectAccount" // To check if an account is selected
 
 interface ReviewSectionProps {
   control: RfpControlType
   onReset: () => void
   isReturnFundsAgreed: boolean
   setIsReturnFundsAgreed: Dispatch<SetStateAction<boolean>>
+  hasSufficientBalance: boolean
+  currentBalance: bigint | null
+  totalRequiredCost: bigint | null
 }
 
 export const ReviewSection: FC<ReviewSectionProps> = ({
@@ -43,8 +48,12 @@ export const ReviewSection: FC<ReviewSectionProps> = ({
   onReset,
   isReturnFundsAgreed,
   setIsReturnFundsAgreed,
+  hasSufficientBalance,
+  currentBalance,
+  totalRequiredCost,
 }) => {
   const estimatedTimeline = useStateObservable(estimatedTimeline$)
+  const selectedAccount = useStateObservable(selectedAccount$) // Get selected account
 
   const milestones = useWatch({ control, name: "milestones" })
   const prizePool = useWatch({ control, name: "prizePool" })
@@ -62,6 +71,21 @@ export const ReviewSection: FC<ReviewSectionProps> = ({
   return (
     <div className="poster-card">
       <h3 className="text-3xl font-medium mb-8 text-midnight-koi">Review & Submit</h3>
+
+      {/* Insufficient Balance Warning */}
+      {selectedAccount && !hasSufficientBalance && totalRequiredCost !== null && (
+        <div className="mb-6 poster-alert alert-error">
+          <div className="flex items-center gap-3">
+            <AlertCircle size={20} className="shrink-0" />
+            <div>
+              <strong>Insufficient Balance:</strong> You need at least{" "}
+              <strong className="font-semibold">{formatToken(totalRequiredCost)}</strong> to launch this RFP. Your
+              current balance is <strong className="font-semibold">{formatToken(currentBalance)}</strong>. Please add
+              funds or select another wallet.
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Summary Grid - Three Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">

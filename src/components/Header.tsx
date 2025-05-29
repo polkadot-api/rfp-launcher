@@ -11,7 +11,7 @@ export const Header = () => {
           <img
             src="/logo.svg" // Assuming logo.svg is in the public folder
             alt="RFP Launcher Logo"
-            className="h-10 w-auto" // Adjust height as needed
+            className="h-14 w-auto" // Adjust height as needed
           />
           {/* The 'poster-brand' class is on this div, which correctly stacks title and subtitle vertically */}
           <div className="poster-brand">

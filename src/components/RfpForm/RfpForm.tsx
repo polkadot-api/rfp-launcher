@@ -14,6 +14,9 @@ import { SupervisorsSection } from "./SupervisorsSection"
 import { TimelineSection } from "./TimelineSection"
 import { WelcomeSection } from "./WelcomeSection"
 import { ArrowLeft, ArrowRight, Rocket } from "lucide-react"
+import { estimatedCost$, signerBalance$ } from "./data" // Correctly keep these
+import { selectedAccount$ } from "@/components/SelectAccount" // Corrected import path for selectedAccount$
+import { useStateObservable } from "@react-rxjs/core"
 
 const defaultValues: Partial<FormSchema> = {
   prizePool: emptyNumeric,
@@ -41,6 +44,10 @@ export const RfpForm = () => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [isReturnFundsAgreed, setIsReturnFundsAgreed] = useState(false)
 
+  const estimatedCost = useStateObservable(estimatedCost$)
+  const currentBalance = useStateObservable(signerBalance$)
+  const selectedAccount = useStateObservable(selectedAccount$) // Observe selectedAccount
+
   const methods = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -60,7 +67,7 @@ export const RfpForm = () => {
     control,
     handleSubmit,
     setValue,
-    formState: { errors, isValid },
+    formState: { errors, isValid: isFormValid },
   } = methods
 
   useEffect(() => {
@@ -72,29 +79,48 @@ export const RfpForm = () => {
 
   const handleNext = async () => {
     setCurrentStepIndex((prev) => Math.min(prev + 1, steps.length - 1))
+    window.scrollTo(0, 0) // Scroll to top
   }
 
   const handlePrev = () => {
     setCurrentStepIndex((prev) => Math.max(prev - 1, 0))
+    window.scrollTo(0, 0) // Scroll to top
   }
 
   const handleResetForm = () => {
     if (!confirm("Are you sure you want to reset the form? This will clear all your progress.")) return
     Object.entries(defaultValues).forEach(([key, value]) => setValue(key as keyof FormSchema, value as any))
-    setIsReturnFundsAgreed(false) // Reset agreement state as well
+    setIsReturnFundsAgreed(false)
     setCurrentStepIndex(0)
+    window.scrollTo(0, 0) // Scroll to top after reset
   }
 
   const ActiveStepComponent = steps[currentStepIndex].Component
   const isReviewStep = currentStepIndex === steps.length - 1
   const hasErrors = Object.keys(errors).length > 0
-  const isSubmitDisabled = hasErrors || !isValid || (isReviewStep && !isReturnFundsAgreed)
+
+  const totalRequiredCost = estimatedCost ? estimatedCost.deposits + estimatedCost.fees : null
+
+  const hasSufficientBalanceForButton =
+    selectedAccount !== null && currentBalance !== null && totalRequiredCost !== null
+      ? currentBalance >= totalRequiredCost
+      : selectedAccount === null
+
+  const isSubmitDisabled =
+    hasErrors ||
+    !isFormValid ||
+    (isReviewStep && !isReturnFundsAgreed) ||
+    (isReviewStep && selectedAccount !== null && !hasSufficientBalanceForButton)
+
+  const hasSufficientBalanceForWarning =
+    selectedAccount !== null && currentBalance !== null && totalRequiredCost !== null
+      ? currentBalance >= totalRequiredCost
+      : true
 
   return (
     <FormProvider {...methods}>
       <Form {...methods}>
         <form onSubmit={handleSubmit(submit)} className="space-y-12">
-          {/* Current step content */}
           <div className="poster-section">
             {isReviewStep ? (
               <ReviewSection
@@ -102,6 +128,9 @@ export const RfpForm = () => {
                 onReset={handleResetForm}
                 isReturnFundsAgreed={isReturnFundsAgreed}
                 setIsReturnFundsAgreed={setIsReturnFundsAgreed}
+                hasSufficientBalance={hasSufficientBalanceForWarning}
+                currentBalance={currentBalance}
+                totalRequiredCost={totalRequiredCost}
               />
             ) : (
               // @ts-ignore
@@ -109,7 +138,6 @@ export const RfpForm = () => {
             )}
           </div>
 
-          {/* Navigation */}
           <div className="poster-section">
             <div className="flex items-center justify-between">
               <div>
