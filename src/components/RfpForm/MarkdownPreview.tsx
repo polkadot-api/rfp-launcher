@@ -1,15 +1,75 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 import { useState } from "react"
 import { Eye, Code } from "lucide-react"
 import { Textarea } from "../ui/textarea"
+import ReactMarkdown, { type Components } from "react-markdown"
+import { cn } from "@/lib/utils" // For combining class names
 
 interface MarkdownPreviewProps {
   markdown: string
+  onCopy: () => void
+  copied: boolean
 }
 
-export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown }) => {
+// Define a base style for standard text elements
+const baseTextStyles =
+  "font-['system-ui','-apple-system','BlinkMacSystemFont','Segoe_UI','Roboto','Helvetica_Neue','Arial','Noto_Sans','sans-serif','Apple_Color_Emoji','Segoe_UI_Emoji','Segoe_UI_Symbol','Noto_Color_Emoji'] text-pine-shadow-90 leading-relaxed"
+const headingStyles = `${baseTextStyles} text-midnight-koi font-semibold mt-6 mb-3`
+const codeStyles = "font-mono bg-pine-shadow-10 text-midnight-koi px-1 py-0.5 rounded text-sm"
+
+const customComponents: Components = {
+  h1: ({ node, ...props }) => (
+    <h1 className={cn(headingStyles, "text-3xl border-b border-pine-shadow-20 pb-2 mb-4")} {...props} />
+  ),
+  h2: ({ node, ...props }) => (
+    <h2 className={cn(headingStyles, "text-2xl border-b border-pine-shadow-20 pb-1 mb-3")} {...props} />
+  ),
+  h3: ({ node, ...props }) => <h3 className={cn(headingStyles, "text-xl")} {...props} />,
+  h4: ({ node, ...props }) => <h4 className={cn(headingStyles, "text-lg")} {...props} />,
+  p: ({ node, ...props }) => <p className={cn(baseTextStyles, "mb-4")} {...props} />,
+  a: ({ node, ...props }) => <a className="text-tomato-stamp hover:text-midnight-koi underline" {...props} />,
+  ul: ({ node, ...props }) => <ul className={cn(baseTextStyles, "list-disc pl-6 mb-4 space-y-1")} {...props} />,
+  ol: ({ node, ...props }) => <ol className={cn(baseTextStyles, "list-decimal pl-6 mb-4 space-y-1")} {...props} />,
+  li: ({ node, children, ...props }) => {
+    // Check if the li contains a p, if so, don't add margin to li itself
+    const hasParagraph = React.Children.toArray(children).some(
+      (child) => React.isValidElement(child) && child.type === "p",
+    )
+    return (
+      <li className={cn(baseTextStyles, !hasParagraph ? "mb-1" : "")} {...props}>
+        {children}
+      </li>
+    )
+  },
+  code: ({ node, inline, className, children, ...props }) => {
+    const match = /language-(\w+)/.exec(className || "")
+    return !inline ? (
+      <pre className="bg-pine-shadow-10 p-4 rounded-md overflow-x-auto my-4">
+        <code className={cn(codeStyles, "bg-transparent p-0")} {...props}>
+          {children}
+        </code>
+      </pre>
+    ) : (
+      <code className={cn(codeStyles, className)} {...props}>
+        {children}
+      </code>
+    )
+  },
+  blockquote: ({ node, ...props }) => (
+    <blockquote
+      className={cn(baseTextStyles, "border-l-4 border-lake-haze pl-4 italic my-4 text-pine-shadow-60")}
+      {...props}
+    />
+  ),
+  strong: ({ node, ...props }) => <strong className="font-semibold text-midnight-koi" {...props} />,
+  em: ({ node, ...props }) => <em className="italic" {...props} />,
+  hr: ({ node, ...props }) => <hr className="border-pine-shadow-20 my-6" {...props} />,
+  // You can add more custom components for other elements like table, img, etc.
+}
+
+export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, onCopy, copied }) => {
   const [activeTab, setActiveTab] = useState<"rendered" | "raw">("rendered")
 
   const handleTabClick = (tab: "rendered" | "raw", event: React.MouseEvent) => {
@@ -20,6 +80,8 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown }) =>
 
   return (
     <div className="markdown-preview">
+      {" "}
+      {/* Keep this outer wrapper for its existing styles */}
       {/* Tab Headers */}
       <div className="markdown-tabs">
         <button
@@ -39,11 +101,19 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown }) =>
           Raw Markdown
         </button>
       </div>
-
       {/* Tab Content */}
       {activeTab === "rendered" ? (
         <div className="p-6 bg-canvas-cream border border-pine-shadow-20 rounded-b-lg">
-          <MarkdownRenderer content={markdown} />
+          {/* Remove all 'prose' classes here */}
+          <div className="max-w-none">
+            {markdown ? (
+              <ReactMarkdown components={customComponents}>{markdown}</ReactMarkdown>
+            ) : (
+              <div className={cn(baseTextStyles, "text-pine-shadow-60 italic text-sm")}>
+                Loading Markdown preview...
+              </div>
+            )}
+          </div>
         </div>
       ) : (
         <div className="border border-pine-shadow-20 rounded-b-lg">
@@ -52,155 +122,13 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown }) =>
             value={markdown || "Loading Markdown preview..."}
             className="w-full min-h-[300px] font-mono text-sm border-0 rounded-b-lg resize-none"
             style={{
-              fontFamily: '"SF Mono", "Monaco", "Inconsolata", "Roboto Mono", monospace',
+              fontFamily: "var(--font-mono)", // Use your theme's mono font variable
               borderRadius: "0 0 0.5rem 0.5rem",
             }}
             placeholder="Markdown preview will appear here..."
           />
         </div>
       )}
-    </div>
-  )
-}
-
-// Simple markdown renderer component with normal fonts
-const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
-  if (!content) {
-    return <div className="text-pine-shadow-60 italic text-sm">Loading Markdown preview...</div>
-  }
-
-  // Simple markdown parsing
-  const parseMarkdown = (text: string) => {
-    const lines = text.split("\n")
-    const elements: React.ReactNode[] = []
-    let currentList: string[] = []
-    let inCodeBlock = false
-    let codeBlockContent: string[] = []
-
-    const flushList = () => {
-      if (currentList.length > 0) {
-        elements.push(
-          <ul key={`list-${elements.length}`} className="list-disc pl-5 mb-4 space-y-1">
-            {currentList.map((item, i) => (
-              <li key={i} className="text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: parseInline(item) }} />
-            ))}
-          </ul>,
-        )
-        currentList = []
-      }
-    }
-
-    const flushCodeBlock = () => {
-      if (codeBlockContent.length > 0) {
-        elements.push(
-          <pre
-            key={`code-${elements.length}`}
-            className="bg-gray-100 p-4 rounded border-l-4 border-lake-haze mb-4 overflow-x-auto"
-            style={{ fontFamily: '"SF Mono", "Monaco", "Inconsolata", "Roboto Mono", monospace' }}
-          >
-            <code className="text-sm text-gray-800">{codeBlockContent.join("\n")}</code>
-          </pre>,
-        )
-        codeBlockContent = []
-      }
-    }
-
-    lines.forEach((line, index) => {
-      // Handle code blocks
-      if (line.startsWith("```")) {
-        if (inCodeBlock) {
-          flushCodeBlock()
-          inCodeBlock = false
-        } else {
-          flushList()
-          inCodeBlock = true
-        }
-        return
-      }
-
-      if (inCodeBlock) {
-        codeBlockContent.push(line)
-        return
-      }
-
-      // Handle headers
-      if (line.startsWith("# ")) {
-        flushList()
-        elements.push(
-          <h1
-            key={index}
-            className="text-2xl font-bold mb-4 text-gray-900 leading-tight"
-            style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
-          >
-            {line.slice(2)}
-          </h1>,
-        )
-      } else if (line.startsWith("## ")) {
-        flushList()
-        elements.push(
-          <h2
-            key={index}
-            className="text-xl font-semibold mb-3 text-gray-900 leading-tight"
-            style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
-          >
-            {line.slice(3)}
-          </h2>,
-        )
-      } else if (line.startsWith("### ")) {
-        flushList()
-        elements.push(
-          <h3
-            key={index}
-            className="text-lg font-semibold mb-2 text-gray-900 leading-tight"
-            style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
-          >
-            {line.slice(4)}
-          </h3>,
-        )
-      }
-      // Handle list items
-      else if (line.startsWith("- ")) {
-        currentList.push(line.slice(2))
-      }
-      // Handle paragraphs
-      else if (line.trim()) {
-        flushList()
-        elements.push(
-          <p
-            key={index}
-            className="mb-4 text-sm leading-relaxed text-gray-700"
-            style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
-            dangerouslySetInnerHTML={{ __html: parseInline(line) }}
-          />,
-        )
-      }
-      // Handle empty lines
-      else {
-        flushList()
-        if (elements.length > 0) {
-          elements.push(<div key={index} className="mb-3" />)
-        }
-      }
-    })
-
-    flushList()
-    flushCodeBlock()
-    return elements
-  }
-
-  const parseInline = (text: string) => {
-    return text
-      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em class="italic text-gray-800">$1</em>')
-      .replace(
-        /`(.*?)`/g,
-        "<code class=\"bg-gray-100 px-2 py-1 rounded text-sm\" style=\"font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;\">$1</code>",
-      )
-  }
-
-  return (
-    <div className="prose prose-sm max-w-none" style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}>
-      {parseMarkdown(content)}
     </div>
   )
 }
