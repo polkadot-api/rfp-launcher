@@ -5,7 +5,7 @@ export const WelcomeSection: FC = () => (
     <div
       className="absolute inset-0 opacity-30"
       style={{
-        backgroundImage: "url('/rocket.jpg?height=400&width=1200')",
+        backgroundImage: `url('${import.meta.env.BASE_URL}rocket.jpg?height=400&width=1200')`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         filter: "blur(2px) saturate(0.95)",
