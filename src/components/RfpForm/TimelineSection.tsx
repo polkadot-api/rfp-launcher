@@ -3,7 +3,7 @@ import { useStateObservable } from "@react-rxjs/core"
 import { addWeeks, differenceInDays, format } from "date-fns"
 import type { FC } from "react"
 import { useWatch } from "react-hook-form"
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
+// Removed Card, CardContent, CardHeader, CardTitle imports
 import { DatePicker } from "../ui/datepicker"
 import { FormDescription, FormField, FormItem, FormLabel, FormMessage } from "../ui/form"
 import { estimatedTimeline$ } from "./data"
@@ -14,11 +14,13 @@ export const TimelineSection: FC<{ control: RfpControlType }> = ({ control }) =>
   const submissionDeadline = useSubmissionDeadline(control)
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Timeline</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="poster-card">
+      {" "}
+      {/* Changed from <Card> to <div className="poster-card"> */}
+      <h3 className="text-3xl font-medium mb-8 text-midnight-koi">Timeline</h3> {/* Added consistent title */}
+      <div className="space-y-4">
+        {" "}
+        {/* Replaces CardContent */}
         <FormInputField
           control={control}
           type="number"
@@ -32,19 +34,21 @@ export const TimelineSection: FC<{ control: RfpControlType }> = ({ control }) =>
           name="projectCompletion"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel>Project Completion Date</FormLabel>
+              <FormLabel className="poster-label">Project Completion Date</FormLabel>
               <DatePicker
                 {...field}
                 disabled={(v) => v.getTime() <= (submissionDeadline ? submissionDeadline.getTime() : Date.now())}
               />
-              <FormDescription>The date by which the project must be fully completed.</FormDescription>
-              <FormMessage />
+              <FormDescription className="text-xs text-pine-shadow-60 leading-tight">
+                The date by which the project must be fully completed.
+              </FormDescription>
+              <FormMessage className="text-tomato-stamp text-xs" />
             </FormItem>
           )}
         />
         <EstimatedTimeline control={control} />
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 
@@ -72,30 +76,37 @@ const EstimatedTimeline: FC<{ control: RfpControlType }> = ({ control }) => {
 
   return (
     <div>
-      <h3 className="text-sm font-medium">Estimated Timeline</h3>
+      <h3 className="text-sm font-medium text-midnight-koi">Estimated Timeline</h3>{" "}
+      {/* Changed from text-sm font-medium to match poster-label style for subheadings if desired, or keep as is */}
       {estimatedTimeline ? (
-        <ol className="text-sm text-foreground/80 list-disc pl-4 leading-normal">
+        <ol className="text-sm text-pine-shadow-60 list-disc pl-4 leading-normal">
+          {" "}
+          {/* Adjusted text color for better contrast/consistency */}
           <li>
             Referendum Executed Deadline:{" "}
-            <span className="text-foreground">{formatDate(estimatedTimeline.referendumDeadline)}</span>
+            <span className="text-midnight-koi font-medium">{formatDate(estimatedTimeline.referendumDeadline)}</span>{" "}
+            {/* Made value bolder */}
           </li>
           <li>
-            Bounty Funding: <span className="text-foreground">{formatDate(estimatedTimeline.bountyFunding)}</span>
+            Bounty Funding:{" "}
+            <span className="text-midnight-koi font-medium">{formatDate(estimatedTimeline.bountyFunding)}</span>
           </li>
           <li>
-            Bounty Funding (if RFP submitted after deadline of{" "}
-            {format(estimatedTimeline.referendumSubmissionDeadline, lateSubmissionDiff < 2 ? "LLL do kk:mm" : "LLL do")})
-            : <span className="text-foreground">{formatDate(estimatedTimeline.lateBountyFunding)}</span>
+            Bounty Funding (if RFP submitted after deadline):{" "}
+            {format(estimatedTimeline.referendumSubmissionDeadline, lateSubmissionDiff < 2 ? "LLL do kk:mm" : "LLL do")}
+            : <span className="text-midnight-koi font-medium">{formatDate(estimatedTimeline.lateBountyFunding)}</span>
           </li>
           <li>
-            Funds Expiry Deadline: <span className="text-foreground">{formatDate(submissionDeadline)}</span>
+            Funds Expiry Deadline:{" "}
+            <span className="text-midnight-koi font-medium">{formatDate(submissionDeadline)}</span>
           </li>
           <li>
-            Project Completion Date: <span className="text-foreground">{formatDate(projectCompletion)}</span>
+            Project Completion Date:{" "}
+            <span className="text-midnight-koi font-medium">{formatDate(projectCompletion)}</span>
           </li>
         </ol>
       ) : (
-        <span className="text-sm text-foreground/60">Loading...</span>
+        <span className="text-sm text-pine-shadow-60">Loading...</span>
       )}
     </div>
   )

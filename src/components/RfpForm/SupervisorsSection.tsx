@@ -18,10 +18,13 @@ export const SupervisorsSection: FC<{ control: RfpControlType }> = ({ control })
   const supervisors = useWatch({ name: "supervisors", control })
 
   return (
-    <div className="vintage-card supervisors-section section-divider">
-      <h3 className="text-3xl font-medium mb-6 text-midnight-koi">Supervisors</h3>
+    <div className="poster-card">
+      {" "}
+      {/* Changed classes here */}
+      <h3 className="text-3xl font-medium mb-8 text-midnight-koi">Supervisors</h3>{" "}
+      {/* Adjusted margin for consistency */}
       <p className="text-lg text-pine-shadow/80 mb-12 leading-relaxed">
-        Curators for this bounty, responsible of choosing the implementors and evaluating the development process.
+        Curators for this bounty, responsible of choosing the implementors and evaluating the development
       </p>
       <div className="space-y-8">
         <FormField
@@ -72,9 +75,11 @@ const SupervisorsControl: FC<ControllerRenderProps<FormSchema, "supervisors">> =
       <ul className="space-y-4">
         {value.map((addr) => (
           <li key={addr} className="flex items-center gap-4 p-4 budget-card">
+            {" "}
+            {/* Consider if 'budget-card' needs poster styling */}
             <Button
               type="button"
-              className="vintage-button btn-destructive"
+              className="vintage-button btn-destructive" // Consider if 'vintage-button' needs poster styling
               onClick={() => onChange(value.filter((v) => v !== addr))}
             >
               <Trash2 size={18} />
@@ -90,14 +95,18 @@ const SupervisorsControl: FC<ControllerRenderProps<FormSchema, "supervisors">> =
             value={newAddr}
             onChange={(evt) => setNewAddr(evt.target.value)}
             aria-invalid={addrInvalid}
-            className="vintage-input flex-1"
+            className="vintage-input flex-1" // Consider if 'vintage-input' needs poster styling
           />
           <Button type="button" className="vintage-button btn-primary" onClick={addSupervisor}>
+            {" "}
+            {/* Consider if 'vintage-button' needs poster styling */}
             Add Supervisor
           </Button>
         </div>
         {addrInvalid ? (
           <div className="alert-box alert-danger">
+            {" "}
+            {/* Consider if 'alert-box' needs poster styling */}
             <div className="text-base">Value is not a valid SS58 address.</div>
           </div>
         ) : null}
