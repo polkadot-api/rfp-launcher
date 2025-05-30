@@ -103,7 +103,7 @@
   h3,
   h4,
   h5,
-  h6 {
+  h5 {
     font-family: var(--font-display);
     font-weight: 500;
     color: var(--midnight-koi);
@@ -232,6 +232,7 @@
     color: var(--midnight-koi);
     letter-spacing: 0.02em;
     line-height: 1;
+    text-transform: lowercase;
   }
 
   .poster-brand-subtitle {
@@ -248,7 +249,7 @@
 
   /* Kusama Network Badge - Poster Stamp Style */
   .kusama-stamp {
-    background-color: black;
+    background-color: var(--tomato-stamp);
     color: var(--canvas-cream);
     padding: 8px 16px;
     font-size: 0.75rem;
@@ -265,7 +266,7 @@
   .poster-card {
     background-color: var(--canvas-cream);
     border: 1px solid var(--pine-shadow-20);
-    border-radius: 12px;
+    border-radius: var(--radius-lg); /* Changed from 12px */
     padding: 2rem;
     box-shadow: 0 4px 12px rgba(76, 102, 89, 0.08);
     transition: all var(--transition-ease);
