@@ -24,7 +24,7 @@ export const SupervisorsSection: FC<{ control: RfpControlType }> = ({ control })
       <h3 className="text-3xl font-medium mb-8 text-midnight-koi">Supervisors</h3>{" "}
       {/* Adjusted margin for consistency */}
       <p className="text-lg text-pine-shadow/80 mb-12 leading-relaxed">
-        Curators for this bounty, responsible of choosing the implementors and evaluating the development
+        Curators for this bounty, responsible of choosing the implementors and evaluating the development process.
       </p>
       <div className="space-y-8">
         <FormField
