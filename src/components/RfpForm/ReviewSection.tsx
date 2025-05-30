@@ -501,7 +501,7 @@ const ResultingMarkdown: FC<{
         </div>
       </div>
 
-      <MarkdownPreview markdown={markdown} onCopy={copyToClipboard} copied={copied} />
+      <MarkdownPreview markdown={markdown} />
 
       <div className="mt-4 poster-alert alert-warning">
         <div className="flex items-start gap-2">

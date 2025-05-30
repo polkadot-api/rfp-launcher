@@ -125,7 +125,6 @@ export const RfpForm = () => {
             {isReviewStep ? (
               <ReviewSection
                 control={control}
-                onReset={handleResetForm}
                 isReturnFundsAgreed={isReturnFundsAgreed}
                 setIsReturnFundsAgreed={setIsReturnFundsAgreed}
                 hasSufficientBalance={hasSufficientBalanceForWarning}
@@ -134,7 +133,7 @@ export const RfpForm = () => {
               />
             ) : (
               // @ts-ignore
-              <ActiveStepComponent control={control} onReset={handleResetForm} />
+              <ActiveStepComponent control={control} />
             )}
           </div>
 
