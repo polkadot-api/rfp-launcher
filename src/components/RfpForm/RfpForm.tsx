@@ -14,9 +14,10 @@ import { SupervisorsSection } from "./SupervisorsSection"
 import { TimelineSection } from "./TimelineSection"
 import { WelcomeSection } from "./WelcomeSection"
 import { ArrowLeft, ArrowRight, Rocket } from "lucide-react"
-import { estimatedCost$, signerBalance$ } from "./data" // Correctly keep these
-import { selectedAccount$ } from "@/components/SelectAccount" // Corrected import path for selectedAccount$
+import { estimatedCost$, signerBalance$, estimatedTimeline$ } from "./data"
+import { selectedAccount$ } from "@/components/SelectAccount"
 import { useStateObservable } from "@react-rxjs/core"
+import { addWeeks, differenceInDays } from "date-fns"
 
 const defaultValues: Partial<FormSchema> = {
   prizePool: emptyNumeric,
@@ -46,7 +47,8 @@ export const RfpForm = () => {
 
   const estimatedCost = useStateObservable(estimatedCost$)
   const currentBalance = useStateObservable(signerBalance$)
-  const selectedAccount = useStateObservable(selectedAccount$) // Observe selectedAccount
+  const selectedAccount = useStateObservable(selectedAccount$)
+  const estimatedTimeline = useStateObservable(estimatedTimeline$)
 
   const methods = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
@@ -67,6 +69,7 @@ export const RfpForm = () => {
     control,
     handleSubmit,
     setValue,
+    getValues,
     formState: { errors, isValid: isFormValid },
   } = methods
 
@@ -77,14 +80,22 @@ export const RfpForm = () => {
     return () => subscription.unsubscribe()
   }, [watch])
 
+  const navigateToStepById = (stepId: string) => {
+    const stepIndex = steps.findIndex((step) => step.id === stepId)
+    if (stepIndex !== -1) {
+      setCurrentStepIndex(stepIndex)
+      window.scrollTo(0, 0)
+    }
+  }
+
   const handleNext = async () => {
     setCurrentStepIndex((prev) => Math.min(prev + 1, steps.length - 1))
-    window.scrollTo(0, 0) // Scroll to top
+    window.scrollTo(0, 0)
   }
 
   const handlePrev = () => {
     setCurrentStepIndex((prev) => Math.max(prev - 1, 0))
-    window.scrollTo(0, 0) // Scroll to top
+    window.scrollTo(0, 0)
   }
 
   const handleResetForm = () => {
@@ -92,7 +103,7 @@ export const RfpForm = () => {
     Object.entries(defaultValues).forEach(([key, value]) => setValue(key as keyof FormSchema, value as any))
     setIsReturnFundsAgreed(false)
     setCurrentStepIndex(0)
-    window.scrollTo(0, 0) // Scroll to top after reset
+    window.scrollTo(0, 0)
   }
 
   const ActiveStepComponent = steps[currentStepIndex].Component
@@ -106,11 +117,24 @@ export const RfpForm = () => {
       ? currentBalance >= totalRequiredCost
       : selectedAccount === null
 
+  const fundsExpiry = getValues("fundsExpiry")
+  const projectCompletion = getValues("projectCompletion")
+  const submissionDeadlineForDevDays = estimatedTimeline
+    ? addWeeks(estimatedTimeline.bountyFunding, fundsExpiry || 1)
+    : new Date()
+  const enoughDevDays = projectCompletion
+    ? differenceInDays(projectCompletion, submissionDeadlineForDevDays) >= 7
+    : true
+
+  const supervisors = getValues("supervisors")
+
   const isSubmitDisabled =
     hasErrors ||
     !isFormValid ||
     (isReviewStep && !isReturnFundsAgreed) ||
-    (isReviewStep && selectedAccount !== null && !hasSufficientBalanceForButton)
+    (isReviewStep && selectedAccount !== null && !hasSufficientBalanceForButton) ||
+    (isReviewStep && !enoughDevDays) ||
+    (isReviewStep && (!supervisors || supervisors.length === 0))
 
   const hasSufficientBalanceForWarning =
     selectedAccount !== null && currentBalance !== null && totalRequiredCost !== null
@@ -130,10 +154,13 @@ export const RfpForm = () => {
                 hasSufficientBalance={hasSufficientBalanceForWarning}
                 currentBalance={currentBalance}
                 totalRequiredCost={totalRequiredCost}
+                setValue={setValue}
+                submissionDeadline={submissionDeadlineForDevDays}
+                navigateToStep={navigateToStepById} // Pass the navigation function
               />
             ) : (
               // @ts-ignore
-              <ActiveStepComponent control={control} />
+              <ActiveStepComponent control={control} onReset={handleResetForm} />
             )}
           </div>
 

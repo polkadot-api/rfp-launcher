@@ -3,11 +3,14 @@
 import { formatToken } from "@/lib/formatToken"
 import { useStateObservable } from "@react-rxjs/core"
 import { TriangleAlert, CheckCircle2 } from "lucide-react"
-import type { FC } from "react"
+import { type FC, useEffect } from "react"
+import { useWatch, type DeepPartialSkipArrayKey } from "react-hook-form"
 import { openSelectAccount, selectedAccount$ } from "../SelectAccount"
 import { estimatedCost$, signerBalance$ } from "./data"
+import { calculatePriceTotals, setBountyValue } from "./data/price"
+import { currencyRate$ } from "@/services/currencyRate"
 import { FormInputField } from "./FormInputField"
-import type { RfpControlType } from "./formSchema"
+import { type RfpControlType, type FormSchema, parseNumber } from "./formSchema"
 
 export const FundingSection: FC<{ control: RfpControlType }> = ({ control }) => (
   <div className="poster-card">
@@ -35,24 +38,49 @@ export const FundingSection: FC<{ control: RfpControlType }> = ({ control }) => 
         type="number"
       />
     </div>
-    <BalanceCheck />
+    <BalanceCheck control={control} />
   </div>
 )
 
-const BalanceCheck = () => {
+const BalanceCheck: FC<{ control: RfpControlType }> = ({ control }) => {
+  const prizePool = useWatch({ control, name: "prizePool" })
+  const findersFee = useWatch({ control, name: "findersFee" })
+  const supervisorsFee = useWatch({ control, name: "supervisorsFee" })
+
+  const currencyRate = useStateObservable(currencyRate$)
   const estimatedCost = useStateObservable(estimatedCost$)
   const selectedAccount = useStateObservable(selectedAccount$)
   const currentBalance = useStateObservable(signerBalance$)
 
-  const renderBalanceCheck = () => {
-    if (estimatedCost == null) return <div className="text-pine-shadow-60">Calculating minimum cost...</div>
+  useEffect(() => {
+    const formValuesForTotals: DeepPartialSkipArrayKey<FormSchema> = {
+      prizePool: parseNumber(prizePool) ?? undefined,
+      findersFee: parseNumber(findersFee) ?? undefined,
+      supervisorsFee: parseNumber(supervisorsFee) ?? undefined,
+    }
+    const { totalAmountWithBuffer } = calculatePriceTotals(formValuesForTotals, currencyRate)
+    setBountyValue(totalAmountWithBuffer)
+  }, [prizePool, findersFee, supervisorsFee, currencyRate])
+
+  const prizePoolAmount = parseNumber(prizePool) || 0
+
+  const renderBalanceCheckContent = () => {
+    if (prizePoolAmount === 0) return null // Don't show balance status if no prize pool entered
+
+    // This means bountyValue was set (due to prizePoolAmount > 0),
+    // but other async parts of estimatedCost$ (like API calls for deposit constants) might still be resolving,
+    // or currencyRate is null, leading to totalAmountWithBuffer being null.
+    if (estimatedCost == null) {
+      return <div className="text-pine-shadow-60">Calculating minimum cost...</div>
+    }
+
     if (!selectedAccount) {
       return (
         <div className="flex items-center gap-4">
           <button type="button" className="poster-btn btn-primary" onClick={openSelectAccount}>
-            Connect a wallet
+            Connect Wallet
           </button>
-          <span className="text-pine-shadow">to check your balance</span>
+          <span className="text-pine-shadow">To check your balance</span>
         </div>
       )
     }
@@ -65,7 +93,7 @@ const BalanceCheck = () => {
         <div className="poster-alert alert-error flex items-center gap-3">
           <TriangleAlert size={20} className="shrink-0" />
           <div>
-            <strong>Uh-oh:</strong> not enough balance ({formatToken(currentBalance)}). please add funds or select
+            <strong>Uh-oh:</strong> not enough balance ({formatToken(currentBalance)}). Please add funds or select
             another wallet.
           </div>
         </div>
@@ -75,7 +103,7 @@ const BalanceCheck = () => {
       <div className="poster-alert alert-success flex items-center gap-3">
         <CheckCircle2 size={20} className="shrink-0 text-lilypad" />
         <div>
-          <strong>Nice:</strong> you have enough balance ({formatToken(currentBalance)}) to launch the RFP 🚀
+          <strong>Rad:</strong> you have enough balance ({formatToken(currentBalance)}) to launch the RFP 🚀
         </div>
       </div>
     )
@@ -83,19 +111,25 @@ const BalanceCheck = () => {
 
   return (
     <div className="bg-canvas-cream border border-pine-shadow-20 rounded-lg p-6">
-      <p className="text-pine-shadow leading-relaxed mb-4">
-        You'll need a minimum of{" "}
-        {estimatedCost ? (
-          <strong className="text-midnight-koi font-semibold">
-            {formatToken(estimatedCost.deposits + estimatedCost.fees)}
-          </strong>
-        ) : (
-          <span className="text-pine-shadow-60">(Calculating…)</span>
-        )}{" "}
-        to submit the RFP ({formatToken(estimatedCost?.fees)} in fees. You'll get {formatToken(estimatedCost?.deposits)}{" "}
-        in deposits back once the RFP ends).
-      </p>
-      <div>{renderBalanceCheck()}</div>
+      {prizePoolAmount > 0 ? (
+        <p className="text-pine-shadow leading-relaxed mb-4">
+          You'll need a minimum of{" "}
+          {estimatedCost ? (
+            <strong className="text-midnight-koi font-semibold">
+              {formatToken(estimatedCost.deposits + estimatedCost.fees)}
+            </strong>
+          ) : (
+            <span className="text-pine-shadow-60">(Calculating…)</span>
+          )}{" "}
+          to submit the RFP ({formatToken(estimatedCost?.fees)} in fees. You'll get{" "}
+          {formatToken(estimatedCost?.deposits)} in deposits back once the RFP ends).
+        </p>
+      ) : (
+        <p className="text-pine-shadow leading-relaxed mb-4">
+          Enter a prize pool amount to see the estimated minimum cost to submit the RFP.
+        </p>
+      )}
+      <div>{renderBalanceCheckContent()}</div>
     </div>
   )
 }

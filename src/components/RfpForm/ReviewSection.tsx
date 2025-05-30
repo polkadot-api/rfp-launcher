@@ -2,15 +2,14 @@
 
 import { TOKEN_SYMBOL } from "@/constants"
 import { formatDate } from "@/lib/date"
-import { formatCurrency, formatToken, formatUsd } from "@/lib/formatToken" // Added formatToken
+import { formatCurrency, formatToken, formatUsd } from "@/lib/formatToken"
 import { getPublicKey, sliceMiddleAddr } from "@/lib/ss58"
 import { currencyRate$ } from "@/services/currencyRate"
 import { PolkadotIdenticon } from "@polkadot-api/react-components"
 import { useStateObservable } from "@react-rxjs/core"
-import { addWeeks, differenceInDays } from "date-fns"
+import { addDays, differenceInDays } from "date-fns"
 import {
   BadgeInfo,
-  OctagonAlert,
   TriangleAlert,
   FileText,
   RefreshCw,
@@ -21,17 +20,19 @@ import {
   Copy,
   CheckCircle,
   AlertCircle,
+  ArrowLeftCircle,
 } from "lucide-react"
 import { type FC, useEffect, useState, useMemo, type Dispatch, type SetStateAction } from "react"
-import { useWatch } from "react-hook-form"
+import { useWatch, type UseFormSetValue } from "react-hook-form"
 import { combineLatest, map } from "rxjs"
 import { Checkbox } from "../ui/checkbox"
+import { DatePicker } from "../ui/datepicker"
 import { estimatedTimeline$, identity$ } from "./data"
 import { calculatePriceTotals, setBountyValue } from "./data/price"
 import { generateMarkdown } from "./data/markdown"
 import { MarkdownPreview } from "./MarkdownPreview"
-import { type Milestone, parseNumber, type RfpControlType } from "./formSchema"
-import { selectedAccount$ } from "../SelectAccount" // To check if an account is selected
+import { type Milestone, parseNumber, type RfpControlType, type FormSchema } from "./formSchema"
+import { selectedAccount$ } from "../SelectAccount"
 
 interface ReviewSectionProps {
   control: RfpControlType
@@ -40,6 +41,9 @@ interface ReviewSectionProps {
   hasSufficientBalance: boolean
   currentBalance: bigint | null
   totalRequiredCost: bigint | null
+  setValue: UseFormSetValue<FormSchema>
+  submissionDeadline: Date | null // Can be null if estimatedTimeline is null
+  navigateToStep: (stepId: string) => void
 }
 
 export const ReviewSection: FC<ReviewSectionProps> = ({
@@ -49,22 +53,23 @@ export const ReviewSection: FC<ReviewSectionProps> = ({
   hasSufficientBalance,
   currentBalance,
   totalRequiredCost,
+  setValue,
+  submissionDeadline,
+  navigateToStep,
 }) => {
-  const estimatedTimeline = useStateObservable(estimatedTimeline$)
-  const selectedAccount = useStateObservable(selectedAccount$) // Get selected account
+  const selectedAccount = useStateObservable(selectedAccount$)
 
   const milestones = useWatch({ control, name: "milestones" })
   const prizePool = useWatch({ control, name: "prizePool" })
-  const fundsExpiry = useWatch({ control, name: "fundsExpiry" })
   const projectCompletion = useWatch({ control, name: "projectCompletion" })
+  const supervisors = useWatch({ control, name: "supervisors" })
 
   const milestonesTotal = getMilestonesTotal(milestones)
   const milestonesMatchesPrize = parseNumber(prizePool) === milestonesTotal
 
-  const submissionDeadline = estimatedTimeline
-    ? addWeeks(estimatedTimeline.bountyFunding, fundsExpiry || 1)
-    : new Date()
-  const enoughDevDays = projectCompletion ? differenceInDays(projectCompletion, submissionDeadline) >= 7 : true
+  const enoughDevDays =
+    projectCompletion && submissionDeadline ? differenceInDays(projectCompletion, submissionDeadline) >= 7 : true
+  const hasSupervisors = supervisors && supervisors.length > 0
 
   return (
     <div className="poster-card">
@@ -87,9 +92,18 @@ export const ReviewSection: FC<ReviewSectionProps> = ({
 
       {/* Summary Grid - Three Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <FundingSummary control={control} milestonesMatchesPrize={milestonesMatchesPrize} />
-        <TimelineSummary control={control} enoughDevDays={enoughDevDays} />
-        <ProjectSummary control={control} />
+        <FundingSummary
+          control={control}
+          milestonesMatchesPrize={milestonesMatchesPrize}
+          navigateToStep={navigateToStep}
+        />
+        <TimelineSummary
+          control={control}
+          enoughDevDays={enoughDevDays}
+          submissionDeadline={submissionDeadline}
+          setValue={setValue}
+        />
+        <ProjectSummary control={control} hasSupervisors={hasSupervisors} navigateToStep={navigateToStep} />
       </div>
 
       {/* Markdown Preview */}
@@ -139,7 +153,8 @@ const FundingSummaryListItem: FC<{
 const FundingSummary: FC<{
   control: RfpControlType
   milestonesMatchesPrize: boolean
-}> = ({ control, milestonesMatchesPrize }) => {
+  navigateToStep: (stepId: string) => void
+}> = ({ control, milestonesMatchesPrize, navigateToStep }) => {
   const formFields = useWatch({ control })
   const milestonesTotal = getMilestonesTotal(formFields.milestones)
   const currencyRate = useStateObservable(currencyRate$)
@@ -223,11 +238,17 @@ const FundingSummary: FC<{
       </div>
 
       {!milestonesMatchesPrize && (
-        <div className="mt-4 poster-alert alert-error">
-          <div className="flex items-center gap-2 text-xs">
-            <OctagonAlert size={14} />
-            <div className="font-medium">Milestones must add up to the total prize pool.</div>
-          </div>
+        <div className="mt-4 flex items-center gap-2 text-tomato-stamp">
+          <TriangleAlert size={16} />
+          <span className="text-sm font-medium">Milestones must match prize pool.</span>
+          <button
+            type="button"
+            onClick={() => navigateToStep("scope")}
+            className="inline-flex items-center gap-1 underline text-tomato-stamp hover:text-midnight-koi text-sm font-medium"
+          >
+            <ArrowLeftCircle size={14} />
+            Fix
+          </button>
         </div>
       )}
     </div>
@@ -237,12 +258,12 @@ const FundingSummary: FC<{
 const TimelineSummary: FC<{
   control: RfpControlType
   enoughDevDays: boolean
-}> = ({ control, enoughDevDays }) => {
+  submissionDeadline: Date | null
+  setValue: UseFormSetValue<FormSchema>
+}> = ({ control, enoughDevDays, submissionDeadline, setValue }) => {
   const estimatedTimeline = useStateObservable(estimatedTimeline$)
   const projectCompletion = useWatch({ name: "projectCompletion", control })
-  const fundsExpiry = parseNumber(useWatch({ name: "fundsExpiry", control }))
 
-  const submissionDeadline = estimatedTimeline ? addWeeks(estimatedTimeline.bountyFunding, fundsExpiry || 1) : null
   const devDays = submissionDeadline && projectCompletion && differenceInDays(projectCompletion, submissionDeadline)
 
   const daysToLateSubmission = estimatedTimeline
@@ -254,6 +275,8 @@ const TimelineSummary: FC<{
 
   const devDaysValue = devDays != null ? Math.round(devDays) : null
   const devDaysUnit = "days"
+
+  const minCompletionDate = submissionDeadline ? addDays(submissionDeadline, 7) : new Date()
 
   return (
     <div className="bg-canvas-cream border border-sun-bleach rounded-lg p-6">
@@ -306,14 +329,27 @@ const TimelineSummary: FC<{
         </div>
       </div>
 
-      {!enoughDevDays ? (
-        <div className="mt-4 poster-alert alert-error">
-          <div className="flex items-center gap-2 text-xs">
-            <OctagonAlert size={14} />
-            <div className="font-medium">Not enough development days.</div>
+      {!enoughDevDays && (
+        <div className="mt-4 space-y-2">
+          <div className="flex items-center gap-2 text-tomato-stamp">
+            <TriangleAlert size={16} />
+            <span className="text-sm font-medium">Development time must be at least 7 days after funding expiry.</span>
+          </div>
+          <div className="pl-1">
+            <DatePicker
+              value={projectCompletion}
+              onChange={(date) => setValue("projectCompletion", date, { shouldValidate: true })}
+              disabled={(date) => date.getTime() < minCompletionDate.getTime()}
+            />
+            <p className="text-xs text-pine-shadow-60 mt-1">
+              Funding expiry is {submissionDeadline ? formatDate(submissionDeadline) : "N/A"}. Select a date on or after{" "}
+              {formatDate(minCompletionDate)}.
+            </p>
           </div>
         </div>
-      ) : devDays != null && daysToLateSubmission != null && daysToLateSubmission < 1 ? (
+      )}
+
+      {enoughDevDays && devDays != null && daysToLateSubmission != null && daysToLateSubmission < 1 && (
         <div className="mt-4 poster-alert alert-warning">
           <div className="flex items-center gap-2 text-xs">
             <TriangleAlert size={14} />
@@ -322,7 +358,7 @@ const TimelineSummary: FC<{
             </div>
           </div>
         </div>
-      ) : null}
+      )}
     </div>
   )
 }
@@ -354,7 +390,9 @@ const SupervisorListItem: FC<{ address: string }> = ({ address }) => {
 
 const ProjectSummary: FC<{
   control: RfpControlType
-}> = ({ control }) => {
+  hasSupervisors: boolean
+  navigateToStep: (stepId: string) => void
+}> = ({ control, hasSupervisors, navigateToStep }) => {
   const formFields = useWatch({ control })
   const supervisors = formFields.supervisors || []
   const milestones = formFields.milestones || []
@@ -406,10 +444,25 @@ const ProjectSummary: FC<{
         </div>
 
         <div className="pt-3 border-t border-pine-shadow-20">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 size={16} className="text-lilypad" />
-            <span className="text-sm text-pine-shadow font-medium">Ready for Submission</span>
-          </div>
+          {hasSupervisors ? (
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={16} className="text-lilypad" />
+              <span className="text-sm text-pine-shadow font-medium">Ready for Submission</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-tomato-stamp">
+              <TriangleAlert size={16} />
+              <span className="text-sm font-medium">Supervisor Required.</span>
+              <button
+                type="button"
+                onClick={() => navigateToStep("supervisors")}
+                className="inline-flex items-center gap-1 underline text-tomato-stamp hover:text-midnight-koi text-sm font-medium"
+              >
+                <ArrowLeftCircle size={14} />
+                Fix
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
