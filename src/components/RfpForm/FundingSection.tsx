@@ -106,7 +106,7 @@ const BalanceCheck: FC<{ control: RfpControlType }> = ({ control }) => {
       <div className="poster-alert alert-success flex items-center gap-3 mt-2">
         <CheckCircle2 size={20} className="shrink-0 text-lilypad" />
         <div className="text-sm">
-          <strong>Rad:</strong> you have enough balance ({formatToken(currentBalance)}) to launch the RFP 🚀
+          <strong>Nice:</strong> you have enough balance ({formatToken(currentBalance)}) to launch the RFP 🚀
         </div>
       </div>
     )
