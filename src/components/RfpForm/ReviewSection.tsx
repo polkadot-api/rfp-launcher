@@ -294,7 +294,7 @@ const TimelineSummary: FC<{
         </div>
 
         <div className="grid grid-cols-[1fr,auto] gap-x-4 items-baseline py-2 bg-sun-bleach bg-opacity-10 px-3 -mx-3 rounded">
-          <span className="font-medium text-midnight-koi">Bounty Funding</span>
+          <span className="font-medium text-midnight-koi">RFP Funding</span>
           <span className="font-medium text-midnight-koi text-xs font-mono tabular-nums text-right">
             {formatDate(estimatedTimeline?.bountyFunding)}
           </span>
@@ -333,7 +333,7 @@ const TimelineSummary: FC<{
         <div className="mt-4 space-y-2">
           <div className="flex items-center gap-2 text-tomato-stamp">
             <TriangleAlert size={16} />
-            <span className="text-sm font-medium">Development time must be at least 7 days after funding expiry.</span>
+            <span className="text-sm font-medium">Development time must be at least 7 days after funds expiry.</span>
           </div>
           <div className="pl-1">
             <DatePicker

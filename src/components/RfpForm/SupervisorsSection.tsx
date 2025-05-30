@@ -24,7 +24,7 @@ export const SupervisorsSection: FC<{ control: RfpControlType }> = ({ control })
       <h3 className="text-3xl font-medium mb-8 text-midnight-koi">Supervisors</h3>{" "}
       {/* Adjusted margin for consistency */}
       <p className="text-lg text-pine-shadow/80 mb-12 leading-relaxed">
-        Curators for this bounty, responsible of choosing the implementors and evaluating the development process.
+        Supervisors for this RFP, responsible for choosing the implementors and evaluating the development process, quality control, and deliverables.
       </p>
       <div className="space-y-8">
         <FormField
@@ -107,7 +107,7 @@ const SupervisorsControl: FC<ControllerRenderProps<FormSchema, "supervisors">> =
           <div className="alert-box alert-danger">
             {" "}
             {/* Consider if 'alert-box' needs poster styling */}
-            <div className="text-base">Value is not a valid SS58 address.</div>
+            <div className="text-base">Value is not a valid address.</div>
           </div>
         ) : null}
       </div>

@@ -27,7 +27,7 @@ export const TimelineSection: FC<{ control: RfpControlType }> = ({ control }) =>
           min={1}
           name="fundsExpiry"
           label="Funds Expiry (Weeks)"
-          description="Number of weeks after bounty funding until the bounty expires if no implementors are found."
+          description="Number of weeks after successful funding until the RFP expires if no implementors are found."
         />
         <FormField
           control={control}

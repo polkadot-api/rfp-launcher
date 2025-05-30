@@ -35,17 +35,17 @@ ${
   totalAmountWithBuffer ? Math.round(totalAmountWithBuffer).toLocaleString() : "TBD"
 } ${TOKEN_SYMBOL} Requested (Amount + ${REFERENDUM_PRICE_BUFFER * 100}%)
 
-## Supervisors (Bounty Curators)
+## Supervisors
 
 ${supervisors.length > 0 ? supervisors.map((addr) => `- ${identities[addr] || addr}`).join("  \n") : "- TBD"}
 
-Excess or unused funds will be returned to the treasury by Bounty Curators.
+Excess or unused funds will be returned to the treasury by the supervisors (bounty curators).
 
 ## Timeline
 
-${format(new Date(), "eeee, LLLL dd")} - Single-ref Bounty + Curators ✅  
-${fundsExpiry} Week${fundsExpiry !== 1 ? "s" : ""} after Bounty Funding - Submission Deadline  
-${projectCompletion ? format(projectCompletion, "eeee, LLLL dd") : "TBD"} - Project Completion  
+${format(new Date(), "eeee, LLLL dd")} - Single-ref RFP + supervisors ✅  
+${fundsExpiry} Week${fundsExpiry !== 1 ? "s" : ""} after RFP funding - submission deadline  
+${projectCompletion ? format(projectCompletion, "eeee, LLLL dd") : "TBD"} - Project completion  
 
 ## Project Scope
 
