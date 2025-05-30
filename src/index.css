@@ -249,7 +249,7 @@
 
   /* Kusama Network Badge - Poster Stamp Style */
   .kusama-stamp {
-    background-color: var(--tomato-stamp);
+    background-color: black;
     color: var(--canvas-cream);
     padding: 8px 16px;
     font-size: 0.75rem;
