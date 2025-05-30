@@ -165,13 +165,14 @@ export const RfpForm = () => {
           </div>
 
           <div className="poster-section">
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-col md:flex-row items-stretch md:items-center md:justify-between gap-4">
+              {/* Previous Button Wrapper: Mobile order 3, Desktop order 1 */}
+              <div className="w-full md:w-auto order-3 md:order-1">
                 {currentStepIndex > 0 && (
                   <button
                     type="button"
                     onClick={handlePrev}
-                    className="poster-btn btn-secondary flex items-center gap-2"
+                    className="poster-btn btn-secondary flex items-center gap-2 w-full justify-center md:w-auto"
                   >
                     <ArrowLeft size={16} />
                     Previous
@@ -179,13 +180,19 @@ export const RfpForm = () => {
                 )}
               </div>
 
-              <div className="text-sm text-pine-shadow-60 font-medium">
+              {/* Step Text: Mobile order 2, Desktop order 2 */}
+              <div className="text-sm text-pine-shadow-60 font-medium py-2 md:py-0 text-center order-2 md:order-2">
                 Step {currentStepIndex + 1} of {steps.length} — {steps[currentStepIndex].title}
               </div>
 
-              <div>
+              {/* Next/Submit Button Wrapper: Mobile order 1, Desktop order 3 */}
+              <div className="w-full md:w-auto order-1 md:order-3">
                 {currentStepIndex < steps.length - 1 && (
-                  <button type="button" onClick={handleNext} className="poster-btn btn-primary flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    className="poster-btn btn-primary flex items-center gap-2 w-full justify-center md:w-auto"
+                  >
                     Next
                     <ArrowRight size={16} />
                   </button>
@@ -193,7 +200,7 @@ export const RfpForm = () => {
                 {isReviewStep && (
                   <button
                     type="submit"
-                    className={`poster-btn btn-success flex items-center gap-2 ${
+                    className={`poster-btn btn-success flex items-center gap-2 w-full justify-center md:w-auto ${
                       isSubmitDisabled ? "opacity-50 cursor-not-allowed" : ""
                     }`}
                     disabled={isSubmitDisabled}
