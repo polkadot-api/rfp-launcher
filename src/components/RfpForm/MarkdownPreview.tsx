@@ -7,11 +7,9 @@ import { Textarea } from "../ui/textarea"
 
 interface MarkdownPreviewProps {
   markdown: string
-  onCopy: () => void
-  copied: boolean
 }
 
-export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, onCopy, copied }) => {
+export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown }) => {
   const [activeTab, setActiveTab] = useState<"rendered" | "raw">("rendered")
 
   const handleTabClick = (tab: "rendered" | "raw", event: React.MouseEvent) => {

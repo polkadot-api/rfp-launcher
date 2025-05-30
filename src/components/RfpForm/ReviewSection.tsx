@@ -35,7 +35,6 @@ import { selectedAccount$ } from "../SelectAccount" // To check if an account is
 
 interface ReviewSectionProps {
   control: RfpControlType
-  onReset: () => void
   isReturnFundsAgreed: boolean
   setIsReturnFundsAgreed: Dispatch<SetStateAction<boolean>>
   hasSufficientBalance: boolean
@@ -45,7 +44,6 @@ interface ReviewSectionProps {
 
 export const ReviewSection: FC<ReviewSectionProps> = ({
   control,
-  onReset,
   isReturnFundsAgreed,
   setIsReturnFundsAgreed,
   hasSufficientBalance,
