@@ -1,74 +1,63 @@
 "use client"
 
-import React from "react" // Ensure React is imported for JSX
+import React from "react"
 import { useState } from "react"
 import { Eye, Code } from "lucide-react"
 import { Textarea } from "../ui/textarea"
-import ReactMarkdown from "react-markdown"
-import type { Components, ExtraProps } from "react-markdown" // For typing custom components
+import ReactMarkdown, { type Components } from "react-markdown"
+import { cn } from "@/lib/utils" // For combining class names
 
-// Define styles (can be moved to a separate file or kept here)
-const baseTextStyles = "font-['IBM_Plex_Sans',_system-ui,_sans-serif] text-pine-shadow-90 leading-relaxed"
-const headingStyles = "font-['Cooper_Hewitt',_Georgia,_serif] text-midnight-koi font-medium"
-const codeStyles = "font-['IBM_Plex_Mono',_monospace] bg-pine-shadow-10 text-midnight-koi p-1 rounded text-sm" // Base for inline and block code text
-const preStyles = "bg-pine-shadow-10 rounded my-4 p-0 overflow-x-auto" // For <pre> tag
-
-// Explicit type for code component props
-interface CodeProps extends React.HTMLAttributes<HTMLElement>, ExtraProps {
-  inline?: boolean
-  // className might be present for language specification in fenced code blocks
-  className?: string
-  children?: React.ReactNode
+interface MarkdownPreviewProps {
+  markdown: string
 }
 
+// Define a base style for standard text elements
+const baseTextStyles =
+  "font-['system-ui','-apple-system','BlinkMacSystemFont','Segoe_UI','Roboto','Helvetica_Neue','Arial','Noto_Sans','sans-serif','Apple_Color_Emoji','Segoe_UI_Emoji','Segoe_UI_Symbol','Noto_Color_Emoji'] text-pine-shadow-90 leading-relaxed"
+const headingStyles = `${baseTextStyles} text-midnight-koi font-semibold mt-6 mb-3`
+const codeStyles = "font-mono bg-pine-shadow-10 text-midnight-koi px-1 py-0.5 rounded text-sm"
+
 const customComponents: Components = {
-  h1: ({ node: _node, ...props }) => <h1 className={`${headingStyles} text-3xl mb-4 mt-6`} {...props} />,
-  h2: ({ node: _node, ...props }) => <h2 className={`${headingStyles} text-2xl mb-3 mt-5`} {...props} />,
-  h3: ({ node: _node, ...props }) => <h3 className={`${headingStyles} text-xl mb-2 mt-4`} {...props} />,
-  h4: ({ node: _node, ...props }) => <h4 className={`${headingStyles} text-lg mb-2 mt-3`} {...props} />,
-  p: ({ node: _node, ...props }) => <p className={`${baseTextStyles} mb-4`} {...props} />,
-  ul: ({ node: _node, ...props }) => <ul className={`${baseTextStyles} list-disc pl-5 mb-4`} {...props} />,
-  ol: ({ node: _node, ...props }) => <ol className={`${baseTextStyles} list-decimal pl-5 mb-4`} {...props} />,
-  li: ({ node: _node, children, ...props }) => {
-    const firstChildIsP = React.Children.toArray(children).some(
+  h1: ({ node, ...props }) => (
+    <h1 className={cn(headingStyles, "text-3xl border-b border-pine-shadow-20 pb-2 mb-4")} {...props} />
+  ),
+  h2: ({ node, ...props }) => (
+    <h2 className={cn(headingStyles, "text-2xl border-b border-pine-shadow-20 pb-1 mb-3")} {...props} />
+  ),
+  h3: ({ node, ...props }) => <h3 className={cn(headingStyles, "text-xl")} {...props} />,
+  h4: ({ node, ...props }) => <h4 className={cn(headingStyles, "text-lg")} {...props} />,
+  p: ({ node, ...props }) => <p className={cn(baseTextStyles, "mb-4")} {...props} />,
+  a: ({ node, ...props }) => <a className="text-tomato-stamp hover:text-midnight-koi underline" {...props} />,
+  ul: ({ node, ...props }) => <ul className={cn(baseTextStyles, "list-disc pl-6 mb-4 space-y-1")} {...props} />,
+  ol: ({ node, ...props }) => <ol className={cn(baseTextStyles, "list-decimal pl-6 mb-4 space-y-1")} {...props} />,
+  li: ({ node, children, ...props }) => {
+    // Check if the li contains a p, if so, don't add margin to li itself
+    const hasParagraph = React.Children.toArray(children).some(
       (child) => React.isValidElement(child) && child.type === "p",
     )
     return (
-      <li className={`${baseTextStyles} ${firstChildIsP ? "" : "mb-1"}`} {...props}>
+      <li className={cn(baseTextStyles, !hasParagraph ? "mb-1" : "")} {...props}>
         {children}
       </li>
     )
   },
-  a: ({ node: _node, ...props }) => <a className="text-tomato-stamp hover:text-midnight-koi underline" {...props} />,
-  strong: ({ node: _node, ...props }) => <strong className="font-semibold text-midnight-koi" {...props} />,
-  em: ({ node: _node, ...props }) => <em className="italic" {...props} />,
-  code: ({ node: _node, inline, className, children, ...props }: CodeProps) => {
-    if (inline) {
-      return (
-        <code className={`${codeStyles} px-1 py-0.5`} {...props}>
-          {children}
-        </code>
-      )
-    }
-    // For block code, it's rendered inside a <pre> by default.
-    // We style the <code> tag here. The <pre> tag is styled by its own custom component.
+  code: ({ node, className, children, ...props }) => {
     return (
-      <code className={`${codeStyles} block whitespace-pre-wrap p-2 ${className || ""}`} {...props}>
-        {String(children).replace(/\n$/, "")}
+      <code className={cn(codeStyles, className)} {...props}>
+        {children}
       </code>
     )
   },
-  pre: ({ node: _node, children, ...props }) => {
-    return (
-      <pre className={preStyles} {...props}>
-        {children}
-      </pre>
-    )
-  },
-}
-
-interface MarkdownPreviewProps {
-  markdown: string
+  blockquote: ({ node, ...props }) => (
+    <blockquote
+      className={cn(baseTextStyles, "border-l-4 border-lake-haze pl-4 italic my-4 text-pine-shadow-60")}
+      {...props}
+    />
+  ),
+  strong: ({ node, ...props }) => <strong className="font-semibold text-midnight-koi" {...props} />,
+  em: ({ node, ...props }) => <em className="italic" {...props} />,
+  hr: ({ node, ...props }) => <hr className="border-pine-shadow-20 my-6" {...props} />,
+  // You can add more custom components for other elements like table, img, etc.
 }
 
 export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown }) => {
@@ -82,6 +71,8 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown }) =>
 
   return (
     <div className="markdown-preview">
+      {" "}
+      {/* Keep this outer wrapper for its existing styles */}
       {/* Tab Headers */}
       <div className="markdown-tabs">
         <button
@@ -101,15 +92,18 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown }) =>
           Raw Markdown
         </button>
       </div>
-
       {/* Tab Content */}
       {activeTab === "rendered" ? (
         <div className="p-6 bg-canvas-cream border border-pine-shadow-20 rounded-b-lg">
-          {markdown ? (
-            <ReactMarkdown components={customComponents}>{markdown}</ReactMarkdown>
-          ) : (
-            <div className="text-pine-shadow-60 italic text-sm">Loading Markdown preview...</div>
-          )}
+          <div className="max-w-none">
+            {markdown ? (
+              <ReactMarkdown components={customComponents}>{markdown}</ReactMarkdown>
+            ) : (
+              <div className={cn(baseTextStyles, "text-pine-shadow-60 italic text-sm")}>
+                Loading Markdown preview...
+              </div>
+            )}
+          </div>
         </div>
       ) : (
         <div className="border border-pine-shadow-20 rounded-b-lg">
@@ -118,7 +112,7 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown }) =>
             value={markdown || "Loading Markdown preview..."}
             className="w-full min-h-[300px] font-mono text-sm border-0 rounded-b-lg resize-none"
             style={{
-              fontFamily: "var(--font-mono)", // Use CSS variable for consistency
+              fontFamily: "var(--font-mono)",
               borderRadius: "0 0 0.5rem 0.5rem",
             }}
             placeholder="Markdown preview will appear here..."
