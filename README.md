@@ -46,6 +46,12 @@ pnpm dev-local
 
 This configures the project to target the local Chopsticks process and enables additional features such as approving referenda, skipping to the next treasury spend period, or minting balances to test accounts.
 
+### Deployment
+
+The project currently is hosted on github pages through a github action.
+
+If you want to preview changes in a fork, configure the `BASE_URL` environment variable in your github environment config. For example, something deployed in github pages `https://{something}.githubpages.io/rfp-launcher/` needs a `BASE_URL` environment variable with the value `/rfp-launcher/`
+
 ## Theming
 
 This project uses the standard setup from [shadcn/ui](https://ui.shadcn.com) for theming, which uses TailwindCSS.
