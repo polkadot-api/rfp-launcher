@@ -33,12 +33,12 @@ export const curatorDeposit$ = from(
   Promise.all([
     typedApi.constants.Balances.ExistentialDeposit(),
     typedApi.constants.Bounties.CuratorDepositMin(),
-  ])
+  ]),
 ).pipe(
   map(
     ([existentialDeposit, minCuratorDeposit = 0n]) =>
-      existentialDeposit + minCuratorDeposit
-  )
+      existentialDeposit + minCuratorDeposit,
+  ),
 );
 
 const referendaSdk = createReferendaSdk(typedApi);
@@ -75,11 +75,11 @@ const submitReferendumFee$ = combineLatest([
               value: undefined,
             },
           },
-          proposal
+          proposal,
         ).decodedCall,
       ],
-    }).getEstimatedFees(ALICE)
-  )
+    }).getEstimatedFees(ALICE),
+  ),
 );
 
 const decisionDepositFee$ = typedApi.tx.Referenda.place_decision_deposit({
@@ -91,8 +91,8 @@ const depositCosts$ = combineLatest([
   submissionDeposit,
   bountyValue$.pipe(
     switchMap((v) =>
-      decisionDeposit(v ? BigInt(v * 10 ** TOKEN_DECIMALS) : null)
-    )
+      decisionDeposit(v ? BigInt(v * 10 ** TOKEN_DECIMALS) : null),
+    ),
   ),
 ]).pipe(map((r) => r.reduce(sum, 0n)));
 
@@ -109,5 +109,5 @@ export const estimatedCost$ = state(
     deposits: depositCosts$,
     fees: feeCosts$,
   }),
-  null
+  null,
 );

@@ -1,14 +1,15 @@
-export const BLOCK_LENGTH = 6
-export const KRAKEN_SYMBOL_PAIR = "KSMUSD"
-export const TOKEN_SYMBOL = "KSM"
-export const TOKEN_DECIMALS = 12
-export const REFERENDUM_PRICE_BUFFER = 0.25
-export const CHOPSTICKS_URL = `http://localhost:8133`
+export const BLOCK_LENGTH = 6;
+export const KRAKEN_SYMBOL_PAIR = "KSMUSD";
+export const TOKEN_SYMBOL = "KSM";
+export const TOKEN_DECIMALS = 12;
+export const REFERENDUM_PRICE_BUFFER = 0.25;
+export const CHOPSTICKS_URL = `http://localhost:8133`;
 
 // Light client disabled while https://github.com/paritytech/litep2p/pull/393, which can cause transactions through smoldot to not get included in blocks.
-export const FEATURE_LIGHT_CLIENT = false
+export const FEATURE_LIGHT_CLIENT = false;
 
-export const REMARK_TEXT = "unused funds from the bounty will be returned to the treasury"
+export const REMARK_TEXT =
+  "unused funds from the bounty will be returned to the treasury";
 
 // 70s-90s Poster-Core Design System
 export const POSTER_COLORS = {
@@ -19,7 +20,7 @@ export const POSTER_COLORS = {
   midnightKoi: "#2A2A2A",
   tomatoStamp: "#D45D5D",
   lilypad: "#8AA580",
-} as const
+} as const;
 
 // Grid System
 export const GRID = {
@@ -30,7 +31,7 @@ export const GRID = {
   marginMobile: 16, // px
   mobileColumns: 4,
   mobileGutters: 16, // px
-} as const
+} as const;
 
 // Typography Scale
 export const TYPE_SCALE = {
@@ -38,5 +39,4 @@ export const TYPE_SCALE = {
   lineHeightBody: "1.55em",
   transitionDuration: "150ms",
   hoverLift: "4px",
-} as const
-
+} as const;

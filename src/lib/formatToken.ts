@@ -11,7 +11,7 @@ export const formatToken = (value: bigint | null | undefined) => {
 export const formatCurrency = (
   value: number | null | undefined,
   symbol: string,
-  maximumFractionDigits = 2
+  maximumFractionDigits = 2,
 ) => {
   if (value == null) return "";
 

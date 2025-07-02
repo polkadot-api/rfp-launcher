@@ -21,7 +21,7 @@ export const identity$ = state((address: SS58String) => {
             value: v.info.display,
             verified: v.verified,
           }
-        : null
+        : null,
     ),
     tap((v) => {
       if (v != null) {
@@ -31,6 +31,6 @@ export const identity$ = state((address: SS58String) => {
       }
       localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
     }),
-    startWith(defaultValue)
+    startWith(defaultValue),
   );
 }, null);

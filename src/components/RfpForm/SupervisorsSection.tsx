@@ -1,30 +1,35 @@
-"use client"
+"use client";
 
-import { getPublicKey, sliceMiddleAddr } from "@/lib/ss58"
-import { CopyText, PolkadotIdenticon } from "@polkadot-api/react-components"
-import { useStateObservable } from "@react-rxjs/core"
-import { CheckCircle, Trash2 } from "lucide-react"
-import { getSs58AddressInfo } from "polkadot-api"
-import { type FC, useState } from "react"
-import { type ControllerRenderProps, useWatch } from "react-hook-form"
-import { Button } from "../ui/button"
-import { FormControl, FormField, FormItem, FormMessage } from "../ui/form"
-import { Input } from "../ui/input"
-import { identity$ } from "./data"
-import { FormInputField } from "./FormInputField"
-import type { FormSchema, RfpControlType } from "./formSchema"
+import { getPublicKey, sliceMiddleAddr } from "@/lib/ss58";
+import { CopyText, PolkadotIdenticon } from "@polkadot-api/react-components";
+import { useStateObservable } from "@react-rxjs/core";
+import { CheckCircle, Trash2 } from "lucide-react";
+import { getSs58AddressInfo } from "polkadot-api";
+import { type FC, useState } from "react";
+import { type ControllerRenderProps, useWatch } from "react-hook-form";
+import { Button } from "../ui/button";
+import { FormControl, FormField, FormItem, FormMessage } from "../ui/form";
+import { Input } from "../ui/input";
+import { identity$ } from "./data";
+import { FormInputField } from "./FormInputField";
+import type { FormSchema, RfpControlType } from "./formSchema";
 
-export const SupervisorsSection: FC<{ control: RfpControlType }> = ({ control }) => {
-  const supervisors = useWatch({ name: "supervisors", control })
+export const SupervisorsSection: FC<{ control: RfpControlType }> = ({
+  control,
+}) => {
+  const supervisors = useWatch({ name: "supervisors", control });
 
   return (
     <div className="poster-card">
       {" "}
       {/* Changed classes here */}
-      <h3 className="text-3xl font-medium mb-8 text-midnight-koi">Supervisors</h3>{" "}
+      <h3 className="text-3xl font-medium mb-8 text-midnight-koi">
+        Supervisors
+      </h3>{" "}
       {/* Adjusted margin for consistency */}
       <p className="text-lg text-pine-shadow/80 mb-12 leading-relaxed">
-        Supervisors for this RFP, responsible for choosing the implementors and evaluating the development process, quality control, and deliverables.
+        Supervisors for this RFP, responsible for choosing the implementors and
+        evaluating the development process, quality control, and deliverables.
       </p>
       <div className="space-y-8">
         <FormField
@@ -51,24 +56,26 @@ export const SupervisorsSection: FC<{ control: RfpControlType }> = ({ control })
         ) : null}
       </div>
     </div>
-  )
-}
+  );
+};
 
-const SupervisorsControl: FC<ControllerRenderProps<FormSchema, "supervisors">> = ({ value, onChange }) => {
-  const [newAddr, setNewAddr] = useState("")
-  const [addrInvalid, setAddrInvalid] = useState(false)
+const SupervisorsControl: FC<
+  ControllerRenderProps<FormSchema, "supervisors">
+> = ({ value, onChange }) => {
+  const [newAddr, setNewAddr] = useState("");
+  const [addrInvalid, setAddrInvalid] = useState(false);
 
   const addSupervisor = () => {
-    const info = getSs58AddressInfo(newAddr)
-    setAddrInvalid(!info.isValid)
+    const info = getSs58AddressInfo(newAddr);
+    setAddrInvalid(!info.isValid);
 
     if (info.isValid) {
       if (!value.includes(newAddr)) {
-        onChange([...value, newAddr])
+        onChange([...value, newAddr]);
       }
-      setNewAddr("")
+      setNewAddr("");
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -97,7 +104,11 @@ const SupervisorsControl: FC<ControllerRenderProps<FormSchema, "supervisors">> =
             aria-invalid={addrInvalid}
             className="vintage-input flex-1" // Consider if 'vintage-input' needs poster styling
           />
-          <Button type="button" className="vintage-button btn-primary" onClick={addSupervisor}>
+          <Button
+            type="button"
+            className="vintage-button btn-primary"
+            onClick={addSupervisor}
+          >
             {" "}
             {/* Consider if 'vintage-button' needs poster styling */}
             Add Supervisor
@@ -112,15 +123,20 @@ const SupervisorsControl: FC<ControllerRenderProps<FormSchema, "supervisors">> =
         ) : null}
       </div>
     </div>
-  )
-}
+  );
+};
 
 const AddressIdentity: FC<{ addr: string }> = ({ addr }) => {
-  const identity = useStateObservable(identity$(addr))
+  const identity = useStateObservable(identity$(addr));
 
   return (
     <div className="flex items-center gap-3 overflow-hidden flex-1">
-      <CopyText text={addr} copiedContent={<CheckCircle size={18} className="text-lilypad-dark w-8" />}>
+      <CopyText
+        text={addr}
+        copiedContent={
+          <CheckCircle size={18} className="text-lilypad-dark w-8" />
+        }
+      >
         <PolkadotIdenticon size={36} publicKey={getPublicKey(addr)} />
       </CopyText>
       {identity ? (
@@ -132,13 +148,16 @@ const AddressIdentity: FC<{ addr: string }> = ({ addr }) => {
         ) : (
           <div className="leading-tight">
             <div className="text-lg font-medium">{identity.value}</div>
-            <div className="text-base text-pine-shadow/60">{sliceMiddleAddr(addr)}</div>
+            <div className="text-base text-pine-shadow/60">
+              {sliceMiddleAddr(addr)}
+            </div>
           </div>
         )
       ) : (
-        <span className="text-base text-pine-shadow/60 overflow-hidden text-ellipsis">{sliceMiddleAddr(addr)}</span>
+        <span className="text-base text-pine-shadow/60 overflow-hidden text-ellipsis">
+          {sliceMiddleAddr(addr)}
+        </span>
       )}
     </div>
-  )
-}
-
+  );
+};

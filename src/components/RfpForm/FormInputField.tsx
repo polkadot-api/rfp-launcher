@@ -1,7 +1,14 @@
-import type { HTMLInputTypeAttribute } from "react"
-import type { Control, FieldValues, Path } from "react-hook-form"
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "../ui/form"
-import { Input } from "../ui/input"
+import type { HTMLInputTypeAttribute } from "react";
+import type { Control, FieldValues, Path } from "react-hook-form";
+import {
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../ui/form";
+import { Input } from "../ui/input";
 
 export const FormInputField = <T extends FieldValues>({
   control,
@@ -11,12 +18,12 @@ export const FormInputField = <T extends FieldValues>({
   type,
   min,
 }: {
-  control: Control<T>
-  name: Path<T>
-  label: string
-  description?: string
-  type?: HTMLInputTypeAttribute
-  min?: number | string | undefined
+  control: Control<T>;
+  name: Path<T>;
+  label: string;
+  description?: string;
+  type?: HTMLInputTypeAttribute;
+  min?: number | string | undefined;
 }) => (
   <FormField
     control={control}
@@ -30,17 +37,20 @@ export const FormInputField = <T extends FieldValues>({
             min={min}
             placeholder="enter value"
             className="poster-input"
-            onWheel={type === "number" ? (evt) => evt.currentTarget.blur() : undefined}
+            onWheel={
+              type === "number" ? (evt) => evt.currentTarget.blur() : undefined
+            }
             {...field}
             value={field.value ?? ""}
           />
         </FormControl>
         {description ? (
-          <FormDescription className="text-xs text-pine-shadow-60 leading-tight">{description}</FormDescription>
+          <FormDescription className="text-xs text-pine-shadow-60 leading-tight">
+            {description}
+          </FormDescription>
         ) : null}
         <FormMessage className="text-tomato-stamp text-xs" />
       </FormItem>
     )}
   />
-)
-
+);

@@ -1,6 +1,6 @@
-import { USE_CHOPSTICKS } from "@/chain"
-import { ChopsticksController } from "./ChopsticksController"
-import { SelectAccount } from "./SelectAccount"
+import { USE_CHOPSTICKS } from "@/chain";
+import { ChopsticksController } from "./ChopsticksController";
+import { SelectAccount } from "./SelectAccount";
 
 export const Header = () => {
   return (
@@ -26,6 +26,5 @@ export const Header = () => {
         </div>
       </div>
     </header>
-  )
-}
-
+  );
+};

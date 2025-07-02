@@ -50,7 +50,7 @@ export const withChopsticksEnhancer =
                   event: "stop",
                 },
               },
-            })
+            }),
           );
           inner.send(
             JSON.stringify({
@@ -58,7 +58,7 @@ export const withChopsticksEnhancer =
               id: "chopsticks-stopped",
               method: "chainHead_v1_unfollow",
               params: [waitingForNumber.params.subscription],
-            })
+            }),
           );
           messageQueue.length = 0;
           previousNumber = currentNumber;
@@ -97,7 +97,7 @@ export const withChopsticksEnhancer =
             id: "chopsticks-header-" + blockHash,
             method: "chainHead_v1_header",
             params: [parsed.params.subscription, blockHash],
-          })
+          }),
         );
         return;
       }

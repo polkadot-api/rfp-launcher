@@ -14,7 +14,7 @@ const referendaSdk = createReferendaSdk(typedApi, {
 });
 
 export const getTrack = async (
-  value: bigint | null
+  value: bigint | null,
 ): Promise<{
   origin: RuntimeOriginCaller<typeof ksm>;
   track: ReferendaTrack;
@@ -36,7 +36,7 @@ export const getTrack = async (
   // Scheduling needs treasurer track - If we can't approve with curator, then use that track.
   const isCompatible =
     await typedApi.tx.Bounties.approve_bounty_with_curator.isCompatible(
-      CompatibilityLevel.Partial
+      CompatibilityLevel.Partial,
     );
   if (!value || !isCompatible) {
     return treasurer;
@@ -58,5 +58,5 @@ export const referendaDuration = (value: bigint | null) =>
       value.track.prepare_period +
       value.track.decision_period +
       value.track.confirm_period +
-      value.track.min_enactment_period
+      value.track.min_enactment_period,
   );

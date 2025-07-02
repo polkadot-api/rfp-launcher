@@ -30,21 +30,21 @@ const getMainChainProvider = () => {
         "wss://rpc.ibp.network/kusama",
         "wss://kusama-rpc-tn.dwellir.com",
         "wss://rpc-kusama.luckyfriday.io",
-      ])
+      ]),
     );
   }
 
   const kusamaChain = kusamaChainSpec.then(({ chainSpec }) =>
-    smoldot.addChain({ chainSpec })
+    smoldot.addChain({ chainSpec }),
   );
   return getSmProvider(kusamaChain);
 };
 const polkadotChain = polkadotChainSpec.then(({ chainSpec }) =>
-  smoldot.addChain({ chainSpec })
+  smoldot.addChain({ chainSpec }),
 );
 const peopleChain = Promise.all([polkadotChain, peopleChainSpec]).then(
   ([relayChain, { chainSpec }]) =>
-    smoldot.addChain({ chainSpec, potentialRelayChains: [relayChain] })
+    smoldot.addChain({ chainSpec, potentialRelayChains: [relayChain] }),
 );
 
 export const peopleClient = createClient(getSmProvider(peopleChain));
@@ -53,6 +53,6 @@ export const peopleApi = peopleClient.getTypedApi(polkadot_people);
 export const client = createClient(
   USE_CHOPSTICKS
     ? withChopsticksEnhancer(getWsProvider("ws://localhost:8132"))
-    : getMainChainProvider()
+    : getMainChainProvider(),
 );
 export const typedApi = client.getTypedApi(ksm);

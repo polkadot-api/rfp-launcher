@@ -28,7 +28,7 @@ const txProcessState = (
       }
     | null
   >,
-  tag: string
+  tag: string,
 ) =>
   combineLatest([tx$, process$]).pipe(
     map(([tx, process]) => {
@@ -64,7 +64,7 @@ const txProcessState = (
             },
           }
         : null;
-    })
+    }),
   );
 
 export const activeTxStep$ = state(
@@ -73,10 +73,10 @@ export const activeTxStep$ = state(
     txProcessState(referendumCreationTx$, referendumCreationProcess$, "ref"),
     txProcessState(decisionDepositTx$, decisionDepositProcess$, "decision"),
   ]).pipe(map((steps) => steps.reverse().reduce((a, b) => a || b, null))),
-  null
+  null,
 );
 
 export const referendumIndex$ = state(
   rfpReferendum$.pipe(map((v) => v.index)),
-  undefined
+  undefined,
 );
