@@ -114,8 +114,8 @@ export const RfpForm = () => {
 
   const isReviewStep = currentStepIndex === steps.length;
   const ActiveStepComponent = isReviewStep
-    ? steps[currentStepIndex].Component
-    : null;
+    ? null
+    : steps[currentStepIndex].Component;
   const hasErrors = Object.keys(errors).length > 0;
 
   const totalRequiredCost = estimatedCost
