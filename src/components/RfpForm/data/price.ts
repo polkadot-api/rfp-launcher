@@ -1,8 +1,9 @@
-import { REFERENDUM_PRICE_BUFFER } from "@/constants";
-import { DeepPartialSkipArrayKey } from "react-hook-form";
-import { FormSchema, parseNumber } from "../formSchema";
-import { createSignal } from "@react-rxjs/utils";
+import { REFERENDUM_PRICE_BUFFER, STABLE_IDS } from "@/constants";
 import { state } from "@react-rxjs/core";
+import { createSignal } from "@react-rxjs/utils";
+import { DeepPartialSkipArrayKey } from "react-hook-form";
+import { map } from "rxjs";
+import { FormSchema, parseNumber } from "../formSchema";
 
 export const calculatePriceTotals = (
   formFields: DeepPartialSkipArrayKey<FormSchema>,
@@ -26,3 +27,12 @@ export const calculatePriceTotals = (
 
 export const [setBountyValue$, setBountyValue] = createSignal<number | null>();
 export const bountyValue$ = state(setBountyValue$, null);
+
+export const [setBountyCurrency$, setBountyCurrency] = createSignal<
+  string | null
+>();
+export const bountyCurrency$ = state(setBountyCurrency$, null);
+
+export const currencyIsStables$ = bountyCurrency$.pipe(
+  map((currency) => !!STABLE_IDS?.[currency ?? ""]),
+);

@@ -18,6 +18,7 @@ export const formSchema = z.object({
       amount: z.coerce.number(),
     }),
   ),
+  fundingCurrency: z.string().nonempty(),
 });
 
 export const parseNumber = (value: string | number | undefined) => {

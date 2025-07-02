@@ -12,6 +12,12 @@ const tokenDecimals: Record<KnownChains, number> = {
   kusama: 12,
   polkadot: 10,
 };
+const stableIds: Partial<Record<KnownChains, Record<string, bigint>>> = {
+  polkadot: {
+    USDC: 1337n,
+    USDT: 1984n,
+  },
+};
 
 export const BLOCK_LENGTH = 6;
 export const KRAKEN_SYMBOL_PAIR = krakenSymbols[matchedChain];
@@ -19,6 +25,8 @@ export const TOKEN_SYMBOL = tokenSymbols[matchedChain];
 export const TOKEN_DECIMALS = tokenDecimals[matchedChain];
 export const REFERENDUM_PRICE_BUFFER = 0.25;
 export const CHOPSTICKS_URL = `http://localhost:8133`;
+export const STABLE_IDS = stableIds[matchedChain];
+export const STABLE_RATE = 10n; // How many stables = 1 native currency according to Treasury.spend (currently 1 DOT = 1 USDT/C)
 
 // Light client disabled while https://github.com/paritytech/litep2p/pull/393, which can cause transactions through smoldot to not get included in blocks.
 export const FEATURE_LIGHT_CLIENT = false;

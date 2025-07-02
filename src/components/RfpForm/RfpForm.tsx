@@ -1,6 +1,7 @@
 "use client";
 
 import { selectedAccount$ } from "@/components/SelectAccount";
+import { TOKEN_SYMBOL } from "@/constants";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useStateObservable } from "@react-rxjs/core";
 import { addWeeks, differenceInDays } from "date-fns";
@@ -30,6 +31,7 @@ const defaultValues: Partial<FormSchema> = {
   projectTitle: "",
   projectScope: "",
   milestones: [],
+  fundingCurrency: TOKEN_SYMBOL,
 };
 
 const steps = [
