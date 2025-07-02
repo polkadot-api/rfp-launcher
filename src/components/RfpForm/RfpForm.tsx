@@ -88,7 +88,7 @@ export const RfpForm = () => {
   };
 
   const handleNext = async () => {
-    setCurrentStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
+    setCurrentStepIndex((prev) => Math.min(prev + 1, steps.length));
     window.scrollTo(0, 0);
   };
 
@@ -198,12 +198,14 @@ export const RfpForm = () => {
               {/* Step Text: Mobile order 2, Desktop order 2 */}
               <div className="text-sm text-pine-shadow-60 font-medium py-2 md:py-0 text-center order-2 md:order-2">
                 Step {currentStepIndex + 1} of {steps.length} —{" "}
-                {steps[currentStepIndex].title}
+                {isReviewStep
+                  ? "Review & Submit"
+                  : steps[currentStepIndex].title}
               </div>
 
               {/* Next/Submit Button Wrapper: Mobile order 1, Desktop order 3 */}
               <div className="w-full md:w-auto order-1 md:order-3">
-                {currentStepIndex < steps.length - 1 && (
+                {currentStepIndex < steps.length && (
                   <button
                     type="button"
                     onClick={handleNext}
