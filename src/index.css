@@ -175,7 +175,7 @@
   /* Smooth transitions for all interactive elements */
   * {
     transition-property:
-      color, background-color, border-color, opacity, transform;
+      color, background-color, border-color, opacity;
     transition-timing-function: ease-in-out;
     transition-duration: 150ms;
   }
