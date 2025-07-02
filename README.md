@@ -1,6 +1,6 @@
 # RFP Launcher
 
-A dApp for creating and submitting Requests for Proposals (RFPs) on Kusama.
+A dApp for creating and submitting Requests for Proposals (RFPs) on Kusama or Polkadot.
 
 ## Features
 

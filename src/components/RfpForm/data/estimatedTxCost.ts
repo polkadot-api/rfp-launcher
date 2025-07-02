@@ -1,8 +1,7 @@
-import { typedApi } from "@/chain";
+import { referendaSdk, typedApi } from "@/chain";
 import { REMARK_TEXT, TOKEN_DECIMALS } from "@/constants";
 import { sum } from "@/lib/math";
 import { MultiAddress } from "@polkadot-api/descriptors";
-import { createReferendaSdk } from "@polkadot-api/sdk-governance";
 import { state } from "@react-rxjs/core";
 import { Binary } from "polkadot-api";
 import { combineLatest, from, map, switchMap } from "rxjs";
@@ -41,7 +40,6 @@ export const curatorDeposit$ = from(
   ),
 );
 
-const referendaSdk = createReferendaSdk(typedApi);
 const submitReferendumFee$ = combineLatest([
   curatorDeposit$,
   typedApi.tx.Utility.batch({

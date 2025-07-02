@@ -1,22 +1,17 @@
-import { typedApi } from "@/chain";
+import { referendaSdk, typedApi } from "@/chain";
 import { ksm } from "@polkadot-api/descriptors";
 import {
-  createReferendaSdk,
-  kusamaSpenderOrigin,
   PolkadotRuntimeOriginCaller,
   ReferendaTrack,
   RuntimeOriginCaller,
 } from "@polkadot-api/sdk-governance";
+import { dot } from "node:test/reporters";
 import { CompatibilityLevel } from "polkadot-api";
-
-const referendaSdk = createReferendaSdk(typedApi, {
-  spenderOrigin: kusamaSpenderOrigin,
-});
 
 export const getTrack = async (
   value: bigint | null,
 ): Promise<{
-  origin: RuntimeOriginCaller<typeof ksm>;
+  origin: RuntimeOriginCaller<typeof ksm> | RuntimeOriginCaller<typeof dot>;
   track: ReferendaTrack;
 }> => {
   const treasurerTrack = await referendaSdk.getTrack("treasurer");
@@ -33,12 +28,16 @@ export const getTrack = async (
     track: treasurerTrack,
   };
 
+  if (!value) {
+    return treasurer;
+  }
+
   // Scheduling needs treasurer track - If we can't approve with curator, then use that track.
   const isCompatible =
     await typedApi.tx.Bounties.approve_bounty_with_curator.isCompatible(
       CompatibilityLevel.Partial,
     );
-  if (!value || !isCompatible) {
+  if (!isCompatible) {
     return treasurer;
   }
 

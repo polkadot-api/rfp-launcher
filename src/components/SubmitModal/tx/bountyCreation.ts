@@ -1,4 +1,5 @@
 import { typedApi } from "@/chain";
+import { matchedChain } from "@/chainRoute";
 import {
   calculatePriceTotals,
   generateMarkdown,
@@ -69,9 +70,9 @@ export const bountyCreationTx$ = state(
 
       const needsMultisigCreation$ =
         formData.supervisors.length > 1
-          ? from(novasamaProvider("kusama")(getMultisigAddress(formData))).pipe(
-              map((v) => !v),
-            )
+          ? from(
+              novasamaProvider(matchedChain)(getMultisigAddress(formData)),
+            ).pipe(map((v) => !v))
           : of(false);
 
       const shouldCreateMultisig$ = combineLatest([

@@ -1,7 +1,22 @@
+import { KnownChains, matchedChain } from "./chainRoute";
+
+const krakenSymbols: Record<KnownChains, string> = {
+  kusama: "KSMUSD",
+  polkadot: "DOTUSD",
+};
+const tokenSymbols: Record<KnownChains, string> = {
+  kusama: "KSM",
+  polkadot: "DOT",
+};
+const tokenDecimals: Record<KnownChains, number> = {
+  kusama: 12,
+  polkadot: 10,
+};
+
 export const BLOCK_LENGTH = 6;
-export const KRAKEN_SYMBOL_PAIR = "KSMUSD";
-export const TOKEN_SYMBOL = "KSM";
-export const TOKEN_DECIMALS = 12;
+export const KRAKEN_SYMBOL_PAIR = krakenSymbols[matchedChain];
+export const TOKEN_SYMBOL = tokenSymbols[matchedChain];
+export const TOKEN_DECIMALS = tokenDecimals[matchedChain];
 export const REFERENDUM_PRICE_BUFFER = 0.25;
 export const CHOPSTICKS_URL = `http://localhost:8133`;
 

@@ -258,7 +258,8 @@
   }
 
   /* Kusama Network Badge - Poster Stamp Style */
-  .kusama-stamp {
+  .kusama-stamp,
+  .kusama-stamp:hover {
     background-color: black;
     color: var(--canvas-cream);
     padding: 8px 16px;
@@ -270,6 +271,9 @@
     box-shadow: 0 2px 4px rgba(212, 93, 93, 0.2);
     transform: rotate(-1deg);
     font-family: var(--font-display);
+  }
+  .kusama-stamp svg {
+    display: none;
   }
 
   /* Cards - Cream with Subtle Shadows */

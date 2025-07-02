@@ -1,5 +1,4 @@
-import { typedApi } from "@/chain";
-import { createReferendaSdk } from "@polkadot-api/sdk-governance";
+import { referendaSdk } from "@/chain";
 import { state } from "@react-rxjs/core";
 import { TxEvent } from "polkadot-api";
 import { combineLatest, map, Observable } from "rxjs";
@@ -14,8 +13,6 @@ import {
   rfpReferendum$,
 } from "./tx/referendumCreation";
 import { TxWithExplanation } from "./tx/types";
-
-const referendaSdk = createReferendaSdk(typedApi);
 
 const txProcessState = (
   tx$: Observable<TxWithExplanation | null>,

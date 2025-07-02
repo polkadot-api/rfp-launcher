@@ -1,7 +1,7 @@
-import { typedApi } from "@/chain";
+import { referendaSdk, typedApi } from "@/chain";
+import { getTrack } from "@/components/RfpForm/data/referendaConstants";
 import { formatToken } from "@/lib/formatToken";
 import { MultiAddress } from "@polkadot-api/descriptors";
-import { createReferendaSdk } from "@polkadot-api/sdk-governance";
 import {
   AccountId,
   getMultisigAccountId,
@@ -26,9 +26,6 @@ import { dismissable, submittedFormData$ } from "../modalActions";
 import { getCreationMultisigCallMetadata, rfpBounty$ } from "./bountyCreation";
 import { createTxProcess } from "./txProcess";
 import { TxWithExplanation } from "./types";
-import { getTrack } from "@/components/RfpForm/data/referendaConstants";
-
-const referendaSdk = createReferendaSdk(typedApi);
 
 const accountCodec = AccountId();
 
