@@ -124,13 +124,6 @@ export const RfpForm = () => {
     ? estimatedCost.deposits + estimatedCost.fees
     : null;
 
-  const hasSufficientBalanceForButton =
-    selectedAccount !== null &&
-    currentBalance !== null &&
-    totalRequiredCost !== null
-      ? currentBalance >= totalRequiredCost
-      : selectedAccount === null;
-
   const fundsExpiry = getValues("fundsExpiry");
   const projectCompletion = getValues("projectCompletion");
   const submissionDeadlineForDevDays = estimatedTimeline
@@ -146,9 +139,6 @@ export const RfpForm = () => {
     hasErrors ||
     !isFormValid ||
     (isReviewStep && !isReturnFundsAgreed) ||
-    (isReviewStep &&
-      selectedAccount !== null &&
-      !hasSufficientBalanceForButton) ||
     (isReviewStep && !enoughDevDays) ||
     (isReviewStep && (!supervisors || supervisors.length === 0));
 

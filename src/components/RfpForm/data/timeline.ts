@@ -32,6 +32,18 @@ export const referendumExecutionBlocks$ = state(
 
       const referendumEnd = currentBlock.number + refDuration;
 
+      if (isStables) {
+        // Stables through a multisig don't need to wait for a treasury spend
+        return {
+          currentBlock,
+          currentBlockDate,
+          referendumEnd,
+          bountyFunding: referendumEnd,
+          lateBountyFunding: referendumEnd,
+          referendumSubmissionDeadline: Number.POSITIVE_INFINITY,
+        };
+      }
+
       const nextTreasurySpend = await getNextTreasurySpend(referendumEnd);
       const bountyFunding = nextTreasurySpend.next;
       const referendumSubmissionDeadline =

@@ -33,6 +33,7 @@ export const [setBountyCurrency$, setBountyCurrency] = createSignal<
 >();
 export const bountyCurrency$ = state(setBountyCurrency$, null);
 
-export const currencyIsStables$ = bountyCurrency$.pipe(
-  map((currency) => !!STABLE_IDS?.[currency ?? ""]),
+export const currencyIsStables$ = state(
+  bountyCurrency$.pipe(map((currency) => !!STABLE_IDS?.[currency ?? ""])),
+  false,
 );

@@ -23,6 +23,15 @@ export function generateMarkdown(
   const projectCompletion = data.projectCompletion;
   const projectScope = data.projectScope || "";
   const milestones = data.milestones || [];
+  const currency = data.fundingCurrency ?? TOKEN_SYMBOL;
+
+  const formattedAmount = totalAmountWithBuffer
+    ? Math.round(totalAmountWithBuffer).toLocaleString()
+    : "TBD";
+  const total =
+    currency === TOKEN_SYMBOL
+      ? `${formattedAmount} ${TOKEN_SYMBOL} Requested (Amount + ${REFERENDUM_PRICE_BUFFER * 100}%)`
+      : `Total ${formattedAmount} ${currency} Requested`;
 
   // Generate markdown even with partial data
   const markdown = `# ${projectTitle}
@@ -31,11 +40,7 @@ Prize Pool: $${prizePool.toLocaleString()}
 Finder's Fee: $${findersFee.toLocaleString()}  
 Supervisors: $${supervisorsFee.toLocaleString()}  
 
-${
-  totalAmountWithBuffer
-    ? Math.round(totalAmountWithBuffer).toLocaleString()
-    : "TBD"
-} ${TOKEN_SYMBOL} Requested (Amount + ${REFERENDUM_PRICE_BUFFER * 100}%)
+${total}
 
 ## Supervisors
 
