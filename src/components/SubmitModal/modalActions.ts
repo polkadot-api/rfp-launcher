@@ -15,7 +15,7 @@ export const [dismiss$, dismiss] = createSignal<void>();
 export const [formDataChange$, submit] = createSignal<FormSchema>();
 export const submittedFormData$ = state(
   merge(formDataChange$, dismiss$.pipe(map(() => null))),
-  null
+  null,
 );
 
 /**

@@ -60,7 +60,9 @@
 
   /* Typography */
   --font-display: "Cooper Hewitt", "Georgia", serif;
-  --font-body: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body:
+    "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
   --font-mono: "IBM Plex Mono", "SF Mono", "Monaco", "Inconsolata", monospace;
 
   /* Layout */
@@ -80,9 +82,16 @@
 
   html {
     /* Ultra-subtle paper grain texture */
-    background-image: radial-gradient(circle at 1px 1px, rgba(76, 102, 89, 0.02) 1px, transparent 0),
+    background-image:
+      radial-gradient(
+        circle at 1px 1px,
+        rgba(76, 102, 89, 0.02) 1px,
+        transparent 0
+      ),
       url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234C6659' fill-opacity='0.02'%3E%3Ccircle cx='7' cy='7' r='1'/%3E%3Ccircle cx='27' cy='27' r='1'/%3E%3Ccircle cx='47' cy='47' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-    background-size: 20px 20px, 60px 60px;
+    background-size:
+      20px 20px,
+      60px 60px;
     background-color: var(--canvas-cream);
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
@@ -165,7 +174,8 @@
 
   /* Smooth transitions for all interactive elements */
   * {
-    transition-property: color, background-color, border-color, opacity, transform;
+    transition-property:
+      color, background-color, border-color, opacity;
     transition-timing-function: ease-in-out;
     transition-duration: 150ms;
   }
@@ -248,7 +258,8 @@
   }
 
   /* Kusama Network Badge - Poster Stamp Style */
-  .kusama-stamp {
+  .kusama-stamp,
+  .kusama-stamp:hover {
     background-color: black;
     color: var(--canvas-cream);
     padding: 8px 16px;
@@ -260,6 +271,9 @@
     box-shadow: 0 2px 4px rgba(212, 93, 93, 0.2);
     transform: rotate(-1deg);
     font-family: var(--font-display);
+  }
+  .kusama-stamp svg {
+    display: none;
   }
 
   /* Cards - Cream with Subtle Shadows */
@@ -488,7 +502,12 @@
 
   /* Loading States */
   .loading-shimmer {
-    background: linear-gradient(90deg, var(--pine-shadow-10) 25%, var(--pine-shadow-20) 50%, var(--pine-shadow-10) 75%);
+    background: linear-gradient(
+      90deg,
+      var(--pine-shadow-10) 25%,
+      var(--pine-shadow-20) 50%,
+      var(--pine-shadow-10) 75%
+    );
     background-size: 200% 100%;
     animation: shimmer 2s infinite;
   }
@@ -623,4 +642,3 @@
     border-color: var(--color-lilypad);
   }
 }
-

@@ -1,5 +1,5 @@
-import { Header } from "./components/Header"
-import { RfpForm } from "./components/RfpForm"
+import { Header } from "./components/Header";
+import { RfpForm } from "./components/RfpForm";
 
 function App() {
   return (
@@ -12,8 +12,7 @@ function App() {
         <RfpForm />
       </main>
     </div>
-  )
+  );
 }
 
-export default App
-
+export default App;

@@ -32,7 +32,7 @@ const buttonVariants = cva(
       variant: "default",
       size: "default",
     },
-  }
+  },
 );
 
 function Button({
@@ -55,7 +55,7 @@ function Button({
       className={cn(
         buttonVariants({ variant, size, className }),
         forceSvgSize &&
-          "[&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4"
+          "[&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
       )}
       {...props}
     />

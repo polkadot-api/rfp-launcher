@@ -20,10 +20,10 @@ export const extensionAccounts$ = selectedExtension$.pipeState(
 
     return fromEventPattern<InjectedPolkadotAccount[]>(
       (handler) => extension.subscribe(handler),
-      (_, signal) => signal()
+      (_, signal) => signal(),
     ).pipe(startWith(initialAccounts));
   }),
-  withDefault(null)
+  withDefault(null),
 );
 
 export const [setSelectValue$, setSelectValue] = createSignal<string>();
@@ -31,11 +31,11 @@ export const selectValue$ = state(
   selectedExtension$.pipe(
     switchMap((extension) =>
       setSelectValue$.pipe(
-        startWith(extension?.getAccounts()[0].address ?? null)
-      )
-    )
+        startWith(extension?.getAccounts()[0].address ?? null),
+      ),
+    ),
   ),
-  null
+  null,
 );
 
 export const [selectAccount$, selectAccount] = createSignal();
@@ -53,16 +53,16 @@ export const selectedAccount$ = state(
       withLatestFrom(extensionAccounts$, selectValue$),
       map(
         ([, accounts, value]) =>
-          accounts?.find((v) => v.address === value) ?? null
+          accounts?.find((v) => v.address === value) ?? null,
       ),
-      tap((v) => setPersistedSelectedAccount(v?.address ?? null))
+      tap((v) => setPersistedSelectedAccount(v?.address ?? null)),
     ),
     extensionAccounts$.pipe(
       map((v) =>
-        v?.find((acc) => acc.address === getPersistedSelectedAccount())
+        v?.find((acc) => acc.address === getPersistedSelectedAccount()),
       ),
-      filter((v) => !!v)
-    )
+      filter((v) => !!v),
+    ),
   ),
-  null
+  null,
 );

@@ -42,11 +42,11 @@ export const StepBroadcastingTx: FC<{
       {txEvt.type === "signed"
         ? "Transaction signed, broadcasting…"
         : txEvt.type === "broadcasted"
-        ? "Transaction broadcasted, waiting to be included in a block…"
-        : "Transaction was found in a block, waiting for confirmation…" +
-          (finalized && txEvt.found
-            ? `(${txEvt.block.number - finalized.number})`
-            : "")}
+          ? "Transaction broadcasted, waiting to be included in a block…"
+          : "Transaction was found in a block, waiting for confirmation…" +
+            (finalized && txEvt.found
+              ? `(${txEvt.block.number - finalized.number})`
+              : "")}
     </Loading>
   );
 };

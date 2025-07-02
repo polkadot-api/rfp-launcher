@@ -1,4 +1,4 @@
-import type { FC } from "react"
+import type { FC } from "react";
 
 export const WelcomeSection: FC = () => (
   <div className="poster-card relative overflow-hidden">
@@ -15,20 +15,23 @@ export const WelcomeSection: FC = () => (
 
     {/* Content overlay */}
     <div className="relative z-10 max-w-2xl">
-      <h2 className="text-4xl font-medium mb-6 text-midnight-koi">Launch your request for proposal</h2>
+      <h2 className="text-4xl font-medium mb-6 text-midnight-koi">
+        Launch your request for proposal
+      </h2>
 
       <div className="space-y-4 text-lg leading-relaxed text-pine-shadow">
         <p>
           This tool guides you through creating an RFP (request for proposal).
         </p>
         <p>
-          After completing the form, you'll submit three transactions to set up the RFP. Then we'll provide a
-          pre-formatted body for your referendum.
+          After completing the form, you'll submit three transactions to set up
+          the RFP. Then we'll provide a pre-formatted body for your referendum.
         </p>
       </div>
 
-      <div className="mt-8 text-sm text-pine-shadow-60">Grab some lemonade and let's get started.</div>
+      <div className="mt-8 text-sm text-pine-shadow-60">
+        Grab some lemonade and let's get started.
+      </div>
     </div>
   </div>
-)
-
+);

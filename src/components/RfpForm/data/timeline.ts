@@ -20,7 +20,7 @@ export const referendumExecutionBlocks$ = state(
     switchMap(async ([currentBlock, bountyValue]) => {
       const currentBlockDate = new Date();
       const refDuration = await referendaDuration(
-        bountyValue ? BigInt(bountyValue * 10 ** TOKEN_DECIMALS) : null
+        bountyValue ? BigInt(bountyValue * 10 ** TOKEN_DECIMALS) : null,
       );
 
       const referendumEnd = currentBlock.number + refDuration;
@@ -40,9 +40,9 @@ export const referendumExecutionBlocks$ = state(
         lateBountyFunding,
         referendumSubmissionDeadline,
       };
-    })
+    }),
   ),
-  null
+  null,
 );
 
 export const estimatedTimeline$ = referendumExecutionBlocks$.pipeState(
@@ -66,10 +66,10 @@ export const estimatedTimeline$ = referendumExecutionBlocks$.pipeState(
         bountyFunding: getBlockDate(bountyFunding),
         lateBountyFunding: getBlockDate(lateBountyFunding),
         referendumSubmissionDeadline: getBlockDate(
-          referendumSubmissionDeadline
+          referendumSubmissionDeadline,
         ),
       };
-    }
+    },
   ),
-  withDefault(null)
+  withDefault(null),
 );

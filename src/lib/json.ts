@@ -7,9 +7,9 @@ export const stringify = (value: unknown) =>
       typeof v === "bigint"
         ? `${v}n`
         : v instanceof Binary
-        ? bytesToString(v)
-        : v,
-    2
+          ? bytesToString(v)
+          : v,
+    2,
   );
 
 const textDecoder = new TextDecoder("utf-8", { fatal: true });

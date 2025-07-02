@@ -19,7 +19,9 @@ const aliceSigner = getPolkadotSigner(alice.publicKey, "Sr25519", alice.sign);
 
 const ALICE = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY";
 
-const ENDPOINT = "wss://rpc.ibp.network/kusama";
+const ENDPOINT = process.argv.includes("polkadot")
+  ? "wss://rpc.ibp.network/polkadot"
+  : "wss://rpc.ibp.network/kusama";
 const LOCAL_RPC_PORT = 8132;
 const CONTROLLER_PORT = LOCAL_RPC_PORT + 1;
 
@@ -34,7 +36,7 @@ chopsticksProcess.stdout.pipe(logStream);
 chopsticksProcess.stderr.pipe(logStreamErr);
 
 console.log(
-  "Connecting to chopsticks… It might take a few retries until the chain is up"
+  "Connecting to chopsticks… It might take a few retries until the chain is up",
 );
 let client = createClient(getWsProvider(`ws://localhost:${LOCAL_RPC_PORT}`));
 let api = client.getUnsafeApi();
@@ -82,9 +84,8 @@ const jumpBlocks = async (height: number, count?: number) => {
 
 const approveReferendum = async (id: number, firstCall = true) => {
   console.log(`Loading referendum ${id} status`);
-  const referendumInfo = await api.query.Referenda.ReferendumInfoFor.getValue(
-    id
-  );
+  const referendumInfo =
+    await api.query.Referenda.ReferendumInfoFor.getValue(id);
   if (!referendumInfo) {
     throw new Error("Referendum not found");
   }
@@ -136,7 +137,7 @@ const approveReferendum = async (id: number, firstCall = true) => {
 
   const currentFinalized = await client.getFinalizedBlock();
   const period = (await api.constants.Referenda.Tracks()).find(
-    ([id]) => id === referendumInfo.value.track
+    ([id]) => id === referendumInfo.value.track,
   )![1].min_enactment_period;
   console.log("Wait one block");
   await client._request("dev_newBlock", []);

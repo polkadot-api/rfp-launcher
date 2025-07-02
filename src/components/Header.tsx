@@ -1,6 +1,14 @@
-import { USE_CHOPSTICKS } from "@/chain"
-import { ChopsticksController } from "./ChopsticksController"
-import { SelectAccount } from "./SelectAccount"
+import { USE_CHOPSTICKS } from "@/chain";
+import { ChopsticksController } from "./ChopsticksController";
+import { SelectAccount } from "./SelectAccount";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { KnownChains, matchedChain } from "@/chainRoute";
 
 export const Header = () => {
   return (
@@ -21,11 +29,37 @@ export const Header = () => {
 
         <div className="poster-actions">
           <SelectAccount />
-          <div className="kusama-stamp">KUSAMA</div>
+          <ChainSelector />
           {USE_CHOPSTICKS && <ChopsticksController />}
         </div>
       </div>
     </header>
-  )
-}
+  );
+};
 
+const chainNames: Record<KnownChains, string> = {
+  kusama: "Kusama",
+  polkadot: "Polkadot",
+};
+
+const ChainSelector = () => (
+  <Select
+    value={matchedChain}
+    onValueChange={(v) => {
+      window.location.href = v === "kusama" ? "/" : "/?chain=" + v;
+    }}
+  >
+    <SelectTrigger className="w-auto kusama-stamp">
+      <SelectValue aria-label={matchedChain}>
+        {chainNames[matchedChain]}
+      </SelectValue>
+    </SelectTrigger>
+    <SelectContent>
+      {Object.entries(chainNames).map(([key, value]) => (
+        <SelectItem key={key} value={key}>
+          {value}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+);

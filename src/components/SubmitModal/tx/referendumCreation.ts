@@ -1,7 +1,7 @@
-import { typedApi } from "@/chain";
+import { referendaSdk, typedApi } from "@/chain";
+import { getTrack } from "@/components/RfpForm/data/referendaConstants";
 import { formatToken } from "@/lib/formatToken";
 import { MultiAddress } from "@polkadot-api/descriptors";
-import { createReferendaSdk } from "@polkadot-api/sdk-governance";
 import {
   AccountId,
   getMultisigAccountId,
@@ -26,9 +26,6 @@ import { dismissable, submittedFormData$ } from "../modalActions";
 import { getCreationMultisigCallMetadata, rfpBounty$ } from "./bountyCreation";
 import { createTxProcess } from "./txProcess";
 import { TxWithExplanation } from "./types";
-import { getTrack } from "@/components/RfpForm/data/referendaConstants";
-
-const referendaSdk = createReferendaSdk(typedApi);
 
 const accountCodec = AccountId();
 
@@ -37,17 +34,17 @@ const getMultisigAddress = (formData: FormSchema) =>
     getMultisigAccountId({
       threshold: Math.min(
         formData.signatoriesThreshold,
-        formData.supervisors.length
+        formData.supervisors.length,
       ),
       signatories: formData.supervisors.map(accountCodec.enc),
-    })
+    }),
   );
 
 export const referendumCreationTx$ = state(
   rfpBounty$.pipe(
     withLatestFrom(
       submittedFormData$.pipe(filter((v) => !!v)),
-      referendumExecutionBlocks$.pipe(filter((v) => !!v))
+      referendumExecutionBlocks$.pipe(filter((v) => !!v)),
     ),
     switchMap(
       ([{ bounty, multisigTimepoint }, formData, { bountyFunding }]) => {
@@ -64,7 +61,7 @@ export const referendumCreationTx$ = state(
         const getReferendumProposal = async (): Promise<TxWithExplanation> => {
           if (
             await typedApi.tx.Bounties.approve_bounty_with_curator.isCompatible(
-              CompatibilityLevel.Partial
+              CompatibilityLevel.Partial,
             )
           ) {
             return {
@@ -148,7 +145,7 @@ export const referendumCreationTx$ = state(
                 // First unlock the deposit, as it could prevent having enough funds for the following transactions.
                 const metadata = getCreationMultisigCallMetadata(
                   formData,
-                  selectedAccount.address
+                  selectedAccount.address,
                 );
                 if (metadata) {
                   calls.push({
@@ -198,20 +195,20 @@ export const referendumCreationTx$ = state(
                   explanation: {
                     text: "batch",
                     params: Object.fromEntries(
-                      calls.map((v, i) => [i, v.explanation])
+                      calls.map((v, i) => [i, v.explanation]),
                     ),
                   },
                 };
               }
               return calls[0];
-            }
+            },
           ),
-          dismissable()
+          dismissable(),
         );
-      }
-    )
+      },
+    ),
   ),
-  null
+  null,
 );
 
 const formatTrackName = (track: string) => track.replace(/_/g, " ");
@@ -229,7 +226,7 @@ export const rfpReferendum$ = state(
           throw new Error("Submitted referendum could not be found");
         }
         return referendum;
-      })
+      }),
     ),
     // try and load existing one if it's there
     rfpBounty$.pipe(
@@ -240,8 +237,8 @@ export const rfpReferendum$ = state(
           .getReferenda()
           .then((referenda) =>
             bounty.filterApprovingReferenda(
-              referenda.filter((ref) => ref.type === "Ongoing")
-            )
+              referenda.filter((ref) => ref.type === "Ongoing"),
+            ),
           );
       }),
       map((v) => v[0]?.referendum),
@@ -250,7 +247,7 @@ export const rfpReferendum$ = state(
         index: v.id,
         track: v.track,
         proposal: v.proposal.rawValue,
-      }))
-    )
-  )
+      })),
+    ),
+  ),
 );

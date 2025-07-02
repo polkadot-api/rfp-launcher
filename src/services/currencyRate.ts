@@ -11,8 +11,8 @@ export const currencyRate$ = state(
           headers: {
             Accept: "application/json",
           },
-        }
-      ).then((r) => r.json())
+        },
+      ).then((r) => r.json()),
     ),
     map((v) => {
       if (v.error?.length) {
@@ -23,7 +23,7 @@ export const currencyRate$ = state(
     catchError((err) => {
       console.error(err);
       return of(null);
-    })
+    }),
   ),
-  null
+  null,
 );

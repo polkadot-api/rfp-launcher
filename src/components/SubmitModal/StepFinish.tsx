@@ -1,3 +1,4 @@
+import { matchedChain } from "@/chainRoute";
 import { useStateObservable } from "@react-rxjs/core";
 import { FC } from "react";
 import { ExternalLink } from "../ExternalLink";
@@ -14,12 +15,14 @@ export const StepFinish: FC<{
       <h3 className="text-sm font-bold">Referendum submitted!</h3>
       <div>
         Please, edit the referendum in{" "}
-        <ExternalLink href={"https://kusama.subsquare.io/referenda/" + refIdx}>
+        <ExternalLink
+          href={`https://${matchedChain}.subsquare.io/referenda/${refIdx}`}
+        >
           Subsquare
         </ExternalLink>{" "}
         or{" "}
         <ExternalLink
-          href={"https://kusama.polkassembly.io/referenda/" + refIdx}
+          href={`https://${matchedChain}.polkassembly.io/referenda/${refIdx}`}
         >
           Polkassembly
         </ExternalLink>{" "}

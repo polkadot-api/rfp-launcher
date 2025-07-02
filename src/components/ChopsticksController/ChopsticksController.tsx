@@ -44,8 +44,10 @@ const ApproveReferendum = () => {
   const { handler, status } = useControllerAction(
     (evt: FormEvent<HTMLFormElement>) =>
       fetch(
-        CHOPSTICKS_URL + "/approve_referendum/" + evt.currentTarget.number.value
-      )
+        CHOPSTICKS_URL +
+          "/approve_referendum/" +
+          evt.currentTarget.number.value,
+      ),
   );
 
   return (
@@ -64,7 +66,7 @@ const ApproveReferendum = () => {
 
 const TreasurySpend = () => {
   const { handler, status } = useControllerAction(() =>
-    fetch(CHOPSTICKS_URL + "/treasury_spend")
+    fetch(CHOPSTICKS_URL + "/treasury_spend"),
   );
 
   return (
@@ -84,8 +86,8 @@ const ResetBalance = () => {
   const { handler, status } = useControllerAction(
     (evt: FormEvent<HTMLFormElement>) =>
       fetch(
-        CHOPSTICKS_URL + "/reset_balance/" + evt.currentTarget.address.value
-      )
+        CHOPSTICKS_URL + "/reset_balance/" + evt.currentTarget.address.value,
+      ),
   );
 
   return (

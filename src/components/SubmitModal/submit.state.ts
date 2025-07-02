@@ -1,5 +1,4 @@
-import { typedApi } from "@/chain";
-import { createReferendaSdk } from "@polkadot-api/sdk-governance";
+import { referendaSdk } from "@/chain";
 import { state } from "@react-rxjs/core";
 import { TxEvent } from "polkadot-api";
 import { combineLatest, map, Observable } from "rxjs";
@@ -15,8 +14,6 @@ import {
 } from "./tx/referendumCreation";
 import { TxWithExplanation } from "./tx/types";
 
-const referendaSdk = createReferendaSdk(typedApi);
-
 const txProcessState = (
   tx$: Observable<TxWithExplanation | null>,
   process$: Observable<
@@ -28,7 +25,7 @@ const txProcessState = (
       }
     | null
   >,
-  tag: string
+  tag: string,
 ) =>
   combineLatest([tx$, process$]).pipe(
     map(([tx, process]) => {
@@ -64,7 +61,7 @@ const txProcessState = (
             },
           }
         : null;
-    })
+    }),
   );
 
 export const activeTxStep$ = state(
@@ -73,10 +70,10 @@ export const activeTxStep$ = state(
     txProcessState(referendumCreationTx$, referendumCreationProcess$, "ref"),
     txProcessState(decisionDepositTx$, decisionDepositProcess$, "decision"),
   ]).pipe(map((steps) => steps.reverse().reduce((a, b) => a || b, null))),
-  null
+  null,
 );
 
 export const referendumIndex$ = state(
   rfpReferendum$.pipe(map((v) => v.index)),
-  undefined
+  undefined,
 );

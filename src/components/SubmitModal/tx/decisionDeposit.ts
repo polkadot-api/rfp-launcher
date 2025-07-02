@@ -16,11 +16,11 @@ export const decisionDepositTx$ = state(
         },
       };
       return of(res).pipe(dismissable());
-    })
+    }),
   ),
-  null
+  null,
 );
 
 export const [decisionDepositProcess$, submitdecisionDeposit] = createTxProcess(
-  decisionDepositTx$.pipe(map((v) => v?.tx ?? null))
+  decisionDepositTx$.pipe(map((v) => v?.tx ?? null)),
 );

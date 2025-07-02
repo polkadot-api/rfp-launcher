@@ -2,7 +2,7 @@ import { FormEvent, useState } from "react";
 
 export type ControllerStatus = null | "loading" | "success" | "error";
 export const useControllerAction = <T extends FormEvent | MouseEvent>(
-  action: (evt: T) => Promise<Response>
+  action: (evt: T) => Promise<Response>,
 ) => {
   const [status, setStatus] = useState<ControllerStatus>(null);
 
@@ -22,7 +22,7 @@ export const useControllerAction = <T extends FormEvent | MouseEvent>(
           (err) => {
             console.error(err);
             setStatus("error");
-          }
+          },
         );
     },
   };

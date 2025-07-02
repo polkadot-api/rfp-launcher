@@ -6,7 +6,7 @@ import { state } from "@react-rxjs/core";
 
 export const calculatePriceTotals = (
   formFields: DeepPartialSkipArrayKey<FormSchema>,
-  conversionRate: number | null
+  conversionRate: number | null,
 ) => {
   const totalAmount = [
     formFields.prizePool,

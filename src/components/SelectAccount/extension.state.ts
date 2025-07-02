@@ -28,11 +28,11 @@ export const availableExtensions$ = state(
     timer(0, 100).pipe(
       map(getInjectedExtensions),
       filter((v) => v.length > 0),
-      take(1)
+      take(1),
     ),
-    interval(2000).pipe(map(getInjectedExtensions))
+    interval(2000).pipe(map(getInjectedExtensions)),
   ),
-  []
+  [],
 );
 
 const getPersistedSelectedExtension = () =>
@@ -46,9 +46,9 @@ export const selectedExtension$ = state(
     availableExtensions$.pipe(
       filter((v) => v.includes(getPersistedSelectedExtension()!)),
       map(() => getPersistedSelectedExtension()!),
-      distinctUntilChanged()
+      distinctUntilChanged(),
     ),
-    selectExtension$.pipe(tap(setPersistedSelectedExtension))
+    selectExtension$.pipe(tap(setPersistedSelectedExtension)),
   ).pipe(
     switchMap((name) => {
       const connect$ = defer(() => connectInjectedExtension(name)).pipe(
@@ -60,7 +60,7 @@ export const selectedExtension$ = state(
             }
             throw error;
           },
-        })
+        }),
       );
 
       let disconnected = false;
@@ -87,9 +87,9 @@ export const selectedExtension$ = state(
               disconnected = true;
             }
           },
-        })
+        }),
       );
-    })
+    }),
   ),
-  null
+  null,
 );

@@ -17,13 +17,13 @@ export const createTxProcess = (tx$: Observable<AnyTx | null>) => {
             of({
               type: "error" as const,
               err,
-            })
-          )
+            }),
+          ),
         );
       }),
-      dismissable()
+      dismissable(),
     ),
-    null
+    null,
   );
 
   return [txProcess$, submitTx] as const;

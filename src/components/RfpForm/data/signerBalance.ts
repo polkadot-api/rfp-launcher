@@ -8,9 +8,9 @@ export const signerBalance$ = state(
     switchMap((account) =>
       account
         ? typedApi.query.System.Account.watchValue(account.address)
-        : of(null)
+        : of(null),
     ),
-    map((v) => (v ? v.data.free : null))
+    map((v) => (v ? v.data.free : null)),
   ),
-  null
+  null,
 );
