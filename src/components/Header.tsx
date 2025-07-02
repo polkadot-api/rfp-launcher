@@ -46,7 +46,7 @@ const ChainSelector = () => (
   <Select
     value={matchedChain}
     onValueChange={(v) => {
-      window.location.href = v === "kusama" ? "/" : "/?chain=" + v;
+      window.location.href = "?chain=" + v;
     }}
   >
     <SelectTrigger className="w-auto kusama-stamp">
