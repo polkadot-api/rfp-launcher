@@ -1,11 +1,16 @@
 "use client";
 
+import { selectedAccount$ } from "@/components/SelectAccount";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useStateObservable } from "@react-rxjs/core";
+import { addWeeks, differenceInDays } from "date-fns";
+import { ArrowLeft, ArrowRight, Rocket } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useForm, FormProvider } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { SubmitModal } from "../SubmitModal";
 import { submit } from "../SubmitModal/modalActions";
 import { Form } from "../ui/form";
+import { estimatedCost$, estimatedTimeline$, signerBalance$ } from "./data";
 import { emptyNumeric, type FormSchema, formSchema } from "./formSchema";
 import { FundingSection } from "./FundingSection";
 import { ReviewSection } from "./ReviewSection";
@@ -13,11 +18,6 @@ import { ScopeSection } from "./ScopeSection";
 import { SupervisorsSection } from "./SupervisorsSection";
 import { TimelineSection } from "./TimelineSection";
 import { WelcomeSection } from "./WelcomeSection";
-import { ArrowLeft, ArrowRight, Rocket } from "lucide-react";
-import { estimatedCost$, signerBalance$, estimatedTimeline$ } from "./data";
-import { selectedAccount$ } from "@/components/SelectAccount";
-import { useStateObservable } from "@react-rxjs/core";
-import { addWeeks, differenceInDays } from "date-fns";
 
 const defaultValues: Partial<FormSchema> = {
   prizePool: emptyNumeric,
@@ -38,7 +38,6 @@ const steps = [
   { id: "supervisors", title: "Supervisors", Component: SupervisorsSection },
   { id: "timeline", title: "Timeline", Component: TimelineSection },
   { id: "scope", title: "Project Scope", Component: ScopeSection },
-  { id: "review", title: "Review & Submit", Component: ReviewSection },
 ];
 
 export const RfpForm = () => {
@@ -113,8 +112,10 @@ export const RfpForm = () => {
     window.scrollTo(0, 0);
   };
 
-  const ActiveStepComponent = steps[currentStepIndex].Component;
-  const isReviewStep = currentStepIndex === steps.length - 1;
+  const isReviewStep = currentStepIndex === steps.length;
+  const ActiveStepComponent = isReviewStep
+    ? steps[currentStepIndex].Component
+    : null;
   const hasErrors = Object.keys(errors).length > 0;
 
   const totalRequiredCost = estimatedCost
@@ -161,7 +162,7 @@ export const RfpForm = () => {
       <Form {...methods}>
         <form onSubmit={handleSubmit(submit)} className="space-y-12">
           <div className="poster-section">
-            {isReviewStep ? (
+            {!ActiveStepComponent ? (
               <ReviewSection
                 control={control}
                 isReturnFundsAgreed={isReturnFundsAgreed}
@@ -174,11 +175,7 @@ export const RfpForm = () => {
                 navigateToStep={navigateToStepById} // Pass the navigation function
               />
             ) : (
-              // @ts-ignore
-              <ActiveStepComponent
-                control={control}
-                onReset={handleResetForm}
-              />
+              <ActiveStepComponent control={control} />
             )}
           </div>
 

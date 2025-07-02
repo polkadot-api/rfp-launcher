@@ -1,11 +1,10 @@
 import { referendaSdk, typedApi } from "@/chain";
-import { ksm } from "@polkadot-api/descriptors";
+import { dot, ksm } from "@polkadot-api/descriptors";
 import {
   PolkadotRuntimeOriginCaller,
   ReferendaTrack,
   RuntimeOriginCaller,
 } from "@polkadot-api/sdk-governance";
-import { dot } from "node:test/reporters";
 import { CompatibilityLevel } from "polkadot-api";
 
 export const getTrack = async (
