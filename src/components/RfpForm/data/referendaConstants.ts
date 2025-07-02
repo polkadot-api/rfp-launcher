@@ -1,9 +1,11 @@
 import { typedApi } from "@/chain";
+import { ksm } from "@polkadot-api/descriptors";
 import {
   createReferendaSdk,
   kusamaSpenderOrigin,
   PolkadotRuntimeOriginCaller,
   ReferendaTrack,
+  RuntimeOriginCaller,
 } from "@polkadot-api/sdk-governance";
 import { CompatibilityLevel } from "polkadot-api";
 
@@ -14,7 +16,7 @@ const referendaSdk = createReferendaSdk(typedApi, {
 export const getTrack = async (
   value: bigint | null
 ): Promise<{
-  origin: PolkadotRuntimeOriginCaller;
+  origin: RuntimeOriginCaller<typeof ksm>;
   track: ReferendaTrack;
 }> => {
   const treasurerTrack = await referendaSdk.getTrack("treasurer");
