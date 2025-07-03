@@ -115,22 +115,26 @@ const EstimatedTimeline: FC<{ control: RfpControlType }> = ({ control }) => {
             {/* Made value bolder */}
           </li>
           <li>
-            Bounty Funding:{" "}
+            RFP Funding:{" "}
             <span className="text-midnight-koi font-medium">
               {formatDate(estimatedTimeline.bountyFunding)}
             </span>
           </li>
-          <li>
-            Bounty Funding (if RFP submitted after deadline):{" "}
-            {format(
-              estimatedTimeline.referendumSubmissionDeadline,
-              lateSubmissionDiff < 2 ? "LLL do kk:mm" : "LLL do",
-            )}
-            :{" "}
-            <span className="text-midnight-koi font-medium">
-              {formatDate(estimatedTimeline.lateBountyFunding)}
-            </span>
-          </li>
+          {isNaN(
+            estimatedTimeline.referendumSubmissionDeadline.getTime(),
+          ) ? null : (
+            <li>
+              RFP Funding (if referendum submitted after{" "}
+              {format(
+                estimatedTimeline.referendumSubmissionDeadline,
+                lateSubmissionDiff < 2 ? "LLL do kk:mm" : "LLL do",
+              )}
+              ):{" "}
+              <span className="text-midnight-koi font-medium">
+                {formatDate(estimatedTimeline.lateBountyFunding)}
+              </span>
+            </li>
+          )}
           <li>
             Funds Expiry Deadline:{" "}
             <span className="text-midnight-koi font-medium">
