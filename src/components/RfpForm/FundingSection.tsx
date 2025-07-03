@@ -94,9 +94,10 @@ export const FundingSection: FC<{ control: RfpControlType }> = ({
                 </Select>
               </FormControl>
               <FormDescription className="text-xs text-pine-shadow-60 leading-tight">
-                currency to use for the RFP. Native currency (KSM) will be
-                submitted through a bounty, stables (USDC/USDT) will create a
-                multisig instead.
+                currency to use for the RFP. Native currency ({TOKEN_SYMBOL})
+                will be submitted through a bounty, stables (
+                {Object.keys(STABLE_INFO!).join("/")}) will create a multisig
+                instead.
               </FormDescription>
               <FormMessage className="text-tomato-stamp text-xs" />
             </FormItem>

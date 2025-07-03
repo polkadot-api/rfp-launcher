@@ -19,6 +19,7 @@ import { ScopeSection } from "./ScopeSection";
 import { SupervisorsSection } from "./SupervisorsSection";
 import { TimelineSection } from "./TimelineSection";
 import { WelcomeSection } from "./WelcomeSection";
+import { matchedChain } from "@/chainRoute";
 
 const defaultValues: Partial<FormSchema> = {
   prizePool: emptyNumeric,
@@ -42,6 +43,9 @@ const steps = [
   { id: "scope", title: "Project Scope", Component: ScopeSection },
 ];
 
+const storageKey =
+  matchedChain === "kusama" ? "rfp-form" : `rfp-form-${matchedChain}`;
+
 export const RfpForm = () => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isReturnFundsAgreed, setIsReturnFundsAgreed] = useState(false);
@@ -55,7 +59,7 @@ export const RfpForm = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       ...defaultValues,
-      ...JSON.parse(localStorage.getItem("rfp-form") ?? "{}", (key, value) => {
+      ...JSON.parse(localStorage.getItem(storageKey) ?? "{}", (key, value) => {
         if (key === "projectCompletion" && value) {
           return new Date(value);
         }
@@ -76,7 +80,7 @@ export const RfpForm = () => {
 
   useEffect(() => {
     const subscription = watch((data) => {
-      localStorage.setItem("rfp-form", JSON.stringify(data));
+      localStorage.setItem(storageKey, JSON.stringify(data));
     });
     return () => subscription.unsubscribe();
   }, [watch]);
