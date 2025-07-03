@@ -34,7 +34,7 @@ import {
   parseNumber,
   type RfpControlType,
 } from "./formSchema";
-import { STABLE_IDS, TOKEN_SYMBOL } from "@/constants";
+import { STABLE_INFO, TOKEN_SYMBOL } from "@/constants";
 
 export const FundingSection: FC<{ control: RfpControlType }> = ({
   control,
@@ -64,7 +64,7 @@ export const FundingSection: FC<{ control: RfpControlType }> = ({
         type="number"
       />
     </div>
-    {STABLE_IDS ? (
+    {STABLE_INFO ? (
       <div className="mb-8">
         <FormField
           control={control}
@@ -85,7 +85,7 @@ export const FundingSection: FC<{ control: RfpControlType }> = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={TOKEN_SYMBOL}>{TOKEN_SYMBOL}</SelectItem>
-                    {Object.keys(STABLE_IDS!).map((symbol) => (
+                    {Object.keys(STABLE_INFO!).map((symbol) => (
                       <SelectItem key={symbol} value={symbol}>
                         {symbol}
                       </SelectItem>

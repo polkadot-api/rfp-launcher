@@ -1,5 +1,8 @@
 import { referendaSdk, typedApi } from "@/chain";
-import { getTrack } from "@/components/RfpForm/data/referendaConstants";
+import {
+  formatTrackName,
+  getTrack,
+} from "@/components/RfpForm/data/referendaConstants";
 import { formatToken } from "@/lib/formatToken";
 import { MultiAddress } from "@polkadot-api/descriptors";
 import {
@@ -210,8 +213,6 @@ export const referendumCreationTx$ = state(
   ),
   null,
 );
-
-const formatTrackName = (track: string) => track.replace(/_/g, " ");
 
 export const [referendumCreationProcess$, submitReferendumCreation] =
   createTxProcess(referendumCreationTx$.pipe(map((v) => v?.tx ?? null)));

@@ -1,4 +1,4 @@
-import { REFERENDUM_PRICE_BUFFER, STABLE_IDS } from "@/constants";
+import { REFERENDUM_PRICE_BUFFER, STABLE_INFO } from "@/constants";
 import { state } from "@react-rxjs/core";
 import { createSignal } from "@react-rxjs/utils";
 import { DeepPartialSkipArrayKey } from "react-hook-form";
@@ -34,6 +34,6 @@ export const [setBountyCurrency$, setBountyCurrency] = createSignal<
 export const bountyCurrency$ = state(setBountyCurrency$, null);
 
 export const currencyIsStables$ = state(
-  bountyCurrency$.pipe(map((currency) => !!STABLE_IDS?.[currency ?? ""])),
+  bountyCurrency$.pipe(map((currency) => !!STABLE_INFO?.[currency ?? ""])),
   false,
 );

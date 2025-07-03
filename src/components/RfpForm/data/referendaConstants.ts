@@ -44,6 +44,8 @@ export const getTrack = async (
   return { track: await track, origin };
 };
 
+export const formatTrackName = (track: string) => track.replace(/_/g, " ");
+
 export const submissionDeposit =
   typedApi.constants.Referenda.SubmissionDeposit();
 
