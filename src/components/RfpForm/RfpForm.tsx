@@ -94,6 +94,7 @@ export const RfpForm = () => {
   };
 
   const handleNext = async () => {
+    if (currentStepIndex === steps.length - 1) methods.trigger();
     setCurrentStepIndex((prev) => Math.min(prev + 1, steps.length));
     window.scrollTo(0, 0);
   };
@@ -193,7 +194,7 @@ export const RfpForm = () => {
 
               {/* Step Text: Mobile order 2, Desktop order 2 */}
               <div className="text-sm text-pine-shadow-60 font-medium py-2 md:py-0 text-center order-2 md:order-2">
-                Step {currentStepIndex + 1} of {steps.length} —{" "}
+                Step {currentStepIndex + 1} of {steps.length + 1} —{" "}
                 {isReviewStep
                   ? "Review & Submit"
                   : steps[currentStepIndex].title}
