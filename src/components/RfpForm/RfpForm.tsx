@@ -1,6 +1,7 @@
 "use client";
 
 import { selectedAccount$ } from "@/components/SelectAccount";
+import { TOKEN_SYMBOL } from "@/constants";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useStateObservable } from "@react-rxjs/core";
 import { addWeeks, differenceInDays } from "date-fns";
@@ -18,6 +19,7 @@ import { ScopeSection } from "./ScopeSection";
 import { SupervisorsSection } from "./SupervisorsSection";
 import { TimelineSection } from "./TimelineSection";
 import { WelcomeSection } from "./WelcomeSection";
+import { matchedChain } from "@/chainRoute";
 
 const defaultValues: Partial<FormSchema> = {
   prizePool: emptyNumeric,
@@ -30,6 +32,7 @@ const defaultValues: Partial<FormSchema> = {
   projectTitle: "",
   projectScope: "",
   milestones: [],
+  fundingCurrency: TOKEN_SYMBOL,
 };
 
 const steps = [
@@ -39,6 +42,9 @@ const steps = [
   { id: "timeline", title: "Timeline", Component: TimelineSection },
   { id: "scope", title: "Project Scope", Component: ScopeSection },
 ];
+
+const storageKey =
+  matchedChain === "kusama" ? "rfp-form" : `rfp-form-${matchedChain}`;
 
 export const RfpForm = () => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -53,7 +59,7 @@ export const RfpForm = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       ...defaultValues,
-      ...JSON.parse(localStorage.getItem("rfp-form") ?? "{}", (key, value) => {
+      ...JSON.parse(localStorage.getItem(storageKey) ?? "{}", (key, value) => {
         if (key === "projectCompletion" && value) {
           return new Date(value);
         }
@@ -74,7 +80,7 @@ export const RfpForm = () => {
 
   useEffect(() => {
     const subscription = watch((data) => {
-      localStorage.setItem("rfp-form", JSON.stringify(data));
+      localStorage.setItem(storageKey, JSON.stringify(data));
     });
     return () => subscription.unsubscribe();
   }, [watch]);
@@ -122,13 +128,6 @@ export const RfpForm = () => {
     ? estimatedCost.deposits + estimatedCost.fees
     : null;
 
-  const hasSufficientBalanceForButton =
-    selectedAccount !== null &&
-    currentBalance !== null &&
-    totalRequiredCost !== null
-      ? currentBalance >= totalRequiredCost
-      : selectedAccount === null;
-
   const fundsExpiry = getValues("fundsExpiry");
   const projectCompletion = getValues("projectCompletion");
   const submissionDeadlineForDevDays = estimatedTimeline
@@ -144,9 +143,6 @@ export const RfpForm = () => {
     hasErrors ||
     !isFormValid ||
     (isReviewStep && !isReturnFundsAgreed) ||
-    (isReviewStep &&
-      selectedAccount !== null &&
-      !hasSufficientBalanceForButton) ||
     (isReviewStep && !enoughDevDays) ||
     (isReviewStep && (!supervisors || supervisors.length === 0));
 

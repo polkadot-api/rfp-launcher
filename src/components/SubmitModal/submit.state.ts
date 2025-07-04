@@ -1,7 +1,7 @@
 import { referendaSdk } from "@/chain";
 import { state } from "@react-rxjs/core";
 import { TxEvent } from "polkadot-api";
-import { combineLatest, map, Observable } from "rxjs";
+import { combineLatest, map, merge, Observable } from "rxjs";
 import { bountyCreationProcess$, bountyCreationTx$ } from "./tx/bountyCreation";
 import {
   decisionDepositProcess$,
@@ -12,6 +12,11 @@ import {
   referendumCreationTx$,
   rfpReferendum$,
 } from "./tx/referendumCreation";
+import {
+  treasurySpendProcess$,
+  treasurySpendRfpReferendum$,
+  treasurySpendTx$,
+} from "./tx/treasurySpend";
 import { TxWithExplanation } from "./tx/types";
 
 const txProcessState = (
@@ -20,7 +25,6 @@ const txProcessState = (
     | TxEvent
     | {
         type: "error";
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         err: any;
       }
     | null
@@ -64,7 +68,7 @@ const txProcessState = (
     }),
   );
 
-export const activeTxStep$ = state(
+export const activeBountyRfpTxStep$ = state(
   combineLatest([
     txProcessState(bountyCreationTx$, bountyCreationProcess$, "bounty"),
     txProcessState(referendumCreationTx$, referendumCreationProcess$, "ref"),
@@ -73,7 +77,15 @@ export const activeTxStep$ = state(
   null,
 );
 
+export const activeMultisigRfpTxStep$ = state(
+  combineLatest([
+    txProcessState(treasurySpendTx$, treasurySpendProcess$, "ref"),
+    txProcessState(decisionDepositTx$, decisionDepositProcess$, "decision"),
+  ]).pipe(map((steps) => steps.reverse().reduce((a, b) => a || b, null))),
+  null,
+);
+
 export const referendumIndex$ = state(
-  rfpReferendum$.pipe(map((v) => v.index)),
+  merge(rfpReferendum$, treasurySpendRfpReferendum$).pipe(map((v) => v.index)),
   undefined,
 );

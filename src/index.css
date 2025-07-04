@@ -287,7 +287,7 @@
   }
 
   .poster-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
     box-shadow: 0 8px 24px rgba(76, 102, 89, 0.12);
   }
 

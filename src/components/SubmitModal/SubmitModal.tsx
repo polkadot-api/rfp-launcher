@@ -1,12 +1,32 @@
 "use client";
 
+import {
+  currencyIsStables$,
+  estimatedCost$,
+  signerBalance$,
+} from "@/components/RfpForm/data";
+import { formatToken } from "@/lib/formatToken";
 import { state, useStateObservable } from "@react-rxjs/core";
 import { mergeWithKey } from "@react-rxjs/utils";
+import { AlertCircle } from "lucide-react";
+import type { FC } from "react";
 import { useEffect } from "react";
-import { filter, map, of, switchMap, take, withLatestFrom } from "rxjs";
+import {
+  combineLatest,
+  concat,
+  filter,
+  map,
+  of,
+  switchMap,
+  take,
+  takeUntil,
+  withLatestFrom,
+} from "rxjs";
 import { selectedAccount$ } from "../SelectAccount";
 import { PickExtension } from "../SelectAccount/PickExtension";
 import { PickExtensionAccount } from "../SelectAccount/PickExtensionAccount";
+import { Loading } from "../Spinner"; // Assuming Spinner.tsx exports Loading
+import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
@@ -20,20 +40,8 @@ import {
   formDataChange$,
   submittedFormData$,
 } from "./modalActions";
-import { StepBroadcastingTx } from "./StepBroadcastingTx";
-import { StepFinish } from "./StepFinish";
-import { StepSubmitTx } from "./StepSubmitTx";
-import { activeTxStep$, referendumIndex$ } from "./submit.state";
-import { submitBountyCreation } from "./tx/bountyCreation";
-import { submitdecisionDeposit } from "./tx/decisionDeposit";
-import { submitReferendumCreation } from "./tx/referendumCreation";
-import { estimatedCost$, signerBalance$ } from "@/components/RfpForm/data";
-import { formatToken } from "@/lib/formatToken";
-import { AlertCircle } from "lucide-react";
-import { Button } from "../ui/button";
-import { Loading } from "../Spinner"; // Assuming Spinner.tsx exports Loading
-import { concat, combineLatest, takeUntil } from "rxjs"; // Add missing RxJS operators
-import type { FC } from "react";
+import { SubmitBountyModal } from "./SubmitBountyModal";
+import { SubmitMultisigRfpModal } from "./SubmitMultisigRfpModal";
 
 // Define modal view types for better clarity
 type ModalView =
@@ -45,7 +53,7 @@ type ModalView =
       required: bigint;
       available: bigint;
     }
-  | { type: "transaction_steps" };
+  | { type: "bounty_transaction_steps" | "multisig_transaction_steps" };
 
 // This observable manages the modal's view state before transaction steps
 const submitModalInternal$ = mergeWithKey({ formDataChange$, dismiss$ }).pipe(
@@ -98,9 +106,10 @@ const submitModal$ = state(
               signerBalance$.pipe(
                 filter((v): v is NonNullable<typeof v> => v !== null),
               ),
+              currencyIsStables$,
             ]).pipe(
               take(1), // Get the latest cost and balance once
-              map(([costData, balanceData]) => {
+              map(([costData, balanceData, isStables]) => {
                 const totalRequired = costData.deposits + costData.fees;
                 if (balanceData < totalRequired) {
                   return {
@@ -110,7 +119,11 @@ const submitModal$ = state(
                   } as ModalView;
                 }
                 // Balance is sufficient, proceed to the original transaction steps
-                return { type: "transaction_steps" } as ModalView;
+                return {
+                  type: isStables
+                    ? "multisig_transaction_steps"
+                    : "bounty_transaction_steps",
+                } as ModalView;
               }),
             );
           }),
@@ -245,78 +258,14 @@ export const SubmitModal = () => {
     );
   }
 
-  if (modalStatus.type === "transaction_steps") {
-    return (
-      <Dialog {...dialogProps}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Submit RFP</DialogTitle>
-            <DialogDescription>
-              This is a three-step process: Create the bounty, submit the
-              referendum, and place the decision deposit.
-            </DialogDescription>
-          </DialogHeader>
-          <SubmitModalContent /> {/* This contains the multi-step tx UI */}
-        </DialogContent>
-      </Dialog>
-    );
+  if (modalStatus.type === "bounty_transaction_steps") {
+    return <SubmitBountyModal />;
+  }
+
+  if (modalStatus.type === "multisig_transaction_steps") {
+    return <SubmitMultisigRfpModal />;
   }
 
   // Fallback or should not be reached if modalStatus is always one of the above or null
   return null;
-};
-
-const SubmitModalContent = () => {
-  const activeTxStep = useStateObservable(activeTxStep$);
-  const refIdx = useStateObservable(referendumIndex$);
-
-  if (!activeTxStep) return null;
-
-  if (activeTxStep.type === "tx") {
-    switch (activeTxStep.tag) {
-      case "bounty":
-        return (
-          <div className="space-y-2 overflow-hidden">
-            <h3 className="text-sm font-bold">
-              1. Submit the transaction to create the bounty
-            </h3>
-            <StepSubmitTx
-              explanation={activeTxStep.value.explanation}
-              submit={submitBountyCreation}
-            />
-          </div>
-        );
-      case "ref":
-        return (
-          <div className="space-y-2 overflow-hidden">
-            <h3 className="text-sm font-bold">
-              2. Submit the transaction to create the referendum
-            </h3>
-            <StepSubmitTx
-              explanation={activeTxStep.value.explanation}
-              submit={submitReferendumCreation}
-            />
-          </div>
-        );
-      case "decision":
-        return (
-          <div className="space-y-2 overflow-hidden">
-            <h3 className="text-sm font-bold">
-              3. Place the decision deposit on the referendum to start it
-            </h3>
-            <StepSubmitTx
-              explanation={activeTxStep.value.explanation}
-              submit={submitdecisionDeposit}
-            />
-          </div>
-        );
-    }
-    return null;
-  }
-
-  if (activeTxStep.type === "submitting" || !activeTxStep.value.txEvent.ok) {
-    return <StepBroadcastingTx txEvt={activeTxStep.value.txEvent} />;
-  }
-
-  return <StepFinish refIdx={refIdx} />;
 };

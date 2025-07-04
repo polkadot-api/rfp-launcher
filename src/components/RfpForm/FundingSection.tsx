@@ -1,20 +1,40 @@
 "use client";
 
 import { formatToken } from "@/lib/formatToken";
-import { useStateObservable } from "@react-rxjs/core";
-import { TriangleAlert, CheckCircle2 } from "lucide-react";
-import { type FC, useEffect } from "react";
-import { useWatch, type DeepPartialSkipArrayKey } from "react-hook-form";
-import { openSelectAccount, selectedAccount$ } from "../SelectAccount";
-import { estimatedCost$, signerBalance$ } from "./data";
-import { calculatePriceTotals, setBountyValue } from "./data/price";
 import { currencyRate$ } from "@/services/currencyRate";
+import { useStateObservable } from "@react-rxjs/core";
+import { CheckCircle2, TriangleAlert } from "lucide-react";
+import { type FC, useEffect } from "react";
+import { type DeepPartialSkipArrayKey, useWatch } from "react-hook-form";
+import { openSelectAccount, selectedAccount$ } from "../SelectAccount";
+import {
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import { estimatedCost$, signerBalance$ } from "./data";
+import {
+  calculatePriceTotals,
+  setBountyCurrency,
+  setBountyValue,
+} from "./data/price";
 import { FormInputField } from "./FormInputField";
 import {
-  type RfpControlType,
   type FormSchema,
   parseNumber,
+  type RfpControlType,
 } from "./formSchema";
+import { STABLE_INFO, TOKEN_SYMBOL } from "@/constants";
 
 export const FundingSection: FC<{ control: RfpControlType }> = ({
   control,
@@ -44,6 +64,47 @@ export const FundingSection: FC<{ control: RfpControlType }> = ({
         type="number"
       />
     </div>
+    {STABLE_INFO ? (
+      <div className="mb-8">
+        <FormField
+          control={control}
+          name="fundingCurrency"
+          render={({ field }) => (
+            <FormItem className="space-y-2">
+              <FormLabel className="poster-label">RFP Currency</FormLabel>
+              <FormControl>
+                <Select
+                  value={field.value ?? ""}
+                  onValueChange={field.onChange}
+                >
+                  <SelectTrigger
+                    className="w-full data-[size=default]:h-auto"
+                    forceSvgSize={false}
+                  >
+                    <SelectValue placeholder="Choose a currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={TOKEN_SYMBOL}>{TOKEN_SYMBOL}</SelectItem>
+                    {Object.keys(STABLE_INFO!).map((symbol) => (
+                      <SelectItem key={symbol} value={symbol}>
+                        {symbol}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormDescription className="text-xs text-pine-shadow-60 leading-tight">
+                currency to use for the RFP. Native currency ({TOKEN_SYMBOL})
+                will be submitted through a bounty, stables (
+                {Object.keys(STABLE_INFO!).join("/")}) will create a multisig
+                instead.
+              </FormDescription>
+              <FormMessage className="text-tomato-stamp text-xs" />
+            </FormItem>
+          )}
+        />
+      </div>
+    ) : null}
     <BalanceCheck control={control} />
   </div>
 );
@@ -52,6 +113,7 @@ const BalanceCheck: FC<{ control: RfpControlType }> = ({ control }) => {
   const prizePool = useWatch({ control, name: "prizePool" });
   const findersFee = useWatch({ control, name: "findersFee" });
   const supervisorsFee = useWatch({ control, name: "supervisorsFee" });
+  const fundingCurrency = useWatch({ control, name: "fundingCurrency" });
 
   const currencyRate = useStateObservable(currencyRate$);
   const estimatedCost = useStateObservable(estimatedCost$);
@@ -64,17 +126,22 @@ const BalanceCheck: FC<{ control: RfpControlType }> = ({ control }) => {
       findersFee: parseNumber(findersFee) ?? undefined,
       supervisorsFee: parseNumber(supervisorsFee) ?? undefined,
     };
-    const { totalAmountWithBuffer } = calculatePriceTotals(
+    const { totalAmount, totalAmountWithBuffer } = calculatePriceTotals(
       formValuesForTotals,
       currencyRate,
     );
+
     // Only set bounty value if there's a prize pool, otherwise estimatedCost might show a value based on 0 USD + buffer
     if ((parseNumber(prizePool) || 0) > 0) {
-      setBountyValue(totalAmountWithBuffer);
+      setBountyCurrency(fundingCurrency);
+      setBountyValue(
+        fundingCurrency == TOKEN_SYMBOL ? totalAmountWithBuffer : totalAmount,
+      );
     } else {
       setBountyValue(null); // Reset estimated cost if prize pool is cleared or zero
+      setBountyCurrency(null);
     }
-  }, [prizePool, findersFee, supervisorsFee, currencyRate]);
+  }, [prizePool, findersFee, supervisorsFee, currencyRate, fundingCurrency]);
 
   const prizePoolAmount = parseNumber(prizePool) || 0;
 

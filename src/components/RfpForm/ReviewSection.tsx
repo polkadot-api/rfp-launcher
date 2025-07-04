@@ -9,42 +9,42 @@ import { PolkadotIdenticon } from "@polkadot-api/react-components";
 import { useStateObservable } from "@react-rxjs/core";
 import { addDays, differenceInDays } from "date-fns";
 import {
-  BadgeInfo,
-  TriangleAlert,
-  FileText,
-  RefreshCw,
-  DollarSign,
-  Clock,
-  Users,
-  CheckCircle2,
-  Copy,
-  CheckCircle,
   AlertCircle,
   ArrowLeftCircle,
+  BadgeInfo,
+  CheckCircle,
+  CheckCircle2,
+  Clock,
+  Copy,
+  DollarSign,
+  FileText,
+  RefreshCw,
+  TriangleAlert,
+  Users,
 } from "lucide-react";
 import {
-  type FC,
   useEffect,
-  useState,
   useMemo,
+  useState,
   type Dispatch,
+  type FC,
   type SetStateAction,
 } from "react";
 import { useWatch, type UseFormSetValue } from "react-hook-form";
 import { combineLatest, map } from "rxjs";
+import { selectedAccount$ } from "../SelectAccount";
 import { Checkbox } from "../ui/checkbox";
 import { DatePicker } from "../ui/datepicker";
 import { estimatedTimeline$, identity$ } from "./data";
-import { calculatePriceTotals, setBountyValue } from "./data/price";
 import { generateMarkdown } from "./data/markdown";
-import { MarkdownPreview } from "./MarkdownPreview";
+import { calculatePriceTotals, currencyIsStables$ } from "./data/price";
 import {
-  type Milestone,
   parseNumber,
-  type RfpControlType,
   type FormSchema,
+  type Milestone,
+  type RfpControlType,
 } from "./formSchema";
-import { selectedAccount$ } from "../SelectAccount";
+import { MarkdownPreview } from "./MarkdownPreview";
 
 interface ReviewSectionProps {
   control: RfpControlType;
@@ -198,37 +198,25 @@ const FundingSummary: FC<{
   const formFields = useWatch({ control });
   const milestonesTotal = getMilestonesTotal(formFields.milestones);
   const currencyRate = useStateObservable(currencyRate$);
-  const { totalAmountWithBuffer } = calculatePriceTotals(
+  const currencyIsStables = useStateObservable(currencyIsStables$);
+  const { totalAmount, totalAmountWithBuffer } = calculatePriceTotals(
     formFields,
     currencyRate,
   );
 
-  useEffect(() => {
-    setBountyValue(totalAmountWithBuffer);
-  }, [totalAmountWithBuffer]);
+  const formattedKsmString = currencyIsStables
+    ? formatCurrency(totalAmount, formFields.fundingCurrency!, 2)
+    : formatCurrency(totalAmountWithBuffer, TOKEN_SYMBOL, 2);
 
-  const formattedKsmString = formatCurrency(
-    totalAmountWithBuffer,
-    TOKEN_SYMBOL,
-    2,
-  );
-  let ksmValueDisplay = "Calculating...";
-  let ksmUnitDisplay = "";
+  let totalValueDisplay = "Calculating...";
+  let valueUnitDisplay = "";
 
-  if (totalAmountWithBuffer != null && formattedKsmString) {
+  if (formattedKsmString) {
     const parts = formattedKsmString.split(" ");
     if (parts.length >= 1) {
-      ksmValueDisplay = parts[0];
+      totalValueDisplay = parts[0];
       if (parts.length >= 2) {
-        ksmUnitDisplay = parts[1];
-      } else {
-        const symbolIndex = ksmValueDisplay.indexOf(TOKEN_SYMBOL);
-        if (symbolIndex > -1 && ksmValueDisplay.endsWith(TOKEN_SYMBOL)) {
-          ksmUnitDisplay = TOKEN_SYMBOL;
-          ksmValueDisplay = ksmValueDisplay.substring(0, symbolIndex).trim();
-        } else {
-          ksmUnitDisplay = TOKEN_SYMBOL;
-        }
+        valueUnitDisplay = parts[1];
       }
     }
   }
@@ -283,24 +271,28 @@ const FundingSummary: FC<{
               <span className="text-base font-semibold text-midnight-koi">
                 Total
               </span>
-              <span className="text-xs text-pine-shadow-60">+25% Buffer</span>
+              {currencyIsStables ? null : (
+                <span className="text-xs text-pine-shadow-60">+25% Buffer</span>
+              )}
             </div>
             <div className="flex flex-col items-end">
               <span className="text-xl font-bold text-midnight-koi tabular-nums">
-                {ksmValueDisplay}
+                {totalValueDisplay}
               </span>
-              {ksmUnitDisplay && (
+              {valueUnitDisplay && (
                 <span className="text-xs text-pine-shadow-60">
-                  {ksmUnitDisplay}
+                  {valueUnitDisplay}
                 </span>
               )}
             </div>
           </div>
         </div>
 
-        <div className="text-right text-xs text-pine-shadow-60 mt-1 tabular-nums">
-          1 {TOKEN_SYMBOL} = {formatCurrency(currencyRate, "USD")}
-        </div>
+        {currencyIsStables ? null : (
+          <div className="text-right text-xs text-pine-shadow-60 mt-1 tabular-nums">
+            1 {TOKEN_SYMBOL} = {formatCurrency(currencyRate, "USD")}
+          </div>
+        )}
       </div>
 
       {!milestonesMatchesPrize && (
@@ -627,11 +619,15 @@ const ResultingMarkdown: FC<{
   }, [formFields.supervisors]);
 
   const markdown = useMemo(() => {
-    const { totalAmountWithBuffer } = calculatePriceTotals(
+    const { totalAmount, totalAmountWithBuffer } = calculatePriceTotals(
       formFields,
       currencyRate,
     );
-    return generateMarkdown(formFields, totalAmountWithBuffer, identities);
+    const total =
+      (formFields.fundingCurrency ?? TOKEN_SYMBOL) === TOKEN_SYMBOL
+        ? totalAmountWithBuffer
+        : totalAmount;
+    return generateMarkdown(formFields, total, identities);
   }, [formFields, currencyRate, identities, refreshKey]);
 
   const copyToClipboard = async () => {

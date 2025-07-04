@@ -1,9 +1,9 @@
 import { client, typedApi } from "@/chain";
-import { BLOCK_LENGTH, TOKEN_DECIMALS } from "@/constants";
+import { BLOCK_LENGTH, STABLE_RATE, TOKEN_DECIMALS } from "@/constants";
 import { state, withDefault } from "@react-rxjs/core";
 import { add } from "date-fns";
 import { combineLatest, filter, map, switchMap } from "rxjs";
-import { bountyValue$ } from "./price";
+import { bountyValue$, currencyIsStables$ } from "./price";
 import { referendaDuration } from "./referendaConstants";
 
 const getNextTreasurySpend = async (block: number) => {
@@ -16,14 +16,33 @@ const getNextTreasurySpend = async (block: number) => {
 };
 
 export const referendumExecutionBlocks$ = state(
-  combineLatest([client.finalizedBlock$, bountyValue$]).pipe(
-    switchMap(async ([currentBlock, bountyValue]) => {
+  combineLatest([
+    client.finalizedBlock$,
+    currencyIsStables$,
+    bountyValue$,
+  ]).pipe(
+    switchMap(async ([currentBlock, isStables, bountyValue]) => {
       const currentBlockDate = new Date();
       const refDuration = await referendaDuration(
-        bountyValue ? BigInt(bountyValue * 10 ** TOKEN_DECIMALS) : null,
+        bountyValue
+          ? BigInt(bountyValue * 10 ** TOKEN_DECIMALS) /
+              (isStables ? STABLE_RATE : 1n)
+          : null,
       );
 
       const referendumEnd = currentBlock.number + refDuration;
+
+      if (isStables) {
+        // Stables through a multisig don't need to wait for a treasury spend
+        return {
+          currentBlock,
+          currentBlockDate,
+          referendumEnd,
+          bountyFunding: referendumEnd,
+          lateBountyFunding: referendumEnd,
+          referendumSubmissionDeadline: Number.POSITIVE_INFINITY,
+        };
+      }
 
       const nextTreasurySpend = await getNextTreasurySpend(referendumEnd);
       const bountyFunding = nextTreasurySpend.next;
