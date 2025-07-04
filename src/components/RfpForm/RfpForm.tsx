@@ -20,8 +20,10 @@ import { SupervisorsSection } from "./SupervisorsSection";
 import { TimelineSection } from "./TimelineSection";
 import { WelcomeSection } from "./WelcomeSection";
 import { matchedChain } from "@/chainRoute";
+import { formValue$, setFormValue } from "./data/formValue";
 
 const defaultValues: Partial<FormSchema> = {
+  isChildRfp: false,
   prizePool: emptyNumeric,
   findersFee: emptyNumeric,
   supervisorsFee: emptyNumeric,
@@ -79,7 +81,13 @@ export const RfpForm = () => {
   } = methods;
 
   useEffect(() => {
+    const sub = formValue$.subscribe();
+    return () => sub.unsubscribe();
+  });
+
+  useEffect(() => {
     const subscription = watch((data) => {
+      setFormValue(data);
       localStorage.setItem(storageKey, JSON.stringify(data));
     });
     return () => subscription.unsubscribe();

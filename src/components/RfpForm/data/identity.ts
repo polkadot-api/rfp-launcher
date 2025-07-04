@@ -1,8 +1,10 @@
 import { peopleApi } from "@/chain";
 import { createIdentitySdk } from "@polkadot-api/sdk-accounts";
 import { state } from "@react-rxjs/core";
+import { combineKeys } from "@react-rxjs/utils";
 import { SS58String } from "polkadot-api";
 import { from, map, startWith, tap } from "rxjs";
+import { formValue$ } from "./formValue";
 
 const CACHE_KEY = "identity-cache";
 const cache: Record<
@@ -34,3 +36,8 @@ export const identity$ = state((address: SS58String) => {
     startWith(defaultValue),
   );
 }, null);
+
+export const supervisorIdentities$ = combineKeys(
+  formValue$.pipe(map((v) => v.supervisors?.filter((v) => v != null) ?? [])),
+  identity$,
+);

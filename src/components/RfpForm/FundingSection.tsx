@@ -1,11 +1,11 @@
 "use client";
 
+import { STABLE_INFO, TOKEN_SYMBOL } from "@/constants";
 import { formatToken } from "@/lib/formatToken";
-import { currencyRate$ } from "@/services/currencyRate";
 import { useStateObservable } from "@react-rxjs/core";
 import { CheckCircle2, TriangleAlert } from "lucide-react";
-import { type FC, useEffect } from "react";
-import { type DeepPartialSkipArrayKey, useWatch } from "react-hook-form";
+import { type FC } from "react";
+import { useWatch } from "react-hook-form";
 import { openSelectAccount, selectedAccount$ } from "../SelectAccount";
 import {
   FormControl,
@@ -23,18 +23,8 @@ import {
   SelectValue,
 } from "../ui/select";
 import { estimatedCost$, signerBalance$ } from "./data";
-import {
-  calculatePriceTotals,
-  setBountyCurrency,
-  setBountyValue,
-} from "./data/price";
 import { FormInputField } from "./FormInputField";
-import {
-  type FormSchema,
-  parseNumber,
-  type RfpControlType,
-} from "./formSchema";
-import { STABLE_INFO, TOKEN_SYMBOL } from "@/constants";
+import { parseNumber, type RfpControlType } from "./formSchema";
 
 export const FundingSection: FC<{ control: RfpControlType }> = ({
   control,
@@ -111,37 +101,10 @@ export const FundingSection: FC<{ control: RfpControlType }> = ({
 
 const BalanceCheck: FC<{ control: RfpControlType }> = ({ control }) => {
   const prizePool = useWatch({ control, name: "prizePool" });
-  const findersFee = useWatch({ control, name: "findersFee" });
-  const supervisorsFee = useWatch({ control, name: "supervisorsFee" });
-  const fundingCurrency = useWatch({ control, name: "fundingCurrency" });
 
-  const currencyRate = useStateObservable(currencyRate$);
   const estimatedCost = useStateObservable(estimatedCost$);
   const selectedAccount = useStateObservable(selectedAccount$);
   const currentBalance = useStateObservable(signerBalance$);
-
-  useEffect(() => {
-    const formValuesForTotals: DeepPartialSkipArrayKey<FormSchema> = {
-      prizePool: parseNumber(prizePool) ?? undefined,
-      findersFee: parseNumber(findersFee) ?? undefined,
-      supervisorsFee: parseNumber(supervisorsFee) ?? undefined,
-    };
-    const { totalAmount, totalAmountWithBuffer } = calculatePriceTotals(
-      formValuesForTotals,
-      currencyRate,
-    );
-
-    // Only set bounty value if there's a prize pool, otherwise estimatedCost might show a value based on 0 USD + buffer
-    if ((parseNumber(prizePool) || 0) > 0) {
-      setBountyCurrency(fundingCurrency);
-      setBountyValue(
-        fundingCurrency == TOKEN_SYMBOL ? totalAmountWithBuffer : totalAmount,
-      );
-    } else {
-      setBountyValue(null); // Reset estimated cost if prize pool is cleared or zero
-      setBountyCurrency(null);
-    }
-  }, [prizePool, findersFee, supervisorsFee, currencyRate, fundingCurrency]);
 
   const prizePoolAmount = parseNumber(prizePool) || 0;
 

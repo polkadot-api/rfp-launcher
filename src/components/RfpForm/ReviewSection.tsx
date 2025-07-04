@@ -18,26 +18,17 @@ import {
   Copy,
   DollarSign,
   FileText,
-  RefreshCw,
   TriangleAlert,
   Users,
 } from "lucide-react";
-import {
-  useEffect,
-  useMemo,
-  useState,
-  type Dispatch,
-  type FC,
-  type SetStateAction,
-} from "react";
+import { useState, type Dispatch, type FC, type SetStateAction } from "react";
 import { useWatch, type UseFormSetValue } from "react-hook-form";
-import { combineLatest, map } from "rxjs";
 import { selectedAccount$ } from "../SelectAccount";
 import { Checkbox } from "../ui/checkbox";
 import { DatePicker } from "../ui/datepicker";
 import { estimatedTimeline$, identity$ } from "./data";
-import { generateMarkdown } from "./data/markdown";
-import { calculatePriceTotals, currencyIsStables$ } from "./data/price";
+import { markdown$ } from "./data/markdown";
+import { currencyIsStables$, priceTotals$ } from "./data/price";
 import {
   parseNumber,
   type FormSchema,
@@ -134,7 +125,7 @@ export const ReviewSection: FC<ReviewSectionProps> = ({
       </div>
 
       {/* Markdown Preview */}
-      <ResultingMarkdown control={control} />
+      <ResultingMarkdown />
 
       {/* Final Confirmation */}
       <div className="mt-8 bg-canvas-cream border border-pine-shadow-20 rounded-lg p-6">
@@ -199,14 +190,13 @@ const FundingSummary: FC<{
   const milestonesTotal = getMilestonesTotal(formFields.milestones);
   const currencyRate = useStateObservable(currencyRate$);
   const currencyIsStables = useStateObservable(currencyIsStables$);
-  const { totalAmount, totalAmountWithBuffer } = calculatePriceTotals(
-    formFields,
-    currencyRate,
-  );
+  const priceTotals = useStateObservable(priceTotals$);
 
-  const formattedKsmString = currencyIsStables
-    ? formatCurrency(totalAmount, formFields.fundingCurrency!, 2)
-    : formatCurrency(totalAmountWithBuffer, TOKEN_SYMBOL, 2);
+  const formattedKsmString = priceTotals
+    ? currencyIsStables
+      ? formatCurrency(priceTotals.totalAmount, formFields.fundingCurrency!, 2)
+      : formatCurrency(priceTotals.totalAmountWithBuffer, TOKEN_SYMBOL, 2)
+    : null;
 
   let totalValueDisplay = "Calculating...";
   let valueUnitDisplay = "";
@@ -588,47 +578,9 @@ const getMilestonesTotal = (milestones: Partial<Milestone>[] | undefined) =>
     .filter((v) => v != null)
     .reduce((a, b) => a + b, 0);
 
-const ResultingMarkdown: FC<{
-  control: RfpControlType;
-}> = ({ control }) => {
-  const formFields = useWatch({ control });
-  const currencyRate = useStateObservable(currencyRate$);
+const ResultingMarkdown = () => {
   const [copied, setCopied] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  const [identities, setIdentities] = useState<
-    Record<string, string | undefined>
-  >({});
-
-  useEffect(() => {
-    const supervisors = formFields.supervisors || [];
-    if (supervisors.length === 0) {
-      setIdentities({});
-      return;
-    }
-
-    const subscription = combineLatest(
-      Object.fromEntries(
-        supervisors.map((addr) => [
-          addr,
-          identity$(addr).pipe(map((id) => id?.value)),
-        ]),
-      ),
-    ).subscribe((r) => setIdentities(r));
-    return () => subscription.unsubscribe();
-  }, [formFields.supervisors]);
-
-  const markdown = useMemo(() => {
-    const { totalAmount, totalAmountWithBuffer } = calculatePriceTotals(
-      formFields,
-      currencyRate,
-    );
-    const total =
-      (formFields.fundingCurrency ?? TOKEN_SYMBOL) === TOKEN_SYMBOL
-        ? totalAmountWithBuffer
-        : totalAmount;
-    return generateMarkdown(formFields, total, identities);
-  }, [formFields, currencyRate, identities, refreshKey]);
+  const markdown = useStateObservable(markdown$);
 
   const copyToClipboard = async () => {
     if (markdown) {
@@ -662,14 +614,6 @@ const ResultingMarkdown: FC<{
           RFP Body Preview
         </h4>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setRefreshKey((prev) => prev + 1)}
-            className="poster-btn btn-secondary flex items-center gap-1 text-xs py-2 px-3"
-          >
-            <RefreshCw size={14} />
-            Refresh
-          </button>
           <button
             type="button"
             onClick={copyToClipboard}
