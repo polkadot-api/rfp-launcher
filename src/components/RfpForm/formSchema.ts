@@ -3,6 +3,7 @@ import { z } from "zod";
 
 export const formSchema = z.object({
   isChildRfp: z.boolean(),
+  parentBountyId: z.number().optional(),
   prizePool: z.coerce.number().positive(),
   findersFee: z.coerce.number(),
   supervisorsFee: z.coerce.number(),
