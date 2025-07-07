@@ -1,16 +1,10 @@
 import { typedApi } from "@/chain";
 import { matchedChain } from "@/chainRoute";
-import {
-  calculatePriceTotals,
-  generateMarkdown,
-  identity$,
-  signerBalance$,
-} from "@/components/RfpForm/data";
+import { priceTotals$, signerBalance$ } from "@/components/RfpForm/data";
 import { FormSchema } from "@/components/RfpForm/formSchema";
 import { selectedAccount$ } from "@/components/SelectAccount";
 import { REMARK_TEXT, TOKEN_DECIMALS } from "@/constants";
 import { formatToken } from "@/lib/formatToken";
-import { currencyRate$ } from "@/services/currencyRate";
 import { novasamaProvider } from "@polkadot-api/sdk-accounts";
 import { createBountiesSdk } from "@polkadot-api/sdk-governance";
 import {
@@ -25,12 +19,9 @@ import { submittedFormData$ } from "../modalActions";
 import { createTxProcess } from "./txProcess";
 import { TxWithExplanation } from "./types";
 
-const totalAmount$ = (formData: FormSchema) =>
-  currencyRate$.pipe(
-    map(
-      (currencyRate) =>
-        calculatePriceTotals(formData, currencyRate).totalAmountWithBuffer,
-    ),
+const totalAmount$ = () =>
+  priceTotals$.pipe(
+    map((v) => v?.totalAmountWithBuffer ?? null),
     filter((v) => v != null),
     map((v) => {
       // The amount is an approximation (with the +25% buffer), no need to have accurate math
@@ -102,7 +93,7 @@ export const bountyCreationTx$ = state(
         }),
       );
 
-      return combineLatest([totalAmount$(formData), multisigMetadata$]).pipe(
+      return combineLatest([totalAmount$(), multisigMetadata$]).pipe(
         map(([value, multisigMeta]): TxWithExplanation => {
           const proposeBounty: TxWithExplanation = {
             tx: typedApi.tx.Bounties.propose_bounty({
@@ -162,36 +153,6 @@ export const bountyCreationTx$ = state(
       );
     }),
   ),
-);
-
-export const bountyMarkdown$ = state(
-  combineLatest([
-    submittedFormData$.pipe(filter((v) => !!v)),
-    currencyRate$,
-  ]).pipe(
-    switchMap(([formFields, currencyRate]) => {
-      const { totalAmountWithBuffer } = calculatePriceTotals(
-        formFields,
-        currencyRate,
-      );
-
-      const identities$ = combineLatest(
-        Object.fromEntries(
-          formFields.supervisors.map((addr) => [
-            addr,
-            identity$(addr).pipe(map((id) => id?.value)),
-          ]),
-        ),
-      );
-
-      return identities$.pipe(
-        map((identities) =>
-          generateMarkdown(formFields, totalAmountWithBuffer, identities),
-        ),
-      );
-    }),
-  ),
-  null,
 );
 
 export const [bountyCreationProcess$, submitBountyCreation] = createTxProcess(

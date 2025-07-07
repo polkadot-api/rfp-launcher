@@ -77,7 +77,7 @@ const useSubmissionDeadline = (control: RfpControlType) => {
     control,
   });
 
-  return estimatedTimeline
+  return estimatedTimeline?.bountyFunding
     ? addWeeks(estimatedTimeline.bountyFunding, fundsExpiry || 1)
     : null;
 };
@@ -90,7 +90,7 @@ const EstimatedTimeline: FC<{ control: RfpControlType }> = ({ control }) => {
   });
   const submissionDeadline = useSubmissionDeadline(control);
 
-  const lateSubmissionDiff = estimatedTimeline
+  const lateSubmissionDiff = estimatedTimeline?.referendumSubmissionDeadline
     ? differenceInDays(
         estimatedTimeline.referendumSubmissionDeadline,
         new Date(),
@@ -107,22 +107,22 @@ const EstimatedTimeline: FC<{ control: RfpControlType }> = ({ control }) => {
         <ol className="text-sm text-pine-shadow-60 list-disc pl-4 leading-normal">
           {" "}
           {/* Adjusted text color for better contrast/consistency */}
-          <li>
-            Referendum Executed Deadline:{" "}
-            <span className="text-midnight-koi font-medium">
-              {formatDate(estimatedTimeline.referendumDeadline)}
-            </span>{" "}
-            {/* Made value bolder */}
-          </li>
+          {estimatedTimeline.referendumDeadline ? (
+            <li>
+              Referendum Executed Deadline:{" "}
+              <span className="text-midnight-koi font-medium">
+                {formatDate(estimatedTimeline.referendumDeadline)}
+              </span>{" "}
+              {/* Made value bolder */}
+            </li>
+          ) : null}
           <li>
             RFP Funding:{" "}
             <span className="text-midnight-koi font-medium">
               {formatDate(estimatedTimeline.bountyFunding)}
             </span>
           </li>
-          {isNaN(
-            estimatedTimeline.referendumSubmissionDeadline.getTime(),
-          ) ? null : (
+          {estimatedTimeline?.referendumSubmissionDeadline ? (
             <li>
               RFP Funding (if referendum submitted after{" "}
               {format(
@@ -134,7 +134,7 @@ const EstimatedTimeline: FC<{ control: RfpControlType }> = ({ control }) => {
                 {formatDate(estimatedTimeline.lateBountyFunding)}
               </span>
             </li>
-          )}
+          ) : null}
           <li>
             Funds Expiry Deadline:{" "}
             <span className="text-midnight-koi font-medium">

@@ -1,8 +1,15 @@
 import { client, typedApi } from "@/chain";
 import { BLOCK_LENGTH, STABLE_RATE, TOKEN_DECIMALS } from "@/constants";
-import { state, withDefault } from "@react-rxjs/core";
+import { state } from "@react-rxjs/core";
 import { add } from "date-fns";
-import { combineLatest, filter, map, switchMap } from "rxjs";
+import {
+  combineLatest,
+  distinctUntilChanged,
+  filter,
+  map,
+  switchMap,
+} from "rxjs";
+import { formValue$ } from "./formValue";
 import { bountyValue$, currencyIsStables$ } from "./price";
 import { referendaDuration } from "./referendaConstants";
 
@@ -39,8 +46,8 @@ export const referendumExecutionBlocks$ = state(
           currentBlockDate,
           referendumEnd,
           bountyFunding: referendumEnd,
-          lateBountyFunding: referendumEnd,
-          referendumSubmissionDeadline: Number.POSITIVE_INFINITY,
+          lateBountyFunding: null,
+          referendumSubmissionDeadline: null,
         };
       }
 
@@ -64,7 +71,7 @@ export const referendumExecutionBlocks$ = state(
   null,
 );
 
-export const estimatedTimeline$ = referendumExecutionBlocks$.pipeState(
+const estimatedReferendumTimeline$ = referendumExecutionBlocks$.pipe(
   filter((v) => !!v),
   map(
     ({
@@ -83,12 +90,33 @@ export const estimatedTimeline$ = referendumExecutionBlocks$.pipeState(
       return {
         referendumDeadline: getBlockDate(referendumEnd),
         bountyFunding: getBlockDate(bountyFunding),
-        lateBountyFunding: getBlockDate(lateBountyFunding),
-        referendumSubmissionDeadline: getBlockDate(
-          referendumSubmissionDeadline,
-        ),
+        lateBountyFunding: lateBountyFunding
+          ? getBlockDate(lateBountyFunding)
+          : null,
+        referendumSubmissionDeadline: referendumSubmissionDeadline
+          ? getBlockDate(referendumSubmissionDeadline)
+          : null,
       };
     },
   ),
-  withDefault(null),
+);
+
+export const estimatedTimeline$ = state(
+  formValue$.pipe(
+    map((v) => v.isChildRfp),
+    distinctUntilChanged(),
+    switchMap((isChild) =>
+      isChild
+        ? [
+            {
+              referendumDeadline: null,
+              bountyFunding: new Date(),
+              lateBountyFunding: null,
+              referendumSubmissionDeadline: null,
+            },
+          ]
+        : estimatedReferendumTimeline$,
+    ),
+  ),
+  null,
 );

@@ -18,26 +18,17 @@ import {
   Copy,
   DollarSign,
   FileText,
-  RefreshCw,
   TriangleAlert,
   Users,
 } from "lucide-react";
-import {
-  useEffect,
-  useMemo,
-  useState,
-  type Dispatch,
-  type FC,
-  type SetStateAction,
-} from "react";
+import { useState, type Dispatch, type FC, type SetStateAction } from "react";
 import { useWatch, type UseFormSetValue } from "react-hook-form";
-import { combineLatest, map } from "rxjs";
 import { selectedAccount$ } from "../SelectAccount";
 import { Checkbox } from "../ui/checkbox";
 import { DatePicker } from "../ui/datepicker";
 import { estimatedTimeline$, identity$ } from "./data";
-import { generateMarkdown } from "./data/markdown";
-import { calculatePriceTotals, currencyIsStables$ } from "./data/price";
+import { markdown$ } from "./data/markdown";
+import { currencyIsStables$, priceTotals$ } from "./data/price";
 import {
   parseNumber,
   type FormSchema,
@@ -75,6 +66,7 @@ export const ReviewSection: FC<ReviewSectionProps> = ({
   const prizePool = useWatch({ control, name: "prizePool" });
   const projectCompletion = useWatch({ control, name: "projectCompletion" });
   const supervisors = useWatch({ control, name: "supervisors" });
+  const isChildRfp = useWatch({ control, name: "isChildRfp" });
 
   const milestonesTotal = getMilestonesTotal(milestones);
   const milestonesMatchesPrize = parseNumber(prizePool) === milestonesTotal;
@@ -134,35 +126,37 @@ export const ReviewSection: FC<ReviewSectionProps> = ({
       </div>
 
       {/* Markdown Preview */}
-      <ResultingMarkdown control={control} />
+      <ResultingMarkdown isChildRfp={isChildRfp} />
 
       {/* Final Confirmation */}
-      <div className="mt-8 bg-canvas-cream border border-pine-shadow-20 rounded-lg p-6">
-        <div className="flex items-start space-x-3">
-          <Checkbox
-            id="return-funds"
-            checked={isReturnFundsAgreed}
-            onCheckedChange={(checked) => setIsReturnFundsAgreed(!!checked)}
-            className="mt-1 border-pine-shadow data-[state=checked]:bg-lilypad data-[state=checked]:text-canvas-cream"
-          />
-          <label
-            htmlFor="return-funds"
-            className="text-pine-shadow leading-tight cursor-pointer text-sm"
-          >
-            I agree that any unused funds will be returned to the Treasury.
-          </label>
-        </div>
-        {!isReturnFundsAgreed && (
-          <div className="mt-3 poster-alert alert-error">
-            <div className="flex items-center gap-2">
-              <TriangleAlert size={16} />
-              <div className="text-sm font-medium">
-                You must agree to return unused funds to the Treasury.
+      {isChildRfp ? null : (
+        <div className="mt-8 bg-canvas-cream border border-pine-shadow-20 rounded-lg p-6">
+          <div className="flex items-start space-x-3">
+            <Checkbox
+              id="return-funds"
+              checked={isReturnFundsAgreed}
+              onCheckedChange={(checked) => setIsReturnFundsAgreed(!!checked)}
+              className="mt-1 border-pine-shadow data-[state=checked]:bg-lilypad data-[state=checked]:text-canvas-cream"
+            />
+            <label
+              htmlFor="return-funds"
+              className="text-pine-shadow leading-tight cursor-pointer text-sm"
+            >
+              I agree that any unused funds will be returned to the Treasury.
+            </label>
+          </div>
+          {!isReturnFundsAgreed && (
+            <div className="mt-3 poster-alert alert-error">
+              <div className="flex items-center gap-2">
+                <TriangleAlert size={16} />
+                <div className="text-sm font-medium">
+                  You must agree to return unused funds to the Treasury.
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
@@ -199,14 +193,13 @@ const FundingSummary: FC<{
   const milestonesTotal = getMilestonesTotal(formFields.milestones);
   const currencyRate = useStateObservable(currencyRate$);
   const currencyIsStables = useStateObservable(currencyIsStables$);
-  const { totalAmount, totalAmountWithBuffer } = calculatePriceTotals(
-    formFields,
-    currencyRate,
-  );
+  const priceTotals = useStateObservable(priceTotals$);
 
-  const formattedKsmString = currencyIsStables
-    ? formatCurrency(totalAmount, formFields.fundingCurrency!, 2)
-    : formatCurrency(totalAmountWithBuffer, TOKEN_SYMBOL, 2);
+  const formattedKsmString = priceTotals
+    ? currencyIsStables
+      ? formatCurrency(priceTotals.totalAmount, formFields.fundingCurrency!, 2)
+      : formatCurrency(priceTotals.totalAmountWithBuffer, TOKEN_SYMBOL, 2)
+    : null;
 
   let totalValueDisplay = "Calculating...";
   let valueUnitDisplay = "";
@@ -323,19 +316,20 @@ const TimelineSummary: FC<{
 }> = ({ control, enoughDevDays, submissionDeadline, setValue }) => {
   const estimatedTimeline = useStateObservable(estimatedTimeline$);
   const projectCompletion = useWatch({ name: "projectCompletion", control });
+  const isChildRfp = useWatch({ name: "isChildRfp", control });
 
   const devDays =
     submissionDeadline &&
     projectCompletion &&
     differenceInDays(projectCompletion, submissionDeadline);
 
-  const daysToLateSubmission = estimatedTimeline
+  const daysToLateSubmission = estimatedTimeline?.referendumSubmissionDeadline
     ? differenceInDays(
         estimatedTimeline.referendumSubmissionDeadline,
         new Date(),
       )
     : null;
-  const lateSubmissionDiff = estimatedTimeline
+  const lateSubmissionDiff = estimatedTimeline?.lateBountyFunding
     ? differenceInDays(
         estimatedTimeline.lateBountyFunding,
         estimatedTimeline.bountyFunding,
@@ -357,12 +351,16 @@ const TimelineSummary: FC<{
       </h4>
 
       <div className="space-y-3">
-        <div className="grid grid-cols-[1fr,auto] gap-x-4 items-baseline">
-          <span className="text-sm text-pine-shadow">Referendum Executed</span>
-          <span className="text-xs text-midnight-koi font-mono tabular-nums text-right">
-            {formatDate(estimatedTimeline?.referendumDeadline)}
-          </span>
-        </div>
+        {isChildRfp ? null : (
+          <div className="grid grid-cols-[1fr,auto] gap-x-4 items-baseline">
+            <span className="text-sm text-pine-shadow">
+              Referendum Executed
+            </span>
+            <span className="text-xs text-midnight-koi font-mono tabular-nums text-right">
+              {formatDate(estimatedTimeline?.referendumDeadline)}
+            </span>
+          </div>
+        )}
 
         <div className="grid grid-cols-[1fr,auto] gap-x-4 items-baseline py-2 bg-sun-bleach bg-opacity-10 px-3 -mx-3 rounded">
           <span className="font-medium text-midnight-koi">RFP Funding</span>
@@ -588,47 +586,9 @@ const getMilestonesTotal = (milestones: Partial<Milestone>[] | undefined) =>
     .filter((v) => v != null)
     .reduce((a, b) => a + b, 0);
 
-const ResultingMarkdown: FC<{
-  control: RfpControlType;
-}> = ({ control }) => {
-  const formFields = useWatch({ control });
-  const currencyRate = useStateObservable(currencyRate$);
+const ResultingMarkdown: FC<{ isChildRfp: boolean }> = ({ isChildRfp }) => {
   const [copied, setCopied] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  const [identities, setIdentities] = useState<
-    Record<string, string | undefined>
-  >({});
-
-  useEffect(() => {
-    const supervisors = formFields.supervisors || [];
-    if (supervisors.length === 0) {
-      setIdentities({});
-      return;
-    }
-
-    const subscription = combineLatest(
-      Object.fromEntries(
-        supervisors.map((addr) => [
-          addr,
-          identity$(addr).pipe(map((id) => id?.value)),
-        ]),
-      ),
-    ).subscribe((r) => setIdentities(r));
-    return () => subscription.unsubscribe();
-  }, [formFields.supervisors]);
-
-  const markdown = useMemo(() => {
-    const { totalAmount, totalAmountWithBuffer } = calculatePriceTotals(
-      formFields,
-      currencyRate,
-    );
-    const total =
-      (formFields.fundingCurrency ?? TOKEN_SYMBOL) === TOKEN_SYMBOL
-        ? totalAmountWithBuffer
-        : totalAmount;
-    return generateMarkdown(formFields, total, identities);
-  }, [formFields, currencyRate, identities, refreshKey]);
+  const markdown = useStateObservable(markdown$);
 
   const copyToClipboard = async () => {
     if (markdown) {
@@ -664,14 +624,6 @@ const ResultingMarkdown: FC<{
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setRefreshKey((prev) => prev + 1)}
-            className="poster-btn btn-secondary flex items-center gap-1 text-xs py-2 px-3"
-          >
-            <RefreshCw size={14} />
-            Refresh
-          </button>
-          <button
-            type="button"
             onClick={copyToClipboard}
             className="poster-btn btn-primary flex items-center gap-1 text-xs py-2 px-3"
           >
@@ -688,7 +640,8 @@ const ResultingMarkdown: FC<{
           <BadgeInfo size={16} className="mt-0.5 shrink-0" />
           <div className="text-sm">
             <strong>Next Step:</strong> Copy this Markdown content and paste it
-            into the body of your referendum once submitted.
+            into the body of your {isChildRfp ? " child bounty " : "referendum"}{" "}
+            once submitted.
           </div>
         </div>
       </div>

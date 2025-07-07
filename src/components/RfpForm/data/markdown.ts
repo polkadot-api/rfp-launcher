@@ -1,17 +1,22 @@
 import { REFERENDUM_PRICE_BUFFER, TOKEN_SYMBOL } from "@/constants";
 import { format } from "date-fns";
-import type { DeepPartialSkipArrayKey } from "react-hook-form";
+import type { DeepPartial } from "react-hook-form";
 import { type FormSchema, parseNumber } from "../formSchema";
+import { combineLatest, map } from "rxjs";
+import { formValue$ } from "./formValue";
+import { bountyValue$ } from "./price";
+import { supervisorIdentities$ } from "./identity";
+import { state } from "@react-rxjs/core";
 
-export function generateMarkdown(
-  data: DeepPartialSkipArrayKey<FormSchema>,
-  totalAmountWithBuffer: number | null,
+function generateMarkdown(
+  data: DeepPartial<FormSchema>,
+  totalAmount: number | null,
   identities: Record<string, string | undefined>,
 ) {
-  // Don't require full validation - work with partial data
-  console.log("Generating markdown with data:", data);
-  console.log("Total amount with buffer:", totalAmountWithBuffer);
-  console.log("Identities:", identities);
+  // // Don't require full validation - work with partial data
+  // console.log("Generating markdown with data:", data);
+  // console.log("Total amount with buffer:", totalAmountWithBuffer);
+  // console.log("Identities:", identities);
 
   // Extract values with fallbacks
   const projectTitle = data.projectTitle || "Untitled Project";
@@ -25,8 +30,8 @@ export function generateMarkdown(
   const milestones = data.milestones || [];
   const currency = data.fundingCurrency ?? TOKEN_SYMBOL;
 
-  const formattedAmount = totalAmountWithBuffer
-    ? Math.round(totalAmountWithBuffer).toLocaleString()
+  const formattedAmount = totalAmount
+    ? Math.round(totalAmount).toLocaleString()
     : "TBD";
   const total =
     currency === TOKEN_SYMBOL
@@ -44,9 +49,16 @@ ${total}
 
 ## Supervisors
 
-${supervisors.length > 0 ? supervisors.map((addr) => `- ${identities[addr] || addr}`).join("  \n") : "- TBD"}
+${
+  supervisors.length > 0
+    ? supervisors
+        .filter((v) => v != null)
+        .map((addr) => `- ${identities[addr] || addr}`)
+        .join("  \n")
+    : "- TBD"
+}
 
-Excess or unused funds will be returned to the treasury by the supervisors (bounty curators).
+${data.isChildRfp ? "" : "Excess or unused funds will be returned to the treasury by the supervisors (bounty curators)."}
 
 ## Timeline
 
@@ -63,6 +75,7 @@ ${projectScope || "Project scope to be defined..."}
 ${
   milestones.length > 0
     ? milestones
+        .filter((v) => v != null)
         .map((milestone, i) => {
           const amount = parseNumber(milestone.amount) || 0;
           const title = milestone.title || `Milestone ${i + 1}`;
@@ -79,6 +92,25 @@ ${description}`;
 }
 `;
 
-  console.log("Generated markdown:", markdown);
+  // console.log("Generated markdown:", markdown);
   return markdown;
 }
+
+export const markdown$ = state(
+  combineLatest({
+    formValue: formValue$,
+    bountyValue: bountyValue$,
+    supervisorIdentities: supervisorIdentities$.pipe(
+      map((map) =>
+        Object.fromEntries(
+          [...map.entries()].map(([key, id]) => [key, id?.value]),
+        ),
+      ),
+    ),
+  }).pipe(
+    map(({ formValue, bountyValue, supervisorIdentities }) =>
+      generateMarkdown(formValue, bountyValue, supervisorIdentities),
+    ),
+  ),
+  generateMarkdown({}, null, {}),
+);

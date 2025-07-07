@@ -1,5 +1,4 @@
 import { referendaSdk, typedApi } from "@/chain";
-import { calculatePriceTotals } from "@/components/RfpForm/data";
 import {
   formatTrackName,
   getTrack,
@@ -77,7 +76,11 @@ export const treasurySpendTx$ = state(
         });
         return [null];
       }
-      const { totalAmount } = calculatePriceTotals(formData, 1);
+      const totalAmount = [
+        formData.findersFee,
+        formData.prizePool,
+        formData.supervisorsFee,
+      ].reduce((a, b) => a + b);
       const amountBig = BigInt(
         Math.round(totalAmount * Math.pow(10, currencyInfo.decimals)),
       );

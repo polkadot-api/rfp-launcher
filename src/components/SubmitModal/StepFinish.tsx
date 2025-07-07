@@ -3,12 +3,12 @@ import { useStateObservable } from "@react-rxjs/core";
 import { FC } from "react";
 import { ExternalLink } from "../ExternalLink";
 import { Textarea } from "../ui/textarea";
-import { bountyMarkdown$ } from "./tx/bountyCreation";
+import { markdown$ } from "../RfpForm/data";
 
 export const StepFinish: FC<{
   refIdx?: number;
 }> = ({ refIdx }) => {
-  const bountyMarkdown = useStateObservable(bountyMarkdown$);
+  const bountyMarkdown = useStateObservable(markdown$);
 
   return (
     <div className="space-y-2 overflow-hidden">
