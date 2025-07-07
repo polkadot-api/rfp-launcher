@@ -7,9 +7,11 @@ import {
   signerBalance$,
 } from "@/components/RfpForm/data";
 import { TOKEN_DECIMALS } from "@/constants";
+import { SelectGroup } from "@radix-ui/react-select";
 import { state, useStateObservable } from "@react-rxjs/core";
 import { createSignal } from "@react-rxjs/utils";
 import { CheckCircle2, TriangleAlert } from "lucide-react";
+import { AccountId } from "polkadot-api";
 import { useEffect } from "react";
 import {
   combineLatest,
@@ -23,7 +25,7 @@ import {
   withLatestFrom,
 } from "rxjs";
 import { formValue$ } from "../RfpForm/data/formValue";
-import { bountyById$ } from "../RfpForm/FundingBountyCheck";
+import { bounties$, bountyById$ } from "../RfpForm/FundingBountyCheck";
 import { selectedAccount$ } from "../SelectAccount";
 import { PickExtension } from "../SelectAccount/PickExtension";
 import { PickExtensionAccount } from "../SelectAccount/PickExtensionAccount";
@@ -37,9 +39,18 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import {
   dismiss,
   dismiss$,
   formDataChange$,
+  submit,
   submittedFormData$,
 } from "./modalActions";
 import { SubmitBountyModal } from "./SubmitBountyModal";
@@ -56,27 +67,34 @@ type ModalView = null | {
 
 const signerStepValidity$ = state(
   combineLatest({
+    selectedAccount: selectedAccount$,
     signerBalance: signerBalance$,
     estimatedCost: estimatedCost$,
     priceTotals: priceTotals$,
     formValue: formValue$,
-    bountyBalance: formValue$.pipe(
+    bounty: formValue$.pipe(
       switchMap((form) =>
         form.isChildRfp && form.parentBountyId != null
           ? bountyById$(form.parentBountyId)
           : [null],
       ),
-      map((v) => v?.balance ?? null),
     ),
   }).pipe(
     map(
       ({
+        selectedAccount,
         signerBalance,
         estimatedCost,
         priceTotals,
         formValue,
-        bountyBalance,
+        bounty,
       }) => {
+        const bountyBalance = bounty?.balance ?? null;
+        const bountySigners = bounty?.signers ?? null;
+        const accountGenericSs58 = selectedAccount
+          ? AccountId().dec(AccountId().enc(selectedAccount.address))
+          : null;
+
         const feesAndDeposits =
           signerBalance && estimatedCost
             ? estimatedCost.deposits + estimatedCost.fees < signerBalance
@@ -85,7 +103,12 @@ const signerStepValidity$ = state(
           ? BigInt(priceTotals.totalAmountWithBuffer * 10 ** TOKEN_DECIMALS)
           : null;
         const parentBounty = formValue.isChildRfp
-          ? !!bountyBalance && !!totalAmount && bountyBalance > totalAmount
+          ? !!bountyBalance &&
+            !!bountySigners &&
+            !!accountGenericSs58 &&
+            !!totalAmount &&
+            bountyBalance > totalAmount &&
+            bountySigners.includes(accountGenericSs58)
           : true;
 
         return {
@@ -94,7 +117,9 @@ const signerStepValidity$ = state(
           estimatedCost,
           priceTotals,
           totalAmount,
+          accountGenericSs58,
           bountyBalance,
+          bountySigners,
         };
       },
     ),
@@ -147,11 +172,11 @@ const submitModal$ = state(
 );
 
 const PromptAccountModal = () => {
-  const selectedAccount = useStateObservable(selectedAccount$);
+  const formValue = useStateObservable(formValue$);
   const validity = useStateObservable(signerStepValidity$);
 
   const renderSignerBalanceCheck = () => {
-    if (!selectedAccount || !validity?.estimatedCost) return null;
+    if (!validity?.accountGenericSs58 || !validity?.estimatedCost) return null;
 
     if (validity.signerBalance === null) {
       return (
@@ -201,6 +226,7 @@ const PromptAccountModal = () => {
         <PickExtension />
         <PickExtensionAccount autoSelect />
         {renderSignerBalanceCheck()}
+        {formValue.isChildRfp ? <PromptParentBounty /> : null}
         <div className="text-right">
           <Button disabled={!validity?.isValid} onClick={onAccountSelected}>
             Next
@@ -208,6 +234,92 @@ const PromptAccountModal = () => {
         </div>
       </DialogContent>
     </Dialog>
+  );
+};
+
+const PromptParentBounty = () => {
+  const formValue = useStateObservable(submittedFormData$);
+  const bounties = useStateObservable(bounties$);
+  const validity = useStateObservable(signerStepValidity$);
+
+  if (!formValue) return null;
+
+  const signerBounties = bounties.filter((b) =>
+    // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
+    b.signers.includes(validity?.accountGenericSs58!),
+  );
+
+  const value = signerBounties.some((v) => v.id === formValue.parentBountyId)
+    ? formValue.parentBountyId
+    : null;
+
+  const renderBountyBalanceCheck = () => {
+    if (!validity?.bountySigners || !validity.totalAmount) return null;
+
+    if (validity.bountyBalance === null) {
+      return (
+        <div className="py-8 flex flex-col justify-center items-center space-y-2">
+          <Loading />
+          <p className="text-sm text-muted-foreground">
+            Checking for the bounty balance balance...
+          </p>
+        </div>
+      );
+    }
+
+    if (validity.bountyBalance > validity.totalAmount) {
+      return (
+        <div className="poster-alert alert-success flex items-center gap-3">
+          <CheckCircle2 size={20} className="shrink-0 text-lilypad" />
+          <div className="text-sm">
+            The bounty has enough balance for the child bounty!
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="poster-alert alert-error flex items-center gap-3">
+        <TriangleAlert size={20} className="shrink-0" />
+        <div className="text-sm">
+          <strong>Uh-oh:</strong> the selected bounty doesn't have enough
+          balance.
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm">Select the parent bounty</p>
+      <Select
+        value={String(value ?? "")}
+        onValueChange={(v) =>
+          submit({ ...formValue, parentBountyId: Number(v) })
+        }
+      >
+        <SelectTrigger className="w-full data-[size=default]:h-auto">
+          <SelectValue placeholder="Choose a bounty" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {signerBounties.length ? (
+              signerBounties.map((bounty) => (
+                <SelectItem key={bounty.id} value={String(bounty.id)}>
+                  {bounty.id}. {bounty.description}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectLabel className="font-bold">
+                The account you selected doesn't seem to have a curator role for
+                any of the bounties.
+              </SelectLabel>
+            )}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      {renderBountyBalanceCheck()}
+    </div>
   );
 };
 

@@ -102,7 +102,7 @@ export const [bountyById$, bountyKeys$] = partitionByKey(
       concatWith(NEVER),
     ),
 );
-const bounties$ = state(
+export const bounties$ = state(
   combineKeys(bountyKeys$, bountyById$).pipe(
     map((bounties) => Array.from(bounties.values())),
   ),
@@ -182,7 +182,7 @@ export const BountyCheck: FC<{
                 onValueChange={(v) => field.onChange(Number(v))}
               >
                 <SelectTrigger className="w-full data-[size=default]:h-auto">
-                  <SelectValue placeholder="Choose a currency" />
+                  <SelectValue placeholder="Choose a bounty" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
