@@ -8,6 +8,7 @@ import {
   map,
   merge,
   ObservableInput,
+  of,
   startWith,
   switchMap,
   take,
@@ -28,6 +29,7 @@ import {
   signerStepValidity$,
 } from "./PromptAccountModal";
 import { SubmitBountyModal } from "./SubmitBountyModal";
+import { SubmitChildBountyModal } from "./SubmitChildBountyModal";
 import { SubmitMultisigRfpModal } from "./SubmitMultisigRfpModal";
 
 // Define modal view types for better clarity
@@ -35,6 +37,7 @@ type ModalView = null | {
   type:
     | "checking_balance"
     | "prompt_account"
+    | "child_bounty_steps"
     | "bounty_transaction_steps"
     | "multisig_transaction_steps";
 };
@@ -45,15 +48,19 @@ const submitModal$ = state(
     switchMap(([formData, selectedAccount]): ObservableInput<ModalView> => {
       if (!formData) return [null];
 
-      const activeSubmissionModal$ = currencyIsStables$.pipe(
-        map(
-          (isStables): ModalView => ({
-            type: isStables
-              ? "multisig_transaction_steps"
-              : "bounty_transaction_steps",
-          }),
-        ),
-      );
+      const activeSubmissionModal$ = formData.isChildRfp
+        ? of({
+            type: "child_bounty_steps",
+          } satisfies ModalView)
+        : currencyIsStables$.pipe(
+            map(
+              (isStables): ModalView => ({
+                type: isStables
+                  ? "multisig_transaction_steps"
+                  : "bounty_transaction_steps",
+              }),
+            ),
+          );
 
       const afterSelection$ = accountSelected$.pipe(
         switchMap(() => activeSubmissionModal$),
@@ -129,6 +136,10 @@ export const SubmitModal = () => {
 
   if (modalStatus.type === "multisig_transaction_steps") {
     return <SubmitMultisigRfpModal />;
+  }
+
+  if (modalStatus.type === "child_bounty_steps") {
+    return <SubmitChildBountyModal />;
   }
 
   // Fallback or should not be reached if modalStatus is always one of the above or null

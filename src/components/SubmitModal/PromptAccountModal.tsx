@@ -9,7 +9,6 @@ import { TOKEN_DECIMALS } from "@/constants";
 import { SelectGroup } from "@radix-ui/react-select";
 import { state, useStateObservable } from "@react-rxjs/core";
 import { createSignal } from "@react-rxjs/utils";
-import { CheckCircle2, TriangleAlert } from "lucide-react";
 import { AccountId } from "polkadot-api";
 import { combineLatest, map, switchMap } from "rxjs";
 import { formValue$ } from "../RfpForm/data/formValue";
@@ -122,23 +121,12 @@ export const PromptAccountModal = () => {
       validity.signerBalance >
       validity.estimatedCost.deposits + validity.estimatedCost.fees
     ) {
-      return (
-        <div className="poster-alert alert-success flex items-center gap-3">
-          <CheckCircle2 size={20} className="shrink-0 text-lilypad" />
-          <div className="text-sm">
-            <strong>Nice:</strong> you have enough balance to launch the RFP 🚀
-          </div>
-        </div>
-      );
+      return null;
     }
 
     return (
-      <div className="poster-alert alert-error flex items-center gap-3">
-        <TriangleAlert size={20} className="shrink-0" />
-        <div className="text-sm">
-          <strong>Uh-oh:</strong> not enough balance. Please add funds or select
-          another wallet.
-        </div>
+      <div className="text-tomato-stamp text-sm -mt-2">
+        The selected account doesn't have enough balance.
       </div>
     );
   };
@@ -184,6 +172,8 @@ const PromptParentBounty = () => {
 
   const renderBountyBalanceCheck = () => {
     if (!validity?.bountySigners || !validity.totalAmount) return null;
+    if (!validity.bountySigners.includes(validity.accountGenericSs58!))
+      return null;
 
     if (validity.bountyBalance === null) {
       return (
@@ -197,23 +187,12 @@ const PromptParentBounty = () => {
     }
 
     if (validity.bountyBalance > validity.totalAmount) {
-      return (
-        <div className="poster-alert alert-success flex items-center gap-3">
-          <CheckCircle2 size={20} className="shrink-0 text-lilypad" />
-          <div className="text-sm">
-            The bounty has enough balance for the child bounty!
-          </div>
-        </div>
-      );
+      return null;
     }
 
     return (
-      <div className="poster-alert alert-error flex items-center gap-3">
-        <TriangleAlert size={20} className="shrink-0" />
-        <div className="text-sm">
-          <strong>Uh-oh:</strong> the selected bounty doesn't have enough
-          balance.
-        </div>
+      <div className="text-tomato-stamp text-sm">
+        The selected bounty doesn't have enough balance.
       </div>
     );
   };

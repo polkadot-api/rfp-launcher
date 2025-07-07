@@ -4,6 +4,7 @@ import { TOKEN_DECIMALS } from "@/constants";
 import { formatToken } from "@/lib/formatToken";
 import {
   createLinkedAccountsSdk,
+  MultisigProvider,
   NestedLinkedAccountsResult,
   novasamaProvider,
 } from "@polkadot-api/sdk-accounts";
@@ -49,7 +50,10 @@ import { type RfpControlType } from "./formSchema";
 const bountiesSdk = createBountiesSdk(typedApi);
 const linkedAccountsSdk = createLinkedAccountsSdk(
   typedApi as any,
-  novasamaProvider(matchedChain),
+  fallbackMultisigProviders([
+    novasamaProvider(matchedChain),
+    hardCodedProivider(),
+  ]),
 );
 
 const accId = AccountId();
@@ -81,7 +85,10 @@ export const [bountyById$, bountyKeys$] = partitionByKey(
                       ])),
                 ]
               : [];
-          return flatten(signers).map((v) => accId.dec(accId.enc(v)));
+          return {
+            signers: flatten(signers).map((v) => accId.dec(accId.enc(v))),
+            nestedLinkedAccounts: signers,
+          };
         }),
       ),
       balance: bounty$.pipe(
@@ -93,11 +100,14 @@ export const [bountyById$, bountyKeys$] = partitionByKey(
       ),
     }).pipe(
       filter(({ bounty }) => bounty.description != null),
-      map(({ bounty, signers, balance }) => ({
-        ...bounty,
-        signers,
-        balance,
-      })),
+      map(
+        ({ bounty, signers: { signers, nestedLinkedAccounts }, balance }) => ({
+          ...bounty,
+          signers,
+          nestedLinkedAccounts,
+          balance,
+        }),
+      ),
       // prevent the observable from completing, as that would signal `partitionByKey` to remove this item
       concatWith(NEVER),
     ),
@@ -122,14 +132,19 @@ export const BountyCheck: FC<{
   const bounty = bounties.find((b) => b.id === selectedBountyId);
 
   const [accountBounties, sortedBounties] = useMemo(() => {
-    const accountBounties = account
-      ? bounties
-          .filter((b) =>
+    const allSortedBounties = bounties.sort((a, b) => a.id - b.id);
+
+    const [accountBounties, sortedBounties] = account
+      ? [
+          allSortedBounties.filter((b) =>
             b.signers.includes(accId.dec(accId.enc(account.address))),
-          )
-          .sort((a, b) => a.id - b.id)
-      : [];
-    const sortedBounties = bounties.sort((a, b) => a.id - b.id);
+          ),
+          allSortedBounties.filter(
+            (b) => !b.signers.includes(accId.dec(accId.enc(account.address))),
+          ),
+        ]
+      : [[], allSortedBounties];
+
     return [accountBounties, sortedBounties];
   }, [bounties, account]);
 
@@ -234,3 +249,33 @@ export const BountyCheck: FC<{
     </div>
   );
 };
+
+function fallbackMultisigProviders(
+  providers: MultisigProvider[],
+): MultisigProvider {
+  return async (address) => {
+    for (const provider of providers) {
+      const result = await provider(address);
+      if (result) return result;
+    }
+    return null;
+  };
+}
+
+function hardCodedProivider(): MultisigProvider {
+  return async (address) => {
+    if (
+      AccountId().dec(AccountId().enc(address)) ===
+      "5E4UqkrTqWLAsX5Qd56dGMGvWSaq9oYRx3eNxgrc5tz66wZR"
+    ) {
+      return {
+        addresses: [
+          "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+          "16JGzEsi8gcySKjpmxHVrkLTHdFHodRepEz8n244gNZpr9J",
+        ],
+        threshold: 2,
+      };
+    }
+    return null;
+  };
+}
