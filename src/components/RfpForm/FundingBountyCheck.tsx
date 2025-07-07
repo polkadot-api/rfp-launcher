@@ -119,6 +119,7 @@ export const BountyCheck: FC<{
     control,
     name: "parentBountyId",
   });
+  const bounty = bounties.find((b) => b.id === selectedBountyId);
 
   const [accountBounties, sortedBounties] = useMemo(() => {
     const accountBounties = account
@@ -134,11 +135,11 @@ export const BountyCheck: FC<{
 
   if (!account) return null;
 
-  const renderBalanceCheck = () => {
-    if (selectedBountyId == null || !priceTotals) return null;
+  const accountIsCurator =
+    bounty?.signers.includes(accId.dec(accId.enc(account.address))) ?? null;
 
-    const bounty = bounties.find((b) => b.id === selectedBountyId)!;
-    if (!bounty) return null;
+  const renderBalanceCheck = () => {
+    if (selectedBountyId == null || !priceTotals || !bounty) return null;
 
     const totalCost = BigInt(
       priceTotals.totalAmountWithBuffer * 10 ** TOKEN_DECIMALS,
@@ -149,7 +150,7 @@ export const BountyCheck: FC<{
         <div className="poster-alert alert-error flex items-center gap-3 mt-2">
           <TriangleAlert size={20} className="shrink-0" />
           <div className="text-sm">
-            <strong>Uh-oh:</strong> the bounty doesn't have enough balance (
+            The bounty doesn't have enough balance (
             {formatToken(bounty.balance)}) for this child RFP (
             {formatToken(totalCost)}).
           </div>
@@ -160,9 +161,8 @@ export const BountyCheck: FC<{
       <div className="poster-alert alert-success flex items-center gap-3 mt-2">
         <CheckCircle2 size={20} className="shrink-0 text-lilypad" />
         <div className="text-sm">
-          <strong>Nice:</strong> the bounty has enough balance (
-          {formatToken(bounty.balance)}) to launch the child RFP 🚀 (
-          {formatToken(totalCost)})
+          The bounty has enough balance ({formatToken(bounty.balance)}) to
+          launch the child RFP ({formatToken(totalCost)})
         </div>
       </div>
     );
@@ -221,6 +221,16 @@ export const BountyCheck: FC<{
         )}
       />
       {renderBalanceCheck()}
+      {accountIsCurator === false ? (
+        <div className="poster-alert alert-error flex items-center gap-3 mt-2">
+          <TriangleAlert size={20} className="shrink-0" />
+          <div className="text-sm">
+            Apparently the account you selected is not a curator of this bounty.
+            You will need to be a curator of the parent bounty to submit the
+            RFP.
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

@@ -66,6 +66,7 @@ export const ReviewSection: FC<ReviewSectionProps> = ({
   const prizePool = useWatch({ control, name: "prizePool" });
   const projectCompletion = useWatch({ control, name: "projectCompletion" });
   const supervisors = useWatch({ control, name: "supervisors" });
+  const isChildRfp = useWatch({ control, name: "isChildRfp" });
 
   const milestonesTotal = getMilestonesTotal(milestones);
   const milestonesMatchesPrize = parseNumber(prizePool) === milestonesTotal;
@@ -125,7 +126,7 @@ export const ReviewSection: FC<ReviewSectionProps> = ({
       </div>
 
       {/* Markdown Preview */}
-      <ResultingMarkdown />
+      <ResultingMarkdown isChildRfp={isChildRfp} />
 
       {/* Final Confirmation */}
       <div className="mt-8 bg-canvas-cream border border-pine-shadow-20 rounded-lg p-6">
@@ -313,19 +314,20 @@ const TimelineSummary: FC<{
 }> = ({ control, enoughDevDays, submissionDeadline, setValue }) => {
   const estimatedTimeline = useStateObservable(estimatedTimeline$);
   const projectCompletion = useWatch({ name: "projectCompletion", control });
+  const isChildRfp = useWatch({ name: "isChildRfp", control });
 
   const devDays =
     submissionDeadline &&
     projectCompletion &&
     differenceInDays(projectCompletion, submissionDeadline);
 
-  const daysToLateSubmission = estimatedTimeline
+  const daysToLateSubmission = estimatedTimeline?.referendumSubmissionDeadline
     ? differenceInDays(
         estimatedTimeline.referendumSubmissionDeadline,
         new Date(),
       )
     : null;
-  const lateSubmissionDiff = estimatedTimeline
+  const lateSubmissionDiff = estimatedTimeline?.lateBountyFunding
     ? differenceInDays(
         estimatedTimeline.lateBountyFunding,
         estimatedTimeline.bountyFunding,
@@ -347,12 +349,16 @@ const TimelineSummary: FC<{
       </h4>
 
       <div className="space-y-3">
-        <div className="grid grid-cols-[1fr,auto] gap-x-4 items-baseline">
-          <span className="text-sm text-pine-shadow">Referendum Executed</span>
-          <span className="text-xs text-midnight-koi font-mono tabular-nums text-right">
-            {formatDate(estimatedTimeline?.referendumDeadline)}
-          </span>
-        </div>
+        {isChildRfp ? null : (
+          <div className="grid grid-cols-[1fr,auto] gap-x-4 items-baseline">
+            <span className="text-sm text-pine-shadow">
+              Referendum Executed
+            </span>
+            <span className="text-xs text-midnight-koi font-mono tabular-nums text-right">
+              {formatDate(estimatedTimeline?.referendumDeadline)}
+            </span>
+          </div>
+        )}
 
         <div className="grid grid-cols-[1fr,auto] gap-x-4 items-baseline py-2 bg-sun-bleach bg-opacity-10 px-3 -mx-3 rounded">
           <span className="font-medium text-midnight-koi">RFP Funding</span>
@@ -578,7 +584,7 @@ const getMilestonesTotal = (milestones: Partial<Milestone>[] | undefined) =>
     .filter((v) => v != null)
     .reduce((a, b) => a + b, 0);
 
-const ResultingMarkdown = () => {
+const ResultingMarkdown: FC<{ isChildRfp: boolean }> = ({ isChildRfp }) => {
   const [copied, setCopied] = useState(false);
   const markdown = useStateObservable(markdown$);
 
@@ -632,7 +638,8 @@ const ResultingMarkdown = () => {
           <BadgeInfo size={16} className="mt-0.5 shrink-0" />
           <div className="text-sm">
             <strong>Next Step:</strong> Copy this Markdown content and paste it
-            into the body of your referendum once submitted.
+            into the body of your {isChildRfp ? " child bounty " : "referendum"}{" "}
+            once submitted.
           </div>
         </div>
       </div>
