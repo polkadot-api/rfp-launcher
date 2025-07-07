@@ -3,29 +3,31 @@
 import {
   currencyIsStables$,
   estimatedCost$,
+  priceTotals$,
   signerBalance$,
 } from "@/components/RfpForm/data";
-import { formatToken } from "@/lib/formatToken";
+import { TOKEN_DECIMALS } from "@/constants";
 import { state, useStateObservable } from "@react-rxjs/core";
-import { mergeWithKey } from "@react-rxjs/utils";
-import { AlertCircle } from "lucide-react";
-import type { FC } from "react";
+import { createSignal } from "@react-rxjs/utils";
+import { CheckCircle2, TriangleAlert } from "lucide-react";
 import { useEffect } from "react";
 import {
   combineLatest,
-  concat,
   filter,
   map,
-  of,
+  merge,
+  ObservableInput,
+  startWith,
   switchMap,
   take,
-  takeUntil,
   withLatestFrom,
 } from "rxjs";
+import { formValue$ } from "../RfpForm/data/formValue";
+import { bountyById$ } from "../RfpForm/FundingBountyCheck";
 import { selectedAccount$ } from "../SelectAccount";
 import { PickExtension } from "../SelectAccount/PickExtension";
 import { PickExtensionAccount } from "../SelectAccount/PickExtensionAccount";
-import { Loading } from "../Spinner"; // Assuming Spinner.tsx exports Loading
+import { Loading } from "../Spinner";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -44,143 +46,168 @@ import { SubmitBountyModal } from "./SubmitBountyModal";
 import { SubmitMultisigRfpModal } from "./SubmitMultisigRfpModal";
 
 // Define modal view types for better clarity
-type ModalView =
-  | null
-  | { type: "prompt_account" }
-  | { type: "checking_balance" }
-  | {
-      type: "insufficient_balance_error";
-      required: bigint;
-      available: bigint;
-    }
-  | { type: "bounty_transaction_steps" | "multisig_transaction_steps" };
+type ModalView = null | {
+  type:
+    | "checking_balance"
+    | "prompt_account"
+    | "bounty_transaction_steps"
+    | "multisig_transaction_steps";
+};
 
+const signerStepValidity$ = state(
+  combineLatest({
+    signerBalance: signerBalance$,
+    estimatedCost: estimatedCost$,
+    priceTotals: priceTotals$,
+    formValue: formValue$,
+    bountyBalance: formValue$.pipe(
+      switchMap((form) =>
+        form.isChildRfp && form.parentBountyId != null
+          ? bountyById$(form.parentBountyId)
+          : [null],
+      ),
+      map((v) => v?.balance ?? null),
+    ),
+  }).pipe(
+    map(
+      ({
+        signerBalance,
+        estimatedCost,
+        priceTotals,
+        formValue,
+        bountyBalance,
+      }) => {
+        const feesAndDeposits =
+          signerBalance && estimatedCost
+            ? estimatedCost.deposits + estimatedCost.fees < signerBalance
+            : false;
+        const totalAmount = priceTotals
+          ? BigInt(priceTotals.totalAmountWithBuffer * 10 ** TOKEN_DECIMALS)
+          : null;
+        const parentBounty = formValue.isChildRfp
+          ? !!bountyBalance && !!totalAmount && bountyBalance > totalAmount
+          : true;
+
+        return {
+          isValid: feesAndDeposits && parentBounty,
+          signerBalance,
+          estimatedCost,
+          priceTotals,
+          totalAmount,
+          bountyBalance,
+        };
+      },
+    ),
+  ),
+  null,
+);
+
+const [accountSelected$, onAccountSelected] = createSignal();
 // This observable manages the modal's view state before transaction steps
-const submitModalInternal$ = mergeWithKey({ formDataChange$, dismiss$ }).pipe(
-  withLatestFrom(selectedAccount$), // Get current account status when submit is initiated or modal dismissed
-  switchMap(([event, account]) => {
-    if (event.type === "dismiss$") {
-      return of(null); // Close modal
-    }
+const submitModal$ = state(
+  merge(formDataChange$, dismiss$.pipe(map(() => null))).pipe(
+    withLatestFrom(selectedAccount$),
+    switchMap(([formData, selectedAccount]): ObservableInput<ModalView> => {
+      if (!formData) return [null];
 
-    // At this point, event.type is 'formDataChange$' (meaning submit was initiated)
-
-    if (!account) {
-      // No account connected when "Launch RFP" was clicked.
-      // First, show the account picker.
-      // Then, once an account is selected, transition to checking_balance.
-      return concat(
-        of({ type: "prompt_account" } as ModalView),
-        selectedAccount$.pipe(
-          filter((newlySelectedAccount) => !!newlySelectedAccount), // Wait for a non-null account
-          take(1), // Only react to the first selection
-          map(() => ({ type: "checking_balance" }) as ModalView), // Transition to balance check
-          // If dismiss is called while waiting for account selection, stop this inner flow.
-          takeUntil(dismiss$.pipe(filter(() => !selectedAccount$.getValue()))), // getValue() to check current state
+      const activeSubmissionModal$ = currencyIsStables$.pipe(
+        map(
+          (isStables): ModalView => ({
+            type: isStables
+              ? "multisig_transaction_steps"
+              : "bounty_transaction_steps",
+          }),
         ),
+      );
+
+      const afterSelection$ = accountSelected$.pipe(
+        switchMap(() => activeSubmissionModal$),
+        startWith({
+          type: "prompt_account",
+        } satisfies ModalView),
+      );
+
+      if (!selectedAccount) {
+        return afterSelection$;
+      }
+
+      return signerStepValidity$.pipe(
+        filter((v) => !!v),
+        take(1),
+        switchMap(({ isValid }) =>
+          isValid ? activeSubmissionModal$ : afterSelection$,
+        ),
+        startWith({
+          type: "checking_balance",
+        } satisfies ModalView),
+      );
+    }),
+  ),
+  null,
+);
+
+const PromptAccountModal = () => {
+  const selectedAccount = useStateObservable(selectedAccount$);
+  const validity = useStateObservable(signerStepValidity$);
+
+  const renderSignerBalanceCheck = () => {
+    if (!selectedAccount || !validity?.estimatedCost) return null;
+
+    if (validity.signerBalance === null) {
+      return (
+        <div className="py-8 flex flex-col justify-center items-center space-y-2">
+          <Loading />
+          <p className="text-sm text-muted-foreground">
+            Checking your available balance...
+          </p>
+        </div>
       );
     }
 
-    // An account was already connected when "Launch RFP" was clicked.
-    // Proceed directly to balance check.
-    return of({ type: "checking_balance" } as ModalView);
-  }),
-);
-
-// This observable handles the balance check and then decides the next step
-const submitModal$ = state(
-  submitModalInternal$.pipe(
-    switchMap((currentView) => {
-      if (currentView?.type === "checking_balance") {
-        // An account is now available (either pre-existing or just selected).
-        // We need to ensure we're using the most current selectedAccount for the balance check.
-        return selectedAccount$.pipe(
-          filter((acc) => !!acc), // Ensure account is definitely available
-          take(1), // Take the current account
-          switchMap((_) => {
-            // We don't need the account from here, signerBalance$ is reactive
-            return combineLatest([
-              estimatedCost$.pipe(
-                filter((v): v is NonNullable<typeof v> => v !== null),
-              ),
-              signerBalance$.pipe(
-                filter((v): v is NonNullable<typeof v> => v !== null),
-              ),
-              currencyIsStables$,
-            ]).pipe(
-              take(1), // Get the latest cost and balance once
-              map(([costData, balanceData, isStables]) => {
-                const totalRequired = costData.deposits + costData.fees;
-                if (balanceData < totalRequired) {
-                  return {
-                    type: "insufficient_balance_error",
-                    required: totalRequired,
-                    available: balanceData,
-                  } as ModalView;
-                }
-                // Balance is sufficient, proceed to the original transaction steps
-                return {
-                  type: isStables
-                    ? "multisig_transaction_steps"
-                    : "bounty_transaction_steps",
-                } as ModalView;
-              }),
-            );
-          }),
-        );
-      }
-      // For any other view (null, prompt_account, etc.), just pass it through.
-      return of(currentView);
-    }),
-  ),
-  null, // Initial state of the modal is closed
-);
-
-// New component for the insufficient balance step
-const StepInsufficientBalance: FC<{
-  required: bigint;
-  available: bigint;
-  onDismiss: () => void;
-}> = ({ required, available, onDismiss }) => {
-  return (
-    // This content will be rendered inside a Dialog open={true}
-    <>
-      <DialogHeader>
-        <DialogTitle className="flex items-center gap-2 text-destructive">
-          <AlertCircle className="h-5 w-5" /> Insufficient Balance
-        </DialogTitle>
-        <DialogDescription>
-          Your connected wallet does not have enough funds to cover the
-          estimated costs for submitting this RFP.
-        </DialogDescription>
-      </DialogHeader>
-      <div className="space-y-4 py-4">
-        <div className="p-4 border rounded-md bg-destructive/10 border-destructive/30 text-sm">
-          <p className="text-destructive">
-            Required:{" "}
-            <strong className="font-semibold">{formatToken(required)}</strong>
-          </p>
-          <p className="text-destructive">
-            Available:{" "}
-            <strong className="font-semibold">{formatToken(available)}</strong>
-          </p>
+    if (
+      validity.signerBalance >
+      validity.estimatedCost.deposits + validity.estimatedCost.fees
+    ) {
+      return (
+        <div className="poster-alert alert-success flex items-center gap-3">
+          <CheckCircle2 size={20} className="shrink-0 text-lilypad" />
+          <div className="text-sm">
+            <strong>Nice:</strong> you have enough balance to launch the RFP 🚀
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Please add funds to your wallet or select a different wallet with
-          sufficient balance.
-        </p>
+      );
+    }
+
+    return (
+      <div className="poster-alert alert-error flex items-center gap-3">
+        <TriangleAlert size={20} className="shrink-0" />
+        <div className="text-sm">
+          <strong>Uh-oh:</strong> not enough balance. Please add funds or select
+          another wallet.
+        </div>
       </div>
-      <div className="flex justify-end gap-2 pt-2">
-        <Button variant="outline" onClick={onDismiss}>
-          Close
-        </Button>
-        {/* Optional: Button to re-trigger wallet selection.
-            This would require `openSelectAccount` to be available or another mechanism.
-            For simplicity, "Close" is the primary action.
-        <Button onClick={() => { onDismiss(); openSelectAccount(); }}>Change Wallet</Button>
-        */}
-      </div>
-    </>
+    );
+  };
+
+  return (
+    <Dialog open onOpenChange={(isOpen) => (isOpen ? null : dismiss())}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Connect Wallet</DialogTitle>
+          <DialogDescription>
+            Please connect a wallet to submit the RFP.
+          </DialogDescription>
+        </DialogHeader>
+        <PickExtension />
+        <PickExtensionAccount autoSelect />
+        {renderSignerBalanceCheck()}
+        <div className="text-right">
+          <Button disabled={!validity?.isValid} onClick={onAccountSelected}>
+            Next
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -205,25 +232,7 @@ export const SubmitModal = () => {
   };
 
   if (modalStatus.type === "prompt_account") {
-    return (
-      <Dialog {...dialogProps}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Connect Wallet</DialogTitle>
-            <DialogDescription>
-              Please connect a wallet to submit the RFP.
-            </DialogDescription>
-          </DialogHeader>
-          <PickExtension />
-          <PickExtensionAccount
-            onSelected={() => {
-              // The selection updates selectedAccount$, and the submitModal$ observable flow
-              // will automatically transition to "checking_balance". No need to call dismiss() here.
-            }}
-          />
-        </DialogContent>
-      </Dialog>
-    );
+    return <PromptAccountModal />;
   }
 
   if (modalStatus.type === "checking_balance") {
@@ -239,20 +248,6 @@ export const SubmitModal = () => {
               Checking your available balance...
             </p>
           </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  if (modalStatus.type === "insufficient_balance_error") {
-    return (
-      <Dialog {...dialogProps}>
-        <DialogContent>
-          <StepInsufficientBalance
-            required={modalStatus.required}
-            available={modalStatus.available}
-            onDismiss={dismiss}
-          />
         </DialogContent>
       </Dialog>
     );

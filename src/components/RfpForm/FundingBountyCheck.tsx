@@ -53,7 +53,7 @@ const linkedAccountsSdk = createLinkedAccountsSdk(
 );
 
 const accId = AccountId();
-const [bountyById$, bountyKeys$] = partitionByKey(
+export const [bountyById$, bountyKeys$] = partitionByKey(
   defer(bountiesSdk.getBounties).pipe(
     mergeAll(),
     filter((v) => v.type === "Active"),

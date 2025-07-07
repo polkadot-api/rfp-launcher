@@ -18,7 +18,8 @@ import {
 
 export const PickExtensionAccount: FC<{
   onSelected?: () => void;
-}> = ({ onSelected }) => {
+  autoSelect?: boolean;
+}> = ({ onSelected, autoSelect }) => {
   const extensionAccounts = useStateObservable(extensionAccounts$);
   const selectValue = useStateObservable(selectValue$);
 
@@ -27,7 +28,16 @@ export const PickExtensionAccount: FC<{
   return (
     <div className="overflow-hidden space-y-2">
       <p className="text-sm">Choose account</p>
-      <Select value={selectValue ?? ""} onValueChange={setSelectValue}>
+      <Select
+        value={selectValue ?? ""}
+        onValueChange={(v) => {
+          setSelectValue(v);
+          if (autoSelect) {
+            selectAccount();
+            onSelected?.();
+          }
+        }}
+      >
         <SelectTrigger
           className="w-full data-[size=default]:h-auto"
           forceSvgSize={false}
@@ -61,17 +71,19 @@ export const PickExtensionAccount: FC<{
           ))}
         </SelectContent>
       </Select>
-      <div className="text-right">
-        <Button
-          disabled={!selectValue}
-          onClick={() => {
-            selectAccount();
-            onSelected?.();
-          }}
-        >
-          Select Account
-        </Button>
-      </div>
+      {autoSelect ? null : (
+        <div className="text-right">
+          <Button
+            disabled={!selectValue}
+            onClick={() => {
+              selectAccount();
+              onSelected?.();
+            }}
+          >
+            Select Account
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
