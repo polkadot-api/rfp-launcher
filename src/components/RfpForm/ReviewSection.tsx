@@ -129,32 +129,34 @@ export const ReviewSection: FC<ReviewSectionProps> = ({
       <ResultingMarkdown isChildRfp={isChildRfp} />
 
       {/* Final Confirmation */}
-      <div className="mt-8 bg-canvas-cream border border-pine-shadow-20 rounded-lg p-6">
-        <div className="flex items-start space-x-3">
-          <Checkbox
-            id="return-funds"
-            checked={isReturnFundsAgreed}
-            onCheckedChange={(checked) => setIsReturnFundsAgreed(!!checked)}
-            className="mt-1 border-pine-shadow data-[state=checked]:bg-lilypad data-[state=checked]:text-canvas-cream"
-          />
-          <label
-            htmlFor="return-funds"
-            className="text-pine-shadow leading-tight cursor-pointer text-sm"
-          >
-            I agree that any unused funds will be returned to the Treasury.
-          </label>
-        </div>
-        {!isReturnFundsAgreed && (
-          <div className="mt-3 poster-alert alert-error">
-            <div className="flex items-center gap-2">
-              <TriangleAlert size={16} />
-              <div className="text-sm font-medium">
-                You must agree to return unused funds to the Treasury.
+      {isChildRfp ? null : (
+        <div className="mt-8 bg-canvas-cream border border-pine-shadow-20 rounded-lg p-6">
+          <div className="flex items-start space-x-3">
+            <Checkbox
+              id="return-funds"
+              checked={isReturnFundsAgreed}
+              onCheckedChange={(checked) => setIsReturnFundsAgreed(!!checked)}
+              className="mt-1 border-pine-shadow data-[state=checked]:bg-lilypad data-[state=checked]:text-canvas-cream"
+            />
+            <label
+              htmlFor="return-funds"
+              className="text-pine-shadow leading-tight cursor-pointer text-sm"
+            >
+              I agree that any unused funds will be returned to the Treasury.
+            </label>
+          </div>
+          {!isReturnFundsAgreed && (
+            <div className="mt-3 poster-alert alert-error">
+              <div className="flex items-center gap-2">
+                <TriangleAlert size={16} />
+                <div className="text-sm font-medium">
+                  You must agree to return unused funds to the Treasury.
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

@@ -58,7 +58,7 @@ ${
     : "- TBD"
 }
 
-Excess or unused funds will be returned to the treasury by the supervisors (bounty curators).
+${data.isChildRfp ? "" : "Excess or unused funds will be returned to the treasury by the supervisors (bounty curators)."}
 
 ## Timeline
 

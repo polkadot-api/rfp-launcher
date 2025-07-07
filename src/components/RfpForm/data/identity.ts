@@ -38,6 +38,8 @@ export const identity$ = state((address: SS58String) => {
 }, null);
 
 export const supervisorIdentities$ = combineKeys(
-  formValue$.pipe(map((v) => v.supervisors?.filter((v) => v != null) ?? [])),
+  formValue$.pipe(
+    map((v) => (v.supervisors?.filter((v) => v != null) as SS58String[]) ?? []),
+  ),
   identity$,
 );

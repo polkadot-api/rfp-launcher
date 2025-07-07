@@ -29,73 +29,79 @@ import { BountyCheck } from "./FundingBountyCheck";
 
 export const FundingSection: FC<{ control: RfpControlType }> = ({
   control,
-}) => (
-  <div className="poster-card">
-    <h3 className="text-3xl font-medium mb-8 text-midnight-koi">Funding</h3>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-      <FormInputField
-        control={control}
-        name="prizePool"
-        label="Prize Pool (USD)"
-        description="amount awarded to implementors"
-        type="number"
-      />
-      <FormInputField
-        control={control}
-        name="findersFee"
-        label="Finder's Fee (USD)"
-        description="amount awarded to the referral"
-        type="number"
-      />
-      <FormInputField
-        control={control}
-        name="supervisorsFee"
-        label="Supervisors' Fee (USD)"
-        description="amount split amongst supervisors"
-        type="number"
-      />
-    </div>
-    {STABLE_INFO ? (
-      <div className="mb-8">
-        <FormField
+}) => {
+  const isChildRfp = useWatch({ control, name: "isChildRfp" });
+
+  return (
+    <div className="poster-card">
+      <h3 className="text-3xl font-medium mb-8 text-midnight-koi">Funding</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+        <FormInputField
           control={control}
-          name="fundingCurrency"
-          render={({ field }) => (
-            <FormItem className="space-y-2">
-              <FormLabel className="poster-label">RFP Currency</FormLabel>
-              <FormControl>
-                <Select
-                  value={field.value ?? ""}
-                  onValueChange={field.onChange}
-                >
-                  <SelectTrigger className="w-full data-[size=default]:h-auto">
-                    <SelectValue placeholder="Choose a currency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={TOKEN_SYMBOL}>{TOKEN_SYMBOL}</SelectItem>
-                    {Object.keys(STABLE_INFO!).map((symbol) => (
-                      <SelectItem key={symbol} value={symbol}>
-                        {symbol}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormDescription className="text-xs text-pine-shadow-60 leading-tight">
-                currency to use for the RFP. Native currency ({TOKEN_SYMBOL})
-                will be submitted through a bounty, stables (
-                {Object.keys(STABLE_INFO!).join("/")}) will create a multisig
-                instead.
-              </FormDescription>
-              <FormMessage className="text-tomato-stamp text-xs" />
-            </FormItem>
-          )}
+          name="prizePool"
+          label="Prize Pool (USD)"
+          description="amount awarded to implementors"
+          type="number"
+        />
+        <FormInputField
+          control={control}
+          name="findersFee"
+          label="Finder's Fee (USD)"
+          description="amount awarded to the referral"
+          type="number"
+        />
+        <FormInputField
+          control={control}
+          name="supervisorsFee"
+          label="Supervisors' Fee (USD)"
+          description="amount split amongst supervisors"
+          type="number"
         />
       </div>
-    ) : null}
-    <BalanceCheck control={control} />
-  </div>
-);
+      {STABLE_INFO && !isChildRfp ? (
+        <div className="mb-8">
+          <FormField
+            control={control}
+            name="fundingCurrency"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel className="poster-label">RFP Currency</FormLabel>
+                <FormControl>
+                  <Select
+                    value={field.value ?? ""}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger className="w-full data-[size=default]:h-auto">
+                      <SelectValue placeholder="Choose a currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={TOKEN_SYMBOL}>
+                        {TOKEN_SYMBOL}
+                      </SelectItem>
+                      {Object.keys(STABLE_INFO!).map((symbol) => (
+                        <SelectItem key={symbol} value={symbol}>
+                          {symbol}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormDescription className="text-xs text-pine-shadow-60 leading-tight">
+                  currency to use for the RFP. Native currency ({TOKEN_SYMBOL})
+                  will be submitted through a bounty, stables (
+                  {Object.keys(STABLE_INFO!).join("/")}) will create a multisig
+                  instead.
+                </FormDescription>
+                <FormMessage className="text-tomato-stamp text-xs" />
+              </FormItem>
+            )}
+          />
+        </div>
+      ) : null}
+      <BalanceCheck control={control} />
+    </div>
+  );
+};
 
 const BalanceCheck: FC<{ control: RfpControlType }> = ({ control }) => {
   const isChild = useWatch({ control, name: "isChildRfp" });

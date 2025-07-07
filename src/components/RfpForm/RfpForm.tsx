@@ -1,5 +1,6 @@
 "use client";
 
+import { matchedChain } from "@/chainRoute";
 import { selectedAccount$ } from "@/components/SelectAccount";
 import { TOKEN_SYMBOL } from "@/constants";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,6 +13,7 @@ import { SubmitModal } from "../SubmitModal";
 import { submit } from "../SubmitModal/modalActions";
 import { Form } from "../ui/form";
 import { estimatedCost$, estimatedTimeline$, signerBalance$ } from "./data";
+import { formValue$, setFormValue } from "./data/formValue";
 import { emptyNumeric, type FormSchema, formSchema } from "./formSchema";
 import { FundingSection } from "./FundingSection";
 import { ReviewSection } from "./ReviewSection";
@@ -19,8 +21,6 @@ import { ScopeSection } from "./ScopeSection";
 import { SupervisorsSection } from "./SupervisorsSection";
 import { TimelineSection } from "./TimelineSection";
 import { WelcomeSection } from "./WelcomeSection";
-import { matchedChain } from "@/chainRoute";
-import { formValue$, setFormValue } from "./data/formValue";
 
 const defaultValues: Partial<FormSchema> = {
   isChildRfp: false,
@@ -93,6 +93,20 @@ export const RfpForm = () => {
     return () => subscription.unsubscribe();
   }, [watch]);
 
+  // A child RFP can't have stables
+  useEffect(() => {
+    const subscription = watch((data) => {
+      if (
+        data.isChildRfp &&
+        data.fundingCurrency &&
+        data.fundingCurrency !== TOKEN_SYMBOL
+      ) {
+        setValue("fundingCurrency", TOKEN_SYMBOL);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, setValue]);
+
   const navigateToStepById = (stepId: string) => {
     const stepIndex = steps.findIndex((step) => step.id === stepId);
     if (stepIndex !== -1) {
@@ -151,7 +165,7 @@ export const RfpForm = () => {
   const isSubmitDisabled =
     hasErrors ||
     !isFormValid ||
-    (isReviewStep && !isReturnFundsAgreed) ||
+    (isReviewStep && !isReturnFundsAgreed && !getValues("isChildRfp")) ||
     (isReviewStep && !enoughDevDays) ||
     (isReviewStep && (!supervisors || supervisors.length === 0));
 
