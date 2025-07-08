@@ -1,8 +1,10 @@
 import { referendaSdk, typedApi } from "@/chain";
+import { curatorDeposit$ } from "@/components/RfpForm/data/estimatedTxCost";
 import {
   formatTrackName,
   getTrack,
 } from "@/components/RfpForm/data/referendaConstants";
+import { referendumExecutionBlocks$ } from "@/components/RfpForm/data/timeline";
 import { formatToken } from "@/lib/formatToken";
 import { accId } from "@/lib/ss58";
 import { MultiAddress } from "@polkadot-api/descriptors";
@@ -17,10 +19,6 @@ import {
   switchMap,
   withLatestFrom,
 } from "rxjs";
-import {
-  curatorDeposit$,
-  referendumExecutionBlocks$,
-} from "../../RfpForm/data";
 import { FormSchema } from "../../RfpForm/formSchema";
 import { selectedAccount$ } from "../../SelectAccount";
 import { dismissable, submittedFormData$ } from "../modalActions";

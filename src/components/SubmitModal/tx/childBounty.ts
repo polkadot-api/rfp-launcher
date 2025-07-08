@@ -1,5 +1,5 @@
 import { typedApi } from "@/chain";
-import { priceToChainAmount } from "@/components/RfpForm/data";
+import { priceToChainAmount } from "@/components/RfpForm/data/price";
 import { bountyById$ } from "@/components/RfpForm/FundingBountyCheck";
 import { formatToken } from "@/lib/formatToken";
 import { currencyRate$ } from "@/services/currencyRate";
@@ -53,6 +53,108 @@ export const nextChildBountyId$ = state(
   ),
   null,
 );
+
+export const createChildBountyTx = ({
+  mainChildBountyAmount,
+  mainChildBountyFee,
+  findersBountyAmount,
+  findersBountyFee,
+  parentId,
+  nextId,
+  title,
+  curator,
+  isParentCurator,
+}: {
+  mainChildBountyAmount: bigint;
+  mainChildBountyFee: bigint;
+  findersBountyAmount: bigint;
+  findersBountyFee: bigint;
+  parentId: number;
+  nextId: number;
+  title: string;
+  curator: SS58String;
+  isParentCurator: boolean;
+}): TxWithExplanation => {
+  return {
+    tx: typedApi.tx.Utility.batch_all({
+      calls: [
+        typedApi.tx.ChildBounties.add_child_bounty({
+          value: mainChildBountyAmount,
+          parent_bounty_id: parentId,
+          description: Binary.fromText(title),
+        }).decodedCall,
+        typedApi.tx.ChildBounties.propose_curator({
+          fee: mainChildBountyFee,
+          parent_bounty_id: parentId,
+          child_bounty_id: nextId,
+          curator: MultiAddress.Id(curator),
+        }).decodedCall,
+        // Adding a second child bounty for finders' fee
+        typedApi.tx.ChildBounties.add_child_bounty({
+          value: findersBountyAmount,
+          parent_bounty_id: parentId,
+          description: Binary.fromText(title + " (finder's fee)"),
+        }).decodedCall,
+        typedApi.tx.ChildBounties.propose_curator({
+          fee: findersBountyFee,
+          parent_bounty_id: parentId,
+          child_bounty_id: nextId + 1,
+          curator: MultiAddress.Id(curator),
+        }).decodedCall,
+        ...(isParentCurator
+          ? [
+              typedApi.tx.ChildBounties.accept_curator({
+                parent_bounty_id: parentId,
+                child_bounty_id: nextId,
+              }).decodedCall,
+              typedApi.tx.ChildBounties.accept_curator({
+                parent_bounty_id: parentId,
+                child_bounty_id: nextId + 1,
+              }).decodedCall,
+            ]
+          : []),
+      ],
+    }),
+    explanation: {
+      text: "batch",
+      params: {
+        0: {
+          text: "Create child bounty",
+          params: {
+            amount: formatToken(mainChildBountyAmount),
+          },
+        },
+        1: {
+          text: "Assign supervisor to child bounty",
+          params: {
+            curator: curator,
+            fee: formatToken(mainChildBountyFee),
+          },
+        },
+        2: {
+          text: "Create finder's child bounty",
+          params: {
+            amount: formatToken(findersBountyAmount),
+          },
+        },
+        3: {
+          text: "Assign supervisor to finder's child bounty",
+          params: {
+            curator: curator,
+            fee: formatToken(findersBountyFee),
+          },
+        },
+        ...((isParentCurator
+          ? {
+              4: {
+                text: "Accept curator role",
+              },
+            }
+          : {}) as Record<number, TxExplanation>),
+      },
+    },
+  };
+};
 
 export const childBountyTx$ = state(
   submittedFormData$.pipe(
@@ -157,87 +259,17 @@ export const childBountyTx$ = state(
           const findersBountyAmount = tokenAmounts.findersFee;
           const findersBountyFee = 0n;
 
-          return {
-            tx: typedApi.tx.Utility.batch_all({
-              calls: [
-                typedApi.tx.ChildBounties.add_child_bounty({
-                  value: mainChildBountyAmount,
-                  parent_bounty_id: formData.parentBountyId!,
-                  description: Binary.fromText(formData.projectTitle),
-                }).decodedCall,
-                typedApi.tx.ChildBounties.propose_curator({
-                  fee: mainChildBountyFee,
-                  parent_bounty_id: formData.parentBountyId!,
-                  child_bounty_id: childId,
-                  curator: MultiAddress.Id(curatorAddr),
-                }).decodedCall,
-                // Adding a second child bounty for finders' fee
-                typedApi.tx.ChildBounties.add_child_bounty({
-                  value: findersBountyAmount,
-                  parent_bounty_id: formData.parentBountyId!,
-                  description: Binary.fromText(
-                    formData.projectTitle + " (finder's fee)",
-                  ),
-                }).decodedCall,
-                typedApi.tx.ChildBounties.propose_curator({
-                  fee: findersBountyFee,
-                  parent_bounty_id: formData.parentBountyId!,
-                  child_bounty_id: childId + 1,
-                  curator: MultiAddress.Id(curatorAddr),
-                }).decodedCall,
-                ...(isParentCurator
-                  ? [
-                      typedApi.tx.ChildBounties.accept_curator({
-                        parent_bounty_id: formData.parentBountyId!,
-                        child_bounty_id: childId,
-                      }).decodedCall,
-                      typedApi.tx.ChildBounties.accept_curator({
-                        parent_bounty_id: formData.parentBountyId!,
-                        child_bounty_id: childId + 1,
-                      }).decodedCall,
-                    ]
-                  : []),
-              ],
-            }),
-            explanation: {
-              text: "batch",
-              params: {
-                0: {
-                  text: "Create child bounty",
-                  params: {
-                    amount: formatToken(mainChildBountyAmount),
-                  },
-                },
-                1: {
-                  text: "Assign supervisor to child bounty",
-                  params: {
-                    curator: curatorAddr,
-                    fee: formatToken(mainChildBountyFee),
-                  },
-                },
-                2: {
-                  text: "Create finder's child bounty",
-                  params: {
-                    amount: formatToken(findersBountyAmount),
-                  },
-                },
-                3: {
-                  text: "Assign supervisor to finder's child bounty",
-                  params: {
-                    curator: curatorAddr,
-                    fee: formatToken(findersBountyFee),
-                  },
-                },
-                ...((isParentCurator
-                  ? {
-                      4: {
-                        text: "Accept curator role",
-                      },
-                    }
-                  : {}) as Record<number, TxExplanation>),
-              },
-            },
-          };
+          return createChildBountyTx({
+            curator: curatorAddr!,
+            findersBountyAmount,
+            findersBountyFee,
+            isParentCurator,
+            mainChildBountyAmount,
+            mainChildBountyFee,
+            nextId: childId,
+            parentId: formData.parentBountyId!,
+            title: formData.projectTitle,
+          });
         }),
       );
 

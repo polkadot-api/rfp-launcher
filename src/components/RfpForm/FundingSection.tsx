@@ -199,9 +199,15 @@ const EstimatedSignerCost = () => {
       {ready && estimatedCost && (
         <>
           {" "}
-          to submit the RFP ({formatToken(estimatedCost.fees)} in fees. You'll
-          get {formatToken(estimatedCost.deposits)} in deposits back once the
-          RFP ends).
+          to submit the RFP
+          {estimatedCost.deposits ? (
+            <>
+              {" "}
+              ({formatToken(estimatedCost.fees)} in fees. You'll get{" "}
+              {formatToken(estimatedCost.deposits)} in deposits back once the
+              RFP ends)
+            </>
+          ) : null}
         </>
       )}
     </p>

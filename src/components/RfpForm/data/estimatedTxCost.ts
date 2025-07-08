@@ -1,4 +1,5 @@
 import { referendaSdk, typedApi } from "@/chain";
+import { createChildBountyTx } from "@/components/SubmitModal/tx/childBounty";
 import { createSpendCall } from "@/components/SubmitModal/tx/treasurySpend";
 import { REMARK_TEXT } from "@/constants";
 import { sum } from "@/lib/math";
@@ -6,6 +7,7 @@ import { MultiAddress } from "@polkadot-api/descriptors";
 import { state } from "@react-rxjs/core";
 import { Binary } from "polkadot-api";
 import { combineLatest, from, map, switchMap } from "rxjs";
+import { formValue$ } from "./formValue";
 import { bountyValue$, currencyIsStables$, priceToChainAmount } from "./price";
 import { decisionDeposit, submissionDeposit } from "./referendaConstants";
 
@@ -98,9 +100,24 @@ const decisionDepositFee$ = typedApi.tx.Referenda.place_decision_deposit({
   index: 0,
 }).getEstimatedFees(ALICE);
 
-const depositCosts$ = currencyIsStables$
+const childBountyFee$ = createChildBountyTx({
+  curator: ALICE,
+  findersBountyAmount: 0n,
+  findersBountyFee: 0n,
+  isParentCurator: true,
+  mainChildBountyAmount: 0n,
+  mainChildBountyFee: 0n,
+  nextId: 0,
+  parentId: 0,
+  title: "Fee-estimating child bounty",
+}).tx.getEstimatedFees(ALICE);
+
+const depositCosts$ = combineLatest([
+  currencyIsStables$,
+  formValue$.pipe(map((v) => v?.isChildRfp)),
+])
   .pipe(
-    switchMap((multisig) =>
+    switchMap(([multisig, isChildRfp]) =>
       multisig
         ? combineLatest([
             submissionDeposit,
@@ -110,31 +127,38 @@ const depositCosts$ = currencyIsStables$
               ),
             ),
           ])
-        : combineLatest([
-            bountyDeposit$,
-            submissionDeposit,
-            bountyValue$.pipe(
-              switchMap((v) =>
-                decisionDeposit(v ? priceToChainAmount(v) : null),
+        : isChildRfp
+          ? [[0n]]
+          : combineLatest([
+              bountyDeposit$,
+              submissionDeposit,
+              bountyValue$.pipe(
+                switchMap((v) =>
+                  decisionDeposit(v ? priceToChainAmount(v) : null),
+                ),
               ),
-            ),
-          ]),
+            ]),
     ),
   )
   .pipe(map((r) => r.reduce(sum, 0n)));
 
-const feeCosts$ = currencyIsStables$
+const feeCosts$ = combineLatest([
+  currencyIsStables$,
+  formValue$.pipe(map((v) => v?.isChildRfp)),
+])
   .pipe(
-    switchMap((multisig) =>
+    switchMap(([multisig, isChildRfp]) =>
       multisig
         ? combineLatest([submitReferendumFee$, decisionDepositFee$])
-        : combineLatest([
-            proposeBountyFee$,
-            submitReferendumFee$,
-            // Counting curator deposit as a "fee", because it's balance being transfered from the signer to the curator
-            curatorDeposit$,
-            decisionDepositFee$,
-          ]),
+        : isChildRfp
+          ? combineLatest([childBountyFee$])
+          : combineLatest([
+              proposeBountyFee$,
+              submitReferendumFee$,
+              // Counting curator deposit as a "fee", because it's balance being transfered from the signer to the curator
+              curatorDeposit$,
+              decisionDepositFee$,
+            ]),
     ),
   )
   .pipe(map((v) => v.reduce(sum, 0n)));
