@@ -1,23 +1,29 @@
 import { typedApi } from "@/chain";
+import { priceToChainAmount } from "@/components/RfpForm/data";
 import { bountyById$ } from "@/components/RfpForm/FundingBountyCheck";
+import { formatToken } from "@/lib/formatToken";
+import { currencyRate$ } from "@/services/currencyRate";
 import { MultiAddress } from "@polkadot-api/descriptors";
 import { NestedLinkedAccountsResult } from "@polkadot-api/sdk-accounts";
 import { state } from "@react-rxjs/core";
 import { Binary, HexString, SS58String } from "polkadot-api";
 import { combineLatest, filter, map, ObservableInput, switchMap } from "rxjs";
 import { submittedFormData$ } from "../modalActions";
-import { AnyTx, TxExplanation, TxWithExplanation } from "./types";
-import { priceTotals$ } from "@/components/RfpForm/data";
-import { TOKEN_DECIMALS } from "@/constants";
+import { getMultisigAddress } from "./referendumCreation";
 import { createTxProcess } from "./txProcess";
-import { formatToken } from "@/lib/formatToken";
+import { AnyTx, TxExplanation, TxWithExplanation } from "./types";
+import { genericSs58 } from "@/lib/ss58";
 
-const totalAmount$ = () =>
-  priceTotals$.pipe(
-    map((v) => v?.totalAmountWithBuffer ?? null),
-    filter((v) => v != null),
-    map((v) => BigInt(Math.round(v * Math.pow(10, TOKEN_DECIMALS)))),
-  );
+const tokenAmounts$ = combineLatest({
+  formValue: submittedFormData$.pipe(filter((v) => v != null)),
+  rate: currencyRate$.pipe(filter((v) => v != null)),
+}).pipe(
+  map(({ formValue, rate }) => ({
+    prizePool: priceToChainAmount(formValue.prizePool / rate),
+    findersFee: priceToChainAmount(formValue.findersFee / rate),
+    supervisorsFee: priceToChainAmount(formValue.supervisorsFee / rate),
+  })),
+);
 
 type TransactionWithConfig =
   | {
@@ -66,7 +72,8 @@ export const childBountyTx$ = state(
           }
         | { type: "unknown" };
 
-      const signerConfiguration$ = bountyById$(formData.parentBountyId).pipe(
+      const parentBounty$ = bountyById$(formData.parentBountyId);
+      const signerConfiguration$ = parentBounty$.pipe(
         map(({ curator, nestedLinkedAccounts }): SignerConfiguration => {
           const getConfiguration = (
             address: SS58String,
@@ -123,22 +130,115 @@ export const childBountyTx$ = state(
         }),
       );
 
-      const createChildBountyTx$ = totalAmount$().pipe(
+      const curatorAddr =
+        formData.supervisors.length === 1
+          ? formData.supervisors[0]
+          : getMultisigAddress(formData);
+
+      const curatorIsParentBountyCurator$ = parentBounty$.pipe(
         map(
-          (totalAmount): TxWithExplanation => ({
-            tx: typedApi.tx.ChildBounties.add_child_bounty({
-              value: totalAmount,
-              parent_bounty_id: formData.parentBountyId!,
-              description: Binary.fromText(formData.projectTitle),
+          (parentBounty) =>
+            genericSs58(curatorAddr) === genericSs58(parentBounty.curator),
+        ),
+      );
+
+      const createChildBountyTx$ = combineLatest([
+        tokenAmounts$,
+        nextChildBountyId$.pipe(filter((v) => v != null)),
+        curatorIsParentBountyCurator$,
+      ]).pipe(
+        map(([tokenAmounts, nextId, isParentCurator]): TxWithExplanation => {
+          const childId = Number(nextId.split("_")[1]);
+
+          // The curator fee subtracts from the child bounty amount.
+          const mainChildBountyAmount =
+            tokenAmounts.prizePool + tokenAmounts.supervisorsFee;
+          const mainChildBountyFee = tokenAmounts.supervisorsFee;
+          const findersBountyAmount = tokenAmounts.findersFee;
+          const findersBountyFee = 0n;
+
+          return {
+            tx: typedApi.tx.Utility.batch_all({
+              calls: [
+                typedApi.tx.ChildBounties.add_child_bounty({
+                  value: mainChildBountyAmount,
+                  parent_bounty_id: formData.parentBountyId!,
+                  description: Binary.fromText(formData.projectTitle),
+                }).decodedCall,
+                typedApi.tx.ChildBounties.propose_curator({
+                  fee: mainChildBountyFee,
+                  parent_bounty_id: formData.parentBountyId!,
+                  child_bounty_id: childId,
+                  curator: MultiAddress.Id(curatorAddr),
+                }).decodedCall,
+                // Adding a second child bounty for finders' fee
+                typedApi.tx.ChildBounties.add_child_bounty({
+                  value: findersBountyAmount,
+                  parent_bounty_id: formData.parentBountyId!,
+                  description: Binary.fromText(
+                    formData.projectTitle + " (finder's fee)",
+                  ),
+                }).decodedCall,
+                typedApi.tx.ChildBounties.propose_curator({
+                  fee: findersBountyFee,
+                  parent_bounty_id: formData.parentBountyId!,
+                  child_bounty_id: childId + 1,
+                  curator: MultiAddress.Id(curatorAddr),
+                }).decodedCall,
+                ...(isParentCurator
+                  ? [
+                      typedApi.tx.ChildBounties.accept_curator({
+                        parent_bounty_id: formData.parentBountyId!,
+                        child_bounty_id: childId,
+                      }).decodedCall,
+                      typedApi.tx.ChildBounties.accept_curator({
+                        parent_bounty_id: formData.parentBountyId!,
+                        child_bounty_id: childId + 1,
+                      }).decodedCall,
+                    ]
+                  : []),
+              ],
             }),
             explanation: {
-              text: "Create child bounty",
+              text: "batch",
               params: {
-                amount: formatToken(totalAmount),
+                0: {
+                  text: "Create child bounty",
+                  params: {
+                    amount: formatToken(mainChildBountyAmount),
+                  },
+                },
+                1: {
+                  text: "Assign supervisor to child bounty",
+                  params: {
+                    curator: curatorAddr,
+                    fee: formatToken(mainChildBountyFee),
+                  },
+                },
+                2: {
+                  text: "Create finder's child bounty",
+                  params: {
+                    amount: formatToken(findersBountyAmount),
+                  },
+                },
+                3: {
+                  text: "Assign supervisor to finder's child bounty",
+                  params: {
+                    curator: curatorAddr,
+                    fee: formatToken(findersBountyFee),
+                  },
+                },
+                ...((isParentCurator
+                  ? {
+                      4: {
+                        text: "Accept curator role",
+                      },
+                    }
+                  : {}) as Record<number, TxExplanation>),
               },
             },
-          }),
-        ),
+          };
+        }),
       );
 
       return combineLatest([signerConfiguration$, createChildBountyTx$]).pipe(

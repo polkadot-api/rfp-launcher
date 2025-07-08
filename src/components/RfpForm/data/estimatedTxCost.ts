@@ -1,12 +1,12 @@
 import { referendaSdk, typedApi } from "@/chain";
 import { createSpendCall } from "@/components/SubmitModal/tx/treasurySpend";
-import { REMARK_TEXT, TOKEN_DECIMALS } from "@/constants";
+import { REMARK_TEXT } from "@/constants";
 import { sum } from "@/lib/math";
 import { MultiAddress } from "@polkadot-api/descriptors";
 import { state } from "@react-rxjs/core";
 import { Binary } from "polkadot-api";
 import { combineLatest, from, map, switchMap } from "rxjs";
-import { bountyValue$, currencyIsStables$ } from "./price";
+import { bountyValue$, currencyIsStables$, priceToChainAmount } from "./price";
 import { decisionDeposit, submissionDeposit } from "./referendaConstants";
 
 const TITLE_LENGTH = 100;
@@ -106,9 +106,7 @@ const depositCosts$ = currencyIsStables$
             submissionDeposit,
             bountyValue$.pipe(
               switchMap((v) =>
-                decisionDeposit(
-                  v ? BigInt(v * 10 ** TOKEN_DECIMALS) / 10n : null,
-                ),
+                decisionDeposit(v ? priceToChainAmount(v) / 10n : null),
               ),
             ),
           ])
@@ -117,7 +115,7 @@ const depositCosts$ = currencyIsStables$
             submissionDeposit,
             bountyValue$.pipe(
               switchMap((v) =>
-                decisionDeposit(v ? BigInt(v * 10 ** TOKEN_DECIMALS) : null),
+                decisionDeposit(v ? priceToChainAmount(v) : null),
               ),
             ),
           ]),

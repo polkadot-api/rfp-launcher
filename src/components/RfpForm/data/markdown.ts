@@ -35,7 +35,9 @@ function generateMarkdown(
     : "TBD";
   const total =
     currency === TOKEN_SYMBOL
-      ? `${formattedAmount} ${TOKEN_SYMBOL} Requested (Amount + ${REFERENDUM_PRICE_BUFFER * 100}%)`
+      ? data.isChildRfp
+        ? `Total ${formattedAmount} ${TOKEN_SYMBOL}`
+        : `${formattedAmount} ${TOKEN_SYMBOL} Requested (Amount + ${REFERENDUM_PRICE_BUFFER * 100}%)`
       : `Total ${formattedAmount} ${currency} Requested`;
 
   // Generate markdown even with partial data

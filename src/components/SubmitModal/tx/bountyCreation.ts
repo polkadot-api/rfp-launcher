@@ -5,10 +5,10 @@ import { FormSchema } from "@/components/RfpForm/formSchema";
 import { selectedAccount$ } from "@/components/SelectAccount";
 import { REMARK_TEXT, TOKEN_DECIMALS } from "@/constants";
 import { formatToken } from "@/lib/formatToken";
+import { accId } from "@/lib/ss58";
 import { novasamaProvider } from "@polkadot-api/sdk-accounts";
 import { createBountiesSdk } from "@polkadot-api/sdk-governance";
 import {
-  AccountId,
   getMultisigAccountId,
   sortMultisigSignatories,
 } from "@polkadot-api/substrate-bindings";
@@ -34,13 +34,12 @@ export const getCreationMultisigCallMetadata = (
   formData: FormSchema,
   selectedAccount: string,
 ) => {
-  const codec = AccountId();
   const multisigAddr = getMultisigAddress(formData);
   const sortedSignatories = sortMultisigSignatories(
-    formData.supervisors.map(codec.enc),
+    formData.supervisors.map(accId.enc),
   );
   const toHex = (v: Uint8Array) => Binary.fromBytes(v).asHex();
-  const selectedPk = toHex(codec.enc(selectedAccount));
+  const selectedPk = toHex(accId.enc(selectedAccount));
   const otherSignatories = sortedSignatories.filter(
     (v) => toHex(v) !== selectedPk,
   );
@@ -50,7 +49,7 @@ export const getCreationMultisigCallMetadata = (
     multisigAddr,
     call_hash: multisigCreationHash,
     threshold: formData.signatoriesThreshold,
-    other_signatories: otherSignatories.map(codec.dec),
+    other_signatories: otherSignatories.map(accId.dec),
   };
 };
 
@@ -159,16 +158,14 @@ export const [bountyCreationProcess$, submitBountyCreation] = createTxProcess(
   bountyCreationTx$.pipe(map((v) => v?.tx ?? null)),
 );
 
-const accountCodec = AccountId();
-
 const getMultisigAddress = (formData: FormSchema) =>
-  accountCodec.dec(
+  accId.dec(
     getMultisigAccountId({
       threshold: Math.min(
         formData.signatoriesThreshold,
         formData.supervisors.length,
       ),
-      signatories: formData.supervisors.map(accountCodec.enc),
+      signatories: formData.supervisors.map(accId.enc),
     }),
   );
 

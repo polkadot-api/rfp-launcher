@@ -1,7 +1,7 @@
 import { typedApi } from "@/chain";
 import { matchedChain } from "@/chainRoute";
-import { TOKEN_DECIMALS } from "@/constants";
 import { formatToken } from "@/lib/formatToken";
+import { accId, genericSs58 } from "@/lib/ss58";
 import {
   createLinkedAccountsSdk,
   MultisigProvider,
@@ -12,7 +12,7 @@ import { createBountiesSdk } from "@polkadot-api/sdk-governance";
 import { state, useStateObservable } from "@react-rxjs/core";
 import { combineKeys, partitionByKey } from "@react-rxjs/utils";
 import { CheckCircle2, TriangleAlert } from "lucide-react";
-import { AccountId, SS58String } from "polkadot-api";
+import { SS58String } from "polkadot-api";
 import { useMemo, type FC } from "react";
 import { useWatch } from "react-hook-form";
 import {
@@ -44,7 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { priceTotals$ } from "./data";
+import { priceToChainAmount, priceTotals$ } from "./data";
 import { type RfpControlType } from "./formSchema";
 
 const bountiesSdk = createBountiesSdk(typedApi);
@@ -56,7 +56,6 @@ const linkedAccountsSdk = createLinkedAccountsSdk(
   ]),
 );
 
-const accId = AccountId();
 export const [bountyById$, bountyKeys$] = partitionByKey(
   defer(bountiesSdk.getBounties).pipe(
     mergeAll(),
@@ -156,9 +155,7 @@ export const BountyCheck: FC<{
   const renderBalanceCheck = () => {
     if (selectedBountyId == null || !priceTotals || !bounty) return null;
 
-    const totalCost = BigInt(
-      priceTotals.totalAmountWithBuffer * 10 ** TOKEN_DECIMALS,
-    );
+    const totalCost = priceToChainAmount(priceTotals.totalAmountToken);
 
     if (bounty.balance < totalCost) {
       return (
@@ -265,7 +262,7 @@ function fallbackMultisigProviders(
 function hardCodedProivider(): MultisigProvider {
   return async (address) => {
     if (
-      AccountId().dec(AccountId().enc(address)) ===
+      genericSs58(address) ===
       "5E4UqkrTqWLAsX5Qd56dGMGvWSaq9oYRx3eNxgrc5tz66wZR"
     ) {
       return {

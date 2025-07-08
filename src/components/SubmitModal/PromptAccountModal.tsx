@@ -2,14 +2,14 @@
 
 import {
   estimatedCost$,
+  priceToChainAmount,
   priceTotals$,
   signerBalance$,
 } from "@/components/RfpForm/data";
-import { TOKEN_DECIMALS } from "@/constants";
+import { genericSs58 } from "@/lib/ss58";
 import { SelectGroup } from "@radix-ui/react-select";
 import { state, useStateObservable } from "@react-rxjs/core";
 import { createSignal } from "@react-rxjs/utils";
-import { AccountId } from "polkadot-api";
 import { combineLatest, map, switchMap } from "rxjs";
 import { formValue$ } from "../RfpForm/data/formValue";
 import { bounties$, bountyById$ } from "../RfpForm/FundingBountyCheck";
@@ -62,7 +62,7 @@ export const signerStepValidity$ = state(
         const bountyBalance = bounty?.balance ?? null;
         const bountySigners = bounty?.signers ?? null;
         const accountGenericSs58 = selectedAccount
-          ? AccountId().dec(AccountId().enc(selectedAccount.address))
+          ? genericSs58(selectedAccount.address)
           : null;
 
         const feesAndDeposits =
@@ -70,7 +70,7 @@ export const signerStepValidity$ = state(
             ? estimatedCost.deposits + estimatedCost.fees < signerBalance
             : false;
         const totalAmount = priceTotals
-          ? BigInt(priceTotals.totalAmountWithBuffer * 10 ** TOKEN_DECIMALS)
+          ? priceToChainAmount(priceTotals.totalAmountToken)
           : null;
         const parentBounty = formValue.isChildRfp
           ? !!bountyBalance &&

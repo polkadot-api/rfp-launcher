@@ -198,7 +198,13 @@ const FundingSummary: FC<{
   const formattedKsmString = priceTotals
     ? currencyIsStables
       ? formatCurrency(priceTotals.totalAmount, formFields.fundingCurrency!, 2)
-      : formatCurrency(priceTotals.totalAmountWithBuffer, TOKEN_SYMBOL, 2)
+      : formatCurrency(
+          formFields.isChildRfp
+            ? priceTotals.totalAmountToken
+            : priceTotals.totalAmountWithBuffer,
+          TOKEN_SYMBOL,
+          2,
+        )
     : null;
 
   let totalValueDisplay = "Calculating...";
@@ -264,7 +270,7 @@ const FundingSummary: FC<{
               <span className="text-base font-semibold text-midnight-koi">
                 Total
               </span>
-              {currencyIsStables ? null : (
+              {currencyIsStables || formFields.isChildRfp ? null : (
                 <span className="text-xs text-pine-shadow-60">+25% Buffer</span>
               )}
             </div>

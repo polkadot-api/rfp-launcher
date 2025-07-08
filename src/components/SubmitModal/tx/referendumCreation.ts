@@ -4,11 +4,9 @@ import {
   getTrack,
 } from "@/components/RfpForm/data/referendaConstants";
 import { formatToken } from "@/lib/formatToken";
+import { accId } from "@/lib/ss58";
 import { MultiAddress } from "@polkadot-api/descriptors";
-import {
-  AccountId,
-  getMultisigAccountId,
-} from "@polkadot-api/substrate-bindings";
+import { getMultisigAccountId } from "@polkadot-api/substrate-bindings";
 import { state } from "@react-rxjs/core";
 import { CompatibilityLevel } from "polkadot-api";
 import {
@@ -30,16 +28,14 @@ import { getCreationMultisigCallMetadata, rfpBounty$ } from "./bountyCreation";
 import { createTxProcess } from "./txProcess";
 import { TxWithExplanation } from "./types";
 
-const accountCodec = AccountId();
-
-const getMultisigAddress = (formData: FormSchema) =>
-  accountCodec.dec(
+export const getMultisigAddress = (formData: FormSchema) =>
+  accId.dec(
     getMultisigAccountId({
       threshold: Math.min(
         formData.signatoriesThreshold,
         formData.supervisors.length,
       ),
-      signatories: formData.supervisors.map(accountCodec.enc),
+      signatories: formData.supervisors.map(accId.enc),
     }),
   );
 

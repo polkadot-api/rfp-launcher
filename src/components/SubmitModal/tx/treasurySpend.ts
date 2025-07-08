@@ -4,9 +4,10 @@ import {
   getTrack,
 } from "@/components/RfpForm/data/referendaConstants";
 import { STABLE_INFO, TOKEN_DECIMALS } from "@/constants";
+import { accId } from "@/lib/ss58";
 import { getMultisigAccountId } from "@polkadot-api/substrate-bindings";
 import { state } from "@react-rxjs/core";
-import { AccountId, Binary, Enum, SS58String } from "polkadot-api";
+import { Binary, Enum, SS58String } from "polkadot-api";
 import { combineLatest, filter, map, switchMap } from "rxjs";
 import { dismissable, submittedFormData$ } from "../modalActions";
 import { createTxProcess } from "./txProcess";
@@ -39,13 +40,12 @@ export const createSpendCall = (
         "X1",
         Enum("AccountId32", {
           network: undefined,
-          id: Binary.fromBytes(AccountId().enc(beneficiary)),
+          id: Binary.fromBytes(accId.enc(beneficiary)),
         }),
       ),
     }),
   });
 
-const accId = AccountId();
 export const treasurySpendTx$ = state(
   submittedFormData$.pipe(
     switchMap((formData) => {

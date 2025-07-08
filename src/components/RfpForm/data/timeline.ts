@@ -1,5 +1,5 @@
 import { client, typedApi } from "@/chain";
-import { BLOCK_LENGTH, STABLE_RATE, TOKEN_DECIMALS } from "@/constants";
+import { BLOCK_LENGTH, STABLE_RATE } from "@/constants";
 import { state } from "@react-rxjs/core";
 import { add } from "date-fns";
 import {
@@ -10,7 +10,7 @@ import {
   switchMap,
 } from "rxjs";
 import { formValue$ } from "./formValue";
-import { bountyValue$, currencyIsStables$ } from "./price";
+import { bountyValue$, currencyIsStables$, priceToChainAmount } from "./price";
 import { referendaDuration } from "./referendaConstants";
 
 const getNextTreasurySpend = async (block: number) => {
@@ -32,8 +32,7 @@ export const referendumExecutionBlocks$ = state(
       const currentBlockDate = new Date();
       const refDuration = await referendaDuration(
         bountyValue
-          ? BigInt(bountyValue * 10 ** TOKEN_DECIMALS) /
-              (isStables ? STABLE_RATE : 1n)
+          ? priceToChainAmount(bountyValue) / (isStables ? STABLE_RATE : 1n)
           : null,
       );
 

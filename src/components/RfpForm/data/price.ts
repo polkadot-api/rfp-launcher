@@ -1,4 +1,8 @@
-import { REFERENDUM_PRICE_BUFFER, STABLE_INFO } from "@/constants";
+import {
+  REFERENDUM_PRICE_BUFFER,
+  STABLE_INFO,
+  TOKEN_DECIMALS,
+} from "@/constants";
 import { currencyRate$ } from "@/services/currencyRate";
 import { state, withDefault } from "@react-rxjs/core";
 import { combineLatest, map } from "rxjs";
@@ -20,6 +24,9 @@ const calculatePriceTotals = (
 
   return { totalAmount, totalAmountToken, totalAmountWithBuffer };
 };
+
+export const priceToChainAmount = (value: number) =>
+  BigInt(Math.round(value * 10 ** TOKEN_DECIMALS));
 
 export const priceTotals$ = state(
   combineLatest({
@@ -59,13 +66,16 @@ export const bountyValue$ = state(
   combineLatest({
     priceTotals: priceTotals$,
     isStable: currencyIsStables$,
+    isChild: formValue$.pipe(map((v) => v?.isChildRfp ?? false)),
   }).pipe(
-    map(({ priceTotals, isStable }) => {
+    map(({ priceTotals, isStable, isChild }) => {
       if (!priceTotals || isStable == null) return null;
 
       return isStable
         ? priceTotals.totalAmount
-        : priceTotals.totalAmountWithBuffer;
+        : isChild
+          ? priceTotals.totalAmountToken
+          : priceTotals.totalAmountWithBuffer;
     }),
   ),
   null,
