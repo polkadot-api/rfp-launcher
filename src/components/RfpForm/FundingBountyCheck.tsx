@@ -1,10 +1,9 @@
 import { typedApi } from "@/chain";
 import { matchedChain } from "@/chainRoute";
 import { formatToken } from "@/lib/formatToken";
-import { accId, genericSs58 } from "@/lib/ss58";
+import { accId } from "@/lib/ss58";
 import {
   createLinkedAccountsSdk,
-  MultisigProvider,
   NestedLinkedAccountsResult,
   novasamaProvider,
 } from "@polkadot-api/sdk-accounts";
@@ -49,11 +48,8 @@ import { type RfpControlType } from "./formSchema";
 
 const bountiesSdk = createBountiesSdk(typedApi);
 const linkedAccountsSdk = createLinkedAccountsSdk(
-  typedApi as any,
-  fallbackMultisigProviders([
-    novasamaProvider(matchedChain),
-    hardCodedProivider(),
-  ]),
+  typedApi,
+  novasamaProvider(matchedChain),
 );
 
 export const [bountyById$, bountyKeys$] = partitionByKey(
@@ -246,33 +242,3 @@ export const BountyCheck: FC<{
     </div>
   );
 };
-
-function fallbackMultisigProviders(
-  providers: MultisigProvider[],
-): MultisigProvider {
-  return async (address) => {
-    for (const provider of providers) {
-      const result = await provider(address);
-      if (result) return result;
-    }
-    return null;
-  };
-}
-
-function hardCodedProivider(): MultisigProvider {
-  return async (address) => {
-    if (
-      genericSs58(address) ===
-      "5E4UqkrTqWLAsX5Qd56dGMGvWSaq9oYRx3eNxgrc5tz66wZR"
-    ) {
-      return {
-        addresses: [
-          "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-          "16JGzEsi8gcySKjpmxHVrkLTHdFHodRepEz8n244gNZpr9J",
-        ],
-        threshold: 2,
-      };
-    }
-    return null;
-  };
-}

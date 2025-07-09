@@ -102,11 +102,11 @@ const decisionDepositFee$ = typedApi.tx.Referenda.place_decision_deposit({
 
 const childBountyFee$ = createChildBountyTx({
   curator: ALICE,
-  findersBountyAmount: 0n,
-  findersBountyFee: 0n,
+  findersBountyAmount: 1n,
+  findersBountyFee: 1n,
   isParentCurator: true,
-  mainChildBountyAmount: 0n,
-  mainChildBountyFee: 0n,
+  mainChildBountyAmount: 1n,
+  mainChildBountyFee: 1n,
   nextId: 0,
   parentId: 0,
   title: "Fee-estimating child bounty",
