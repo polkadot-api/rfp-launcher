@@ -105,7 +105,7 @@ export const createChildBountyTx = ({
       },
     },
     // Adding a second child bounty for finders' fee
-    ...(findersBountyFee
+    ...(findersBountyAmount
       ? [
           {
             tx: typedApi.tx.ChildBounties.add_child_bounty({
@@ -148,7 +148,7 @@ export const createChildBountyTx = ({
               text: "Accept supervisor role of child rfp",
             },
           },
-          ...(findersBountyFee
+          ...(findersBountyAmount
             ? [
                 {
                   tx: typedApi.tx.ChildBounties.accept_curator({
